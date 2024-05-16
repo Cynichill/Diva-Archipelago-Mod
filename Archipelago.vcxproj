@@ -75,7 +75,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\logan\Desktop\MegaMixPlusShareDivaMod-main\MegaMixPlusShareDivaMod-main\Dependencies;C:\Users\logan\Desktop\MegaMixPlusShareDivaMod-main\MegaMixPlusShareDivaMod-main\Dependencies\curl\include;C:\Users\logan\Desktop\MegaMixPlusShareDivaMod-main\MegaMixPlusShareDivaMod-main\Dependencies\Detours;C:\Users\logan\Desktop\MegaMixPlusShareDivaMod-main\MegaMixPlusShareDivaMod-main\Dependencies\Detours\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Dependencies;$(ProjectDir)Dependencies\curl\include;$(ProjectDir)Dependencies\Detours;$(ProjectDir)Dependencies\Detours\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -83,7 +83,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>C:\Users\logan\Desktop\MegaMixPlusShareDivaMod-main\MegaMixPlusShareDivaMod-main\Dependencies\curl\lib;C:\Users\logan\Desktop\MegaMixPlusShareDivaMod-main\MegaMixPlusShareDivaMod-main\Dependencies\Detours\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)Dependencies\curl\lib;$(ProjectDir)Dependencies\Detours\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
