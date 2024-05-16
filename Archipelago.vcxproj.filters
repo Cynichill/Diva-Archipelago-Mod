@@ -50,6 +50,5 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependencies\Detours\lib\detours.lib" />
-    <Library Include="Dependencies\curl\lib\libcurl.dll.a" />
   </ItemGroup>
 </Project>
