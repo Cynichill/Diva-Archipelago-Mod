@@ -10,9 +10,10 @@
 
 // MegaMix+ addresses
 
-const uint64_t DivaScoreGradeAddress = 0x00000001416E2D00;
+const uint64_t DivaScoreBaseAddress = 0x00000001412EF568;
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
 const uint64_t DivaCurrentPVIdAddress = 0x00000001412C2340;
+const uint64_t DivaScoreGradeAddress = 0x00000001416E2D00;
 
 // Non-SongLimitPatch 1.02
 const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001412B634C;
@@ -46,6 +47,7 @@ void writeToFile(const nlohmann::json& results) {
 HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, int a1) {
 
     std::string& DivaTitle = *(std::string*)DivaCurrentPVTitleAddress;
+    DIVA_SCORE DivaScore = *(DIVA_SCORE*)DivaScoreBaseAddress;
     DIVA_PV_ID DivaPVId = *(DIVA_PV_ID*)DivaCurrentPVIdAddress;
     DIVA_DIFFICULTY DivaDif = *(_DIVA_DIFFICULTY*)DivaCurrentPVDifficultyAddress;
     DIVA_GRADE DivaGrade = *(_DIVA_GRADE*)DivaScoreGradeAddress;
