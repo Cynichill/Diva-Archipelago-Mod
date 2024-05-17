@@ -29,12 +29,12 @@ void* DivaScoreTrigger = sigScan(
     "xxxx?xxxx?xxxx?xxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxx?????xx????"
 );
 
-void writeToFile(const std::string& resultsString) {
+void writeToFile(const nlohmann::json& results) {
 
     // Write the JSON to a file
     std::ofstream outputFile(OutputFileName);
     if (outputFile.is_open()) {
-        outputFile << resultsString;
+        outputFile << results.dump(4); // Pretty-print JSON with an indent of 4 spaces
         outputFile.close();
     }
     else {
@@ -58,11 +58,8 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, int a1) {
         {"scoreGrade", DivaGrade},
     };
 
-    // Dump JSON into a string
-    std::string resultsString = results.dump();
-
     // Detach a thread that will be writing the result so the game doesn't hang
-    std::thread fileWriteThread(writeToFile, resultsString);
+    std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
     return original_PrintResult(a1);
