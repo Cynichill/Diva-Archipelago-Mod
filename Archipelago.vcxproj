@@ -72,7 +72,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;SCORESHARE_EXPORTS;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)Dependencies;$(ProjectDir)Dependencies\Detours;$(ProjectDir)Dependencies\Detours\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -87,16 +87,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="core_types.h" />
+    <ClInclude Include="core_win32_hacks.h" />
+    <ClInclude Include="deck.h" />
     <ClInclude Include="Dependencies\Helpers.h" />
     <ClInclude Include="Dependencies\nlohmann\json.hpp" />
     <ClInclude Include="Dependencies\SigScan.h" />
     <ClInclude Include="Diva.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="MemSigScan.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Dependencies\SigScan.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="dllmainDebug.cpp" />
+    <ClCompile Include="MemSigScan.cpp" />
     <ClCompile Include="Mod.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
