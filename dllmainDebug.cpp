@@ -3,6 +3,7 @@
 #include <chrono>
 #include <thread>
 #include "pch.h"
+#include "virtualKey.h"
 
 using namespace GameStates;
 
@@ -20,11 +21,44 @@ namespace EnableDebugMode
 
 	static bool IsKeyPressed(u8 keyCode) { return (::GetAsyncKeyState(keyCode) & 0x8000) != 0; }
 
+	// Initialize reload key code
+	static u8 reloadKeyCode;
+
+	// Function to print debug information
+	void PrintDebugInfo() {
+		std::cout << "Reload key code: " << static_cast<int>(reloadKeyCode) << std::endl;
+	}
+
+	std::string getAndPrintReloadValue(const std::string& filename) {
+		std::ifstream file(filename);
+		if (!file.is_open()) {
+			std::cerr << "Error opening file: " << filename << std::endl;
+			return "";
+		}
+
+		try {
+			auto data = toml::parse(file);
+			std::string reloadValue = data["reload"].value_or(""); // Retrieve the value associated with "reload"
+			std::cout << "Reload value: " << reloadValue << std::endl; // Print the reload value
+			return reloadValue; // Return the reload value
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Error parsing TOML file: " << e.what() << std::endl;
+			return "";
+		}
+	}
+
+	std::string reloadVal = "";
+
 	static void pluginLoop()
 	{
-		if (IsMainWindowFocused && IsKeyPressed(VK_F7))
+		if (reloadVal == "")
 		{
-			//SWAP THIS LATER WITH DIRECT BUTTON CODE
+			reloadVal = getAndPrintReloadValue("mods/ArchipelagoMod/config.toml");
+			reloadKeyCode = GetReloadKeyCode(reloadVal);
+		}
+		if (IsMainWindowFocused && IsKeyPressed(reloadKeyCode)) {
+			//PrintDebugInfo();
 			Original_ChangeGameState(GameState::DATA_TEST);
 			CurrentState = PluginState::WaitingToSelectDataTest;
 

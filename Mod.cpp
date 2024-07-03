@@ -16,10 +16,10 @@ const uint64_t DivaScoreGradeAddress = 0x00000001416E2D00;
 const uint64_t DivaScoreCompletionRateAddress = 0x00000001412EF634;
 
 // Non-SongLimitPatch 1.02
-const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001412B634C;
+//const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001412B634C;
 
 // SongLimitPatch 1.02 ONLY
-//const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001423157AC;
+const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001423157AC;
 
 const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
 
