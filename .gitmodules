@@ -1,0 +1,9 @@
+[submodule "wswrap"]
+	path = wswrap
+	url = https://github.com/black-sliver/wswrap.git
+[submodule "SubModules/wswrap"]
+	path = SubModules/wswrap
+	url = https://github.com/black-sliver/wswrap.git
+[submodule "SubModules/valijson"]
+	path = SubModules/valijson
+	url = https://github.com/tristanpenman/valijson.git
