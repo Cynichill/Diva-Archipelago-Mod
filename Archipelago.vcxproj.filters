@@ -68,6 +68,9 @@
     <ClCompile Include="MemSigScan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TestFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependencies\Detours\lib\detours.lib" />

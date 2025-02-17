@@ -1,0 +1,9 @@
+[submodule "SubModules/apclientpp"]
+	path = SubModules/apclientpp
+	url = https://github.com/black-sliver/apclientpp.git
+[submodule "SubModules/valijson"]
+	path = SubModules/valijson
+	url = git@github.com:tristanpenman/valijson.git
+[submodule "SubModules/wswrap"]
+	path = SubModules/wswrap
+	url = https://github.com/black-sliver/wswrap.git
