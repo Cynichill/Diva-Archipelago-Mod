@@ -21,9 +21,13 @@ const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001412B634C;
 // SongLimitPatch 1.02 ONLY
 //const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001423157AC;
 
-const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
-
+// Archipelago Mod variables
 bool consoleEnabled = true;
+bool currentlyDying = false;
+const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
+const char* DeathLinkInFile = "mods/ArchipelagoMod/death_link_in";
+const std::string DeathLinkOutFile = "mods/ArchipelagoMod/death_link_out";
+
 
 void* DivaScoreTrigger = sigScan(
     "\x48\x89\x5C\x24\x00\x48\x89\x74\x24\x00\x48\x89\x7C\x24\x00\x55\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8B\xEC\x48\x83\xEC\x60\x48\x8B\x05\x00\x00\x00\x00\x48\x33\xC4\x48\x89\x45\xF8\x48\x8B\xF9\x80\xB9\x00\x00\x00\x00\x00\x0F\x85\x00\x00\x00\x00",
@@ -114,27 +118,34 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
+    currentlyDying = false;
+
     return original_PrintResult(a1);
 };
 
 HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, int a1) {
-    const std::string DLinkFile = "mods/ArchipelagoMod/death_link_out";
-
-    std::ofstream outputFile(DLinkFile);
-    if (outputFile.is_open()) {
-        outputFile << "dead";
-        outputFile.close();
+    // TODO: Apparently the trigger is called twice.
+    if (!currentlyDying) {
+        currentlyDying = true;
+        std::ofstream outputFile(DeathLinkOutFile);
+        if (outputFile.is_open()) {
+            outputFile.close();
+            printf("[Archipelago] Sending death_link_out\n");
+        }
+        else {
+            if (consoleEnabled)
+                printf("[Archipelago] Failed to send death_link_out\n");
+        }
     }
     else {
-        if (consoleEnabled)
-            printf("Failed to open the file for writing.\n");
+        printf("[Archipelago] Currently dying so no death_link_out\n");
     }
 
     return original_DeathLinkFail(a1);
 };
 
-// Called rapidly within the gamestate. A more precise function and name is preferred.
-void* gameplayTrigger = sigScan(
+// TODO: Called rapidly during gameplay. A more precise function and name is preferred.
+void* gameplayLoopTrigger = sigScan(
     "\x48\x89\x5c\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xec\x20\x48\x8b\xf9\x33\xdb\xe8\xe7\x91\x03\x00",
     "xxxxxxxxxxxxxxxxxxxxxxxxx"
     
@@ -142,20 +153,20 @@ void* gameplayTrigger = sigScan(
 
 const uint64_t DivaHitPointsAddress = 0x00000001412EF564;
 
-HOOK(int, __fastcall, _GameplayTrigger, gameplayTrigger, long long a1) {
+HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
     //uint8_t HP = *(uint8_t*)DivaHitPointsAddress;
 
-    bool exists = std::filesystem::exists("mods/ArchipelagoMod/death_link_in");
+    bool exists = std::filesystem::exists(DeathLinkInFile);
 
-    if (consoleEnabled)
-        printf("Exists: %d\n", exists);
-
-    if (exists) {
+    if (exists && !currentlyDying) {
+        if (consoleEnabled)
+            printf("[Archipelago] death_link_in seen\n");
+        currentlyDying = true;
         WRITE_MEMORY(DivaHitPointsAddress, uint8_t, 0x00);
-        remove("mods/ArchipelagoMod/death_link_in");
+        remove(DeathLinkInFile);
     }
 
-    return original_GameplayTrigger(a1);
+    return original_GameplayLoopTrigger(a1);
 }
 
 extern "C"
@@ -164,6 +175,6 @@ extern "C"
     {
         INSTALL_HOOK(_PrintResult);
         INSTALL_HOOK(_DeathLinkFail);
-        INSTALL_HOOK(_GameplayTrigger);
+        INSTALL_HOOK(_GameplayLoopTrigger);
     }
 }
