@@ -15,6 +15,10 @@ const uint64_t DivaCurrentPVIdAddress = 0x00000001412C2340;
 const uint64_t DivaScoreGradeAddress = 0x00000001416E2D00;
 const uint64_t DivaScoreCompletionRateAddress = 0x00000001412EF634;
 
+// Active gameplay addresses
+const uint64_t DivaGameHPAddress = 0x00000001412EF564;
+const uint64_t DivaGameModifierAddress = 0x00000001412EF450;
+
 // Non-SongLimitPatch 1.02
 const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001412B634C;
 
@@ -151,8 +155,6 @@ void* gameplayLoopTrigger = sigScan(
     
 );
 
-const uint64_t DivaHitPointsAddress = 0x00000001412EF564;
-
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
     //uint8_t HP = *(uint8_t*)DivaHitPointsAddress;
 
@@ -162,7 +164,7 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
         if (consoleEnabled)
             printf("[Archipelago] death_link_in seen\n");
         currentlyDying = true;
-        WRITE_MEMORY(DivaHitPointsAddress, uint8_t, 0x00);
+        WRITE_MEMORY(DivaGameHPAddress, uint8_t, 0x00);
         remove(DeathLinkInFile);
     }
 
