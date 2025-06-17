@@ -38,6 +38,7 @@ void* DivaScoreTrigger = sigScan(
     "xxxx?xxxx?xxxx?xxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxx?????xx????"
 );
 
+// TODO: Bad trigger. Called on FAILURE and Results screen.
 void* DivaDeathTrigger = sigScan(
     "\x48\x89\x6C\x24\x18\x48\x89\x74\x24\x20\x41\x56\x48\x83\xEC\x30\x4C\x8B\x35",
     "xxxxxxxxxxxxxxxxxxx"
@@ -119,16 +120,17 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
     };
 
     // Detach a thread that will be writing the result so the game doesn't hang
+    printf("[Archipelago] Writing out results.json\n");
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
+    printf("[Archipelago] currentlyDying = %d -> %d\n", currentlyDying, !currentlyDying);
     currentlyDying = false;
 
     return original_PrintResult(a1);
 };
 
-HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, int a1) {
-    // TODO: Apparently the trigger is called twice.
+HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, long long a1) {
     if (!currentlyDying) {
         currentlyDying = true;
         std::ofstream outputFile(DeathLinkOutFile);
