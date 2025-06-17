@@ -30,6 +30,11 @@ void* DivaScoreTrigger = sigScan(
     "xxxx?xxxx?xxxx?xxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxx?????xx????"
 );
 
+void* DivaDeathTrigger = sigScan(
+    "\x48\x89\x6C\x24\x18\x48\x89\x74\x24\x20\x41\x56\x48\x83\xEC\x30\x4C\x8B\x35",
+    "xxxxxxxxxxxxxxxxxxx"
+);
+
 //Difficulty thresholds
 float thresholdEasy = 30.0;
 float thresholdNormal = 50.0;
@@ -51,7 +56,7 @@ void writeToFile(const nlohmann::json& results) {
     }
 }
 
-HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, int a1) {
+HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
 
     std::string& DivaTitle = *(std::string*)DivaCurrentPVTitleAddress;
     DIVA_PV_ID DivaPVId = *(DIVA_PV_ID*)DivaCurrentPVIdAddress;
@@ -112,10 +117,53 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, int a1) {
     return original_PrintResult(a1);
 };
 
+HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, int a1) {
+    const std::string DLinkFile = "mods/ArchipelagoMod/death_link_out";
+
+    std::ofstream outputFile(DLinkFile);
+    if (outputFile.is_open()) {
+        outputFile << "dead";
+        outputFile.close();
+    }
+    else {
+        if (consoleEnabled)
+            printf("Failed to open the file for writing.\n");
+    }
+
+    return original_DeathLinkFail(a1);
+};
+
+// Called rapidly within the gamestate. A more precise function and name is preferred.
+void* gameplayTrigger = sigScan(
+    "\x48\x89\x5c\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xec\x20\x48\x8b\xf9\x33\xdb\xe8\xe7\x91\x03\x00",
+    "xxxxxxxxxxxxxxxxxxxxxxxxx"
+    
+);
+
+const uint64_t DivaHitPointsAddress = 0x00000001412EF564;
+
+HOOK(int, __fastcall, _GameplayTrigger, gameplayTrigger, long long a1) {
+    //uint8_t HP = *(uint8_t*)DivaHitPointsAddress;
+
+    bool exists = std::filesystem::exists("mods/ArchipelagoMod/death_link_in");
+
+    if (consoleEnabled)
+        printf("Exists: %d\n", exists);
+
+    if (exists) {
+        WRITE_MEMORY(DivaHitPointsAddress, uint8_t, 0x00);
+        remove("mods/ArchipelagoMod/death_link_in");
+    }
+
+    return original_GameplayTrigger(a1);
+}
+
 extern "C"
 {
     void __declspec(dllexport) Init()
     {
         INSTALL_HOOK(_PrintResult);
+        INSTALL_HOOK(_DeathLinkFail);
+        INSTALL_HOOK(_GameplayTrigger);
     }
 }
