@@ -9,21 +9,19 @@
 #include "Diva.h"
 
 // MegaMix+ addresses
-
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
 const uint64_t DivaCurrentPVIdAddress = 0x00000001412C2340;
 const uint64_t DivaScoreGradeAddress = 0x00000001416E2D00;
 const uint64_t DivaScoreCompletionRateAddress = 0x00000001412EF634;
 
+//const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001412B634C; // Non-SongLimitPatch 1.02
+//const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001423157AC; // SongLimitPatch 1.02 ONLY
+const uint64_t DivaCurrentPVDifficultyBaseAddress = 0x0000000140DAE934;
+const uint64_t DivaCurrentPVDifficultyExtraAddress = 0x0000000140DAE938;
+
 // Active gameplay addresses
 const uint64_t DivaGameHPAddress = 0x00000001412EF564;
 const uint64_t DivaGameModifierAddress = 0x00000001412EF450;
-
-// Non-SongLimitPatch 1.02
-const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001412B634C;
-
-// SongLimitPatch 1.02 ONLY
-//const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001423157AC;
 
 // Archipelago Mod variables
 bool consoleEnabled = true;
@@ -69,7 +67,9 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
 
     std::string& DivaTitle = *(std::string*)DivaCurrentPVTitleAddress;
     DIVA_PV_ID DivaPVId = *(DIVA_PV_ID*)DivaCurrentPVIdAddress;
-    DIVA_DIFFICULTY DivaDif = *(_DIVA_DIFFICULTY*)DivaCurrentPVDifficultyAddress;
+    int DivaBaseDiff = *(int*)DivaCurrentPVDifficultyBaseAddress;
+    int DivaExtraFlag = *(int*)DivaCurrentPVDifficultyExtraAddress;
+    DIVA_DIFFICULTY DivaDif = (_DIVA_DIFFICULTY)(DivaBaseDiff + DivaExtraFlag);
     DIVA_GRADE DivaGrade = *(_DIVA_GRADE*)DivaScoreGradeAddress;
     DIVA_STAT DivaStat = *(DIVA_STAT*)DivaScoreCompletionRateAddress;
 
