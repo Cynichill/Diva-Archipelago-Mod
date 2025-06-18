@@ -22,6 +22,7 @@ const uint64_t DivaCurrentPVDifficultyExtraAddress = 0x0000000140DAE938;
 // Active gameplay addresses
 const uint64_t DivaGameHPAddress = 0x00000001412EF564;
 const uint64_t DivaGameModifierAddress = 0x00000001412EF450;
+const uint64_t DivaGameIconDisplayAddress = 0x00000001412B6374;
 
 // Archipelago Mod variables
 bool consoleEnabled = true;
