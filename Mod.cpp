@@ -38,7 +38,7 @@ void* DivaScoreTrigger = sigScan(
     "xxxx?xxxx?xxxx?xxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxx?????xx????"
 );
 
-// TODO: Bad trigger. Called on FAILURE and Results screen.
+// TODO: Meh trigger. Called twice: FAILURE and around Results screen. Differentiate with remaining HP.
 void* DivaDeathTrigger = sigScan(
     "\x48\x89\x6C\x24\x18\x48\x89\x74\x24\x20\x41\x56\x48\x83\xEC\x30\x4C\x8B\x35",
     "xxxxxxxxxxxxxxxxxxx"
@@ -124,27 +124,33 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
-    printf("[Archipelago] currentlyDying = %d -> %d\n", currentlyDying, !currentlyDying);
+    printf("[Archipelago] DeathLink: currentlyDying = %d -> %d\n", currentlyDying, false);
     currentlyDying = false;
 
     return original_PrintResult(a1);
 };
 
 HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, long long a1) {
+    uint8_t HP = *(uint8_t*)DivaGameHPAddress;
+
     if (!currentlyDying) {
-        currentlyDying = true;
-        std::ofstream outputFile(DeathLinkOutFile);
-        if (outputFile.is_open()) {
-            outputFile.close();
-            printf("[Archipelago] Sending death_link_out\n");
+        if (HP == 0) { // Results screen 
+            currentlyDying = true;
+            std::ofstream outputFile(DeathLinkOutFile);
+            if (outputFile.is_open()) {
+                outputFile.close();
+                printf("[Archipelago] DeathLink > Sending death_link_out\n");
+            }
+            else {
+                printf("[Archipelago] DeathLink > Failed to send death_link_out\n");
+            }
         }
         else {
-            if (consoleEnabled)
-                printf("[Archipelago] Failed to send death_link_out\n");
+            printf("[Archipelago] DeathLink > Called with %d HP != 0, not sending death_link_out\n", HP);
         }
     }
     else {
-        printf("[Archipelago] Currently dying so no death_link_out\n");
+        printf("[Archipelago] DeathLink > Currently dying so no death_link_out\n");
     }
 
     return original_DeathLinkFail(a1);
@@ -159,12 +165,10 @@ void* gameplayLoopTrigger = sigScan(
 
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
     //uint8_t HP = *(uint8_t*)DivaHitPointsAddress;
-
     bool exists = std::filesystem::exists(DeathLinkInFile);
 
     if (exists && !currentlyDying) {
-        if (consoleEnabled)
-            printf("[Archipelago] death_link_in seen\n");
+        printf("[Archipelago] DeathLink < death_link_in exists\n");
         currentlyDying = true;
         WRITE_MEMORY(DivaGameHPAddress, uint8_t, 0x00);
         remove(DeathLinkInFile);
