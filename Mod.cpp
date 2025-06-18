@@ -20,10 +20,10 @@ const uint64_t DivaGameHPAddress = 0x00000001412EF564;
 const uint64_t DivaGameModifierAddress = 0x00000001412EF450;
 
 // Non-SongLimitPatch 1.02
-//const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001412B634C;
+const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001412B634C;
 
 // SongLimitPatch 1.02 ONLY
-const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001423157AC;
+//const uint64_t DivaCurrentPVDifficultyAddress = 0x00000001423157AC;
 
 // Archipelago Mod variables
 bool consoleEnabled = true;
