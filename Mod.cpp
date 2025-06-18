@@ -159,8 +159,7 @@ HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, long long a1) {
 // TODO: Called rapidly during gameplay. A more precise function and name is preferred.
 void* gameplayLoopTrigger = sigScan(
     "\x48\x89\x5c\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xec\x20\x48\x8b\xf9\x33\xdb\xe8\xe7\x91\x03\x00",
-    "xxxxxxxxxxxxxxxxxxxxxxxxx"
-    
+    "xxxxxxxxxxxxxxxxxxxxxxxxx"    
 );
 
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
