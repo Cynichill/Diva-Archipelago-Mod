@@ -7,6 +7,8 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include "Diva.h"
+#include <toml++/toml.h>
+#include <iostream>
 
 // MegaMix+ addresses
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
@@ -27,10 +29,12 @@ const uint64_t DivaGameIconDisplayAddress = 0x00000001412B6374;
 // Archipelago Mod variables
 bool consoleEnabled = true;
 bool currentlyDying = false;
+int deathLinkPercent = 100;
+// Supposedly DML changes CWD to the mod folder but...?
+const std::string ConfigTOML = "config.toml";
 const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
 const char* DeathLinkInFile = "mods/ArchipelagoMod/death_link_in";
 const std::string DeathLinkOutFile = "mods/ArchipelagoMod/death_link_out";
-
 
 void* DivaScoreTrigger = sigScan(
     "\x48\x89\x5C\x24\x00\x48\x89\x74\x24\x00\x48\x89\x7C\x24\x00\x55\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8B\xEC\x48\x83\xEC\x60\x48\x8B\x05\x00\x00\x00\x00\x48\x33\xC4\x48\x89\x45\xF8\x48\x8B\xF9\x80\xB9\x00\x00\x00\x00\x00\x0F\x85\x00\x00\x00\x00",
@@ -125,7 +129,7 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
-    printf("[Archipelago] DeathLink: currentlyDying = %d -> %d\n", currentlyDying, false);
+    std::cout << "[Archipelago] DeathLink: currentlyDying = " << currentlyDying << " -> " << false << std::endl;
     currentlyDying = false;
 
     return original_PrintResult(a1);
@@ -140,18 +144,18 @@ HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, long long a1) {
             std::ofstream outputFile(DeathLinkOutFile);
             if (outputFile.is_open()) {
                 outputFile.close();
-                printf("[Archipelago] DeathLink > Sending death_link_out\n");
+                std::cout << "[Archipelago] DeathLink > Sending death_link_out" << std::endl;
             }
             else {
-                printf("[Archipelago] DeathLink > Failed to send death_link_out\n");
+                std::cout << "[Archipelago] DeathLink > Failed to send death_link_out" << std::endl;
             }
         }
         else {
-            printf("[Archipelago] DeathLink > Called with %d HP != 0, not sending death_link_out\n", HP);
+            std::cout << "[Archipelago] DeathLink > Called with " << HP << " HP != 0, not sending death_link_out" << std::endl;
         }
     }
     else {
-        printf("[Archipelago] DeathLink > Currently dying so no death_link_out\n");
+        std::cout << "[Archipelago] DeathLink > Currently dying so no death_link_out" << std::endl;
     }
 
     return original_DeathLinkFail(a1);
@@ -164,13 +168,21 @@ void* gameplayLoopTrigger = sigScan(
 );
 
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
-    //uint8_t HP = *(uint8_t*)DivaHitPointsAddress;
     bool exists = std::filesystem::exists(DeathLinkInFile);
 
     if (exists && !currentlyDying) {
-        printf("[Archipelago] DeathLink < death_link_in exists\n");
-        currentlyDying = true;
-        WRITE_MEMORY(DivaGameHPAddress, uint8_t, 0x00);
+        std::cout << "[Archipelago] DeathLink < death_link_in exists" << std::endl;
+        
+        int HP = *(uint8_t*)DivaGameHPAddress;
+        int deathLinkHit = (255 * deathLinkPercent) / 100;
+        HP = std::clamp(HP - deathLinkHit, 0, 255);
+        std::cout << "[Archipelago] Death Link < Drop HP by " << deathLinkHit << " (" << deathLinkPercent << "%) total, result: " << HP << std::endl;
+
+        WRITE_MEMORY(DivaGameHPAddress, uint8_t, HP);
+
+        if (HP == 0) // Need a hook to also false this on starting a song, not just results.
+            currentlyDying = true;
+
         remove(DeathLinkInFile);
     }
 
@@ -184,5 +196,23 @@ extern "C"
         INSTALL_HOOK(_PrintResult);
         INSTALL_HOOK(_DeathLinkFail);
         INSTALL_HOOK(_GameplayLoopTrigger);
+
+        // TODO: Relocate
+        try {
+            std::ifstream file(ConfigTOML); // CWD is the mod folder within Init
+            if (!file.is_open()) {
+                std::cout << "[Archipelago] Error opening config file: " << ConfigTOML << std::endl;
+                return;
+            }
+
+            auto data = toml::parse(file);
+            std::string deathlink = data["deathlink_percent"].value_or("42");
+            deathLinkPercent = std::clamp(std::stoi(deathlink), 0, 100);
+
+            std::cout << "[Archipelago] Death Link Percent: " << deathLinkPercent << std::endl;
+        }
+        catch (const std::exception& e) {
+            std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
+        }
     }
 }

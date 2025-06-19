@@ -1,3 +1,9 @@
+typedef enum _DIVA_MODIFIERS : uint8_t {
+    None = 0x0,
+    HiSpeed = 0x1,
+    Hidden = 0x2,
+    Sudden = 0x3
+} DIVA_MODIFIERS;
 typedef enum _DIVA_DIFFICULTY : uint32_t {
     Easy = 0x0,
     Normal = 0x1,
