@@ -125,7 +125,7 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
     };
 
     // Detach a thread that will be writing the result so the game doesn't hang
-    printf("[Archipelago] Writing out results.json\n");
+    std::cout << "[Archipelago] Writing out results.json" << std::endl;
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
