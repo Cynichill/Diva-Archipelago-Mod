@@ -206,7 +206,7 @@ extern "C"
             }
 
             auto data = toml::parse(file);
-            std::string deathlink = data["deathlink_percent"].value_or("42");
+            std::string deathlink = data["deathlink_percent"].value_or("100");
             deathLinkPercent = std::clamp(std::stoi(deathlink), 0, 100);
 
             std::cout << "[Archipelago] Death Link Percent: " << deathLinkPercent << std::endl;
