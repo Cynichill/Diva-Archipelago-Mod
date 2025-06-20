@@ -30,8 +30,8 @@ const uint64_t DivaGameIconDisplayAddress = 0x00000001412B6374;
 bool consoleEnabled = true;
 bool currentlyDying = false;
 int deathLinkPercent = 100;
-// Supposedly DML changes CWD to the mod folder but...?
-const std::string ConfigTOML = "config.toml";
+
+const std::string ConfigTOML = "config.toml"; // CWD within Init()
 const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
 const char* DeathLinkInFile = "mods/ArchipelagoMod/death_link_in";
 const std::string DeathLinkOutFile = "mods/ArchipelagoMod/death_link_out";
@@ -206,10 +206,11 @@ extern "C"
             }
 
             auto data = toml::parse(file);
-            std::string deathlink = data["deathlink_percent"].value_or("100");
-            deathLinkPercent = std::clamp(std::stoi(deathlink), 0, 100);
-
-            std::cout << "[Archipelago] Death Link Percent: " << deathLinkPercent << std::endl;
+            std::string deathlink_percent = data["deathlink_percent"].value_or("100");
+            std::cout << "[Archipelago] Config deathlink_percent: " << deathlink_percent << std::endl;
+            
+            deathLinkPercent = std::clamp(std::stoi(deathlink_percent), 0, 100);
+            std::cout << "[Archipelago] Final deathlink_percent: " << deathLinkPercent << std::endl;
         }
         catch (const std::exception& e) {
             std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
