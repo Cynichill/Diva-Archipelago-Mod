@@ -137,7 +137,7 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
 };
 
 HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, long long a1) {
-    uint8_t HP = *(uint8_t*)DivaGameHPAddress;
+    int HP = *(uint8_t*)DivaGameHPAddress;
 
     if (!deathLinked) {
         if (HP == 0) { // Results screen 
