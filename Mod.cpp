@@ -28,7 +28,7 @@ const uint64_t DivaGameIconDisplayAddress = 0x00000001412B6374;
 
 // Archipelago Mod variables
 bool consoleEnabled = true;
-bool currentlyDying = false;
+bool deathLinked = false;
 int deathLinkPercent = 100;
 
 const std::string ConfigTOML = "config.toml"; // CWD within Init()
@@ -122,6 +122,7 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
         {"pvName", DivaTitle},
         {"pvDifficulty", DivaDif},
         {"scoreGrade", finalGrade},
+        {"deathLinked", deathLinked}, 
     };
 
     // Detach a thread that will be writing the result so the game doesn't hang
@@ -129,8 +130,8 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
-    std::cout << "[Archipelago] DeathLink: currentlyDying = " << currentlyDying << " -> " << false << std::endl;
-    currentlyDying = false;
+    std::cout << "[Archipelago] DeathLink: deathLinked = " << deathLinked << " -> " << false << std::endl;
+    deathLinked = false;
 
     return original_PrintResult(a1);
 };
@@ -138,9 +139,9 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
 HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, long long a1) {
     uint8_t HP = *(uint8_t*)DivaGameHPAddress;
 
-    if (!currentlyDying) {
+    if (!deathLinked) {
         if (HP == 0) { // Results screen 
-            currentlyDying = true;
+            deathLinked = true;
             std::ofstream outputFile(DeathLinkOutFile);
             if (outputFile.is_open()) {
                 outputFile.close();
@@ -170,7 +171,7 @@ void* gameplayLoopTrigger = sigScan(
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
     bool exists = std::filesystem::exists(DeathLinkInFile);
 
-    if (exists && !currentlyDying) {
+    if (exists && !deathLinked) {
         std::cout << "[Archipelago] DeathLink < death_link_in exists" << std::endl;
         
         int HP = *(uint8_t*)DivaGameHPAddress;
@@ -180,8 +181,8 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
 
         WRITE_MEMORY(DivaGameHPAddress, uint8_t, HP);
 
-        if (HP == 0) // Need a hook to also false this on starting a song, not just results.
-            currentlyDying = true;
+        if (HP == 0)
+            deathLinked = true;
 
         remove(DeathLinkInFile);
     }
