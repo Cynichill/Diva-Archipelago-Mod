@@ -177,7 +177,7 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
         int HP = *(uint8_t*)DivaGameHPAddress;
         int deathLinkHit = (255 * deathLinkPercent) / 100 + 1;
         HP = std::clamp(HP - deathLinkHit, 0, 255);
-        std::cout << "[Archipelago] Death Link < Drop HP by " << deathLinkHit << " (" << deathLinkPercent << "%) total, result: " << HP << std::endl;
+        std::cout << "[Archipelago] DeathLink < Drop HP by " << deathLinkHit << " (" << deathLinkPercent << "%) total, result: " << HP << std::endl;
 
         WRITE_MEMORY(DivaGameHPAddress, uint8_t, HP);
 
