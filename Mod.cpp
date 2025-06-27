@@ -179,7 +179,7 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
         HP = std::clamp(HP - deathLinkHit, 0, 255);
         std::cout << "[Archipelago] DeathLink < Drop HP by " << deathLinkHit << " (" << deathLinkPercent << "%) total, result: " << HP << std::endl;
 
-        WRITE_MEMORY(DivaGameHPAddress, uint8_t, HP);
+        WRITE_MEMORY(DivaGameHPAddress, uint8_t, static_cast<uint8_t>(HP));
 
         if (HP == 0)
             deathLinked = true;
