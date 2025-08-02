@@ -36,10 +36,13 @@ const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
 const char* DeathLinkInFile = "mods/ArchipelagoMod/death_link_in";
 const std::string DeathLinkOutFile = "mods/ArchipelagoMod/death_link_out";
 
-void* DivaScoreTrigger = sigScan(
+// The original sigscan from ScoreDiva for MMUI (may have previously worked with FTUI?)
+void* MMUIScoreTrigger = sigScan(
     "\x48\x89\x5C\x24\x00\x48\x89\x74\x24\x00\x48\x89\x7C\x24\x00\x55\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8B\xEC\x48\x83\xEC\x60\x48\x8B\x05\x00\x00\x00\x00\x48\x33\xC4\x48\x89\x45\xF8\x48\x8B\xF9\x80\xB9\x00\x00\x00\x00\x00\x0F\x85\x00\x00\x00\x00",
     "xxxx?xxxx?xxxx?xxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxx?????xx????"
 );
+// Can definitely be better. Not quite the function, mostly AET related, but called on results in FTUI and not MMUI.
+const uint64_t FTUIScoreTrigger = 0x140237F30;
 
 // TODO: Meh trigger. Called twice: FAILURE and around Results screen. Differentiate with remaining HP.
 void* DivaDeathTrigger = sigScan(
@@ -47,12 +50,8 @@ void* DivaDeathTrigger = sigScan(
     "xxxxxxxxxxxxxxxxxxx"
 );
 
-//Difficulty thresholds
-float thresholdEasy = 30.0;
-float thresholdNormal = 50.0;
-float thresholdHard = 60.0;
-float thresholdExtreme = 70.0;
-float thresholdExExtreme = 70.0;
+// Difficulty percentage thresholds
+float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
 
 void writeToFile(const nlohmann::json& results) {
 
@@ -68,8 +67,7 @@ void writeToFile(const nlohmann::json& results) {
     }
 }
 
-HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
-
+void processResults() {
     std::string& DivaTitle = *(std::string*)DivaCurrentPVTitleAddress;
     DIVA_PV_ID DivaPVId = *(DIVA_PV_ID*)DivaCurrentPVIdAddress;
     int DivaBaseDiff = *(int*)DivaCurrentPVDifficultyBaseAddress;
@@ -83,38 +81,8 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
     float percentageEarned = float(DivaStat.CompletionRate);
 
     //If % earned is less than threshold, fail song
-    if (finalGrade == 2)
-    {
-        switch (difficulty) 
-        {
-            case 0: // Easy
-                if (percentageEarned < thresholdEasy) 
-                {
-                    finalGrade = 1;
-                }
-                break;
-            case 1: // Normal
-                if (percentageEarned < thresholdNormal) {
-                    finalGrade = 1;
-                }
-                break;
-            case 2: // Hard
-                if (percentageEarned < thresholdHard) {
-                    finalGrade = 1;
-                }
-                break;
-            case 3: // Extreme
-                if (percentageEarned < thresholdExtreme) {
-                    finalGrade = 1;
-                }
-                break;
-            case 4: // ExExtreme
-                if (percentageEarned < thresholdExExtreme) {
-                    finalGrade = 1;
-                }
-                break;
-        }
-    }
+    if (finalGrade == 2 && percentageEarned < thresholds[difficulty])
+        finalGrade = 1;
 
     // Create JSON with all results that will be sent to the bot
     nlohmann::json results = {
@@ -122,18 +90,28 @@ HOOK(int, __fastcall, _PrintResult, DivaScoreTrigger, long long a1) {
         {"pvName", DivaTitle},
         {"pvDifficulty", DivaDif},
         {"scoreGrade", finalGrade},
-        {"deathLinked", deathLinked}, 
+        {"deathLinked", deathLinked},
     };
 
     // Detach a thread that will be writing the result so the game doesn't hang
-    std::cout << "[Archipelago] Writing out results.json" << std::endl;
+    std::cout << "[Archipelago] Writing out results.json" << std::endl << results << std::endl;
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
     std::cout << "[Archipelago] DeathLink: deathLinked = " << deathLinked << " -> " << false << std::endl;
     deathLinked = false;
+}
 
-    return original_PrintResult(a1);
+HOOK(int, __fastcall, _FTUIResult, FTUIScoreTrigger, long long a1) {
+    std::cout << "[Archipelago] FTUIResult a1: " << a1 << std::endl;
+    processResults();
+    return original_FTUIResult(a1);
+}
+
+HOOK(int, __fastcall, _MMUIResult, MMUIScoreTrigger, long long a1) {
+    std::cout << "[Archipelago] MMUIResult a1: " << a1 << std::endl;
+    processResults();
+    return original_MMUIResult(a1);
 };
 
 HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, long long a1) {
@@ -170,11 +148,11 @@ void* gameplayLoopTrigger = sigScan(
 
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
     bool exists = std::filesystem::exists(DeathLinkInFile);
+    int HP = *(uint8_t*)DivaGameHPAddress;
 
     if (exists && !deathLinked) {
         std::cout << "[Archipelago] DeathLink < death_link_in exists" << std::endl;
-        
-        int HP = *(uint8_t*)DivaGameHPAddress;
+
         int deathLinkHit = (255 * deathLinkPercent) / 100 + 1;
         HP = std::clamp(HP - deathLinkHit, 0, 255);
         std::cout << "[Archipelago] DeathLink < Drop HP by " << deathLinkHit << " (" << deathLinkPercent << "%) total, result: " << HP << std::endl;
@@ -185,6 +163,9 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
             deathLinked = true;
 
         remove(DeathLinkInFile);
+    } else if (HP > 0 && deathLinked) {
+        // deathLinked reset alternative to results screen.
+        deathLinked = false;
     }
 
     return original_GameplayLoopTrigger(a1);
@@ -194,7 +175,8 @@ extern "C"
 {
     void __declspec(dllexport) Init()
     {
-        INSTALL_HOOK(_PrintResult);
+        INSTALL_HOOK(_MMUIResult);
+        INSTALL_HOOK(_FTUIResult);
         INSTALL_HOOK(_DeathLinkFail);
         INSTALL_HOOK(_GameplayLoopTrigger);
 
