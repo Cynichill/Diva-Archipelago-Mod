@@ -9,6 +9,7 @@
 #include "Diva.h"
 #include <toml++/toml.h>
 #include <iostream>
+#include <chrono>
 
 // MegaMix+ addresses
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
@@ -30,6 +31,8 @@ const uint64_t DivaGameIconDisplayAddress = 0x00000001412B6374;
 bool consoleEnabled = true;
 bool deathLinked = false;
 int deathLinkPercent = 100;
+int deathLinkSafetySeconds = 10; // Seconds after receiving a DL to avoid chain reaction DLs.
+std::chrono::steady_clock::time_point deathLinkTimestamp;
 
 const std::string ConfigTOML = "config.toml"; // CWD within Init()
 const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
@@ -120,13 +123,22 @@ HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, long long a1) {
     if (!deathLinked) {
         if (HP == 0) { // Results screen 
             deathLinked = true;
-            std::ofstream outputFile(DeathLinkOutFile);
-            if (outputFile.is_open()) {
-                outputFile.close();
-                std::cout << "[Archipelago] DeathLink > Sending death_link_out" << std::endl;
+
+            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - deathLinkTimestamp);
+            std::cout << "[Archipelago] DeathLink > Seconds since received: " << elapsed.count() << " (safety: " << deathLinkSafetySeconds << "s)" << std::endl;
+
+            if (elapsed.count() < deathLinkSafetySeconds) {
+                std::cout << "[Archipelago] DeathLink > In safety window so no death_link_out" << std::endl;
             }
             else {
-                std::cout << "[Archipelago] DeathLink > Failed to send death_link_out" << std::endl;
+                std::ofstream outputFile(DeathLinkOutFile);
+                if (outputFile.is_open()) {
+                    outputFile.close();
+                    std::cout << "[Archipelago] DeathLink > Sending death_link_out" << std::endl;
+                }
+                else {
+                    std::cout << "[Archipelago] DeathLink > Failed to send death_link_out" << std::endl;
+                }
             }
         }
         else {
@@ -152,6 +164,9 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
 
     if (exists && !deathLinked) {
         std::cout << "[Archipelago] DeathLink < death_link_in exists" << std::endl;
+        std::cout << "[Archipelago] DeathLink < Updating timestamp from " << deathLinkTimestamp.time_since_epoch().count() << " to ";
+        deathLinkTimestamp = std::chrono::steady_clock::now();
+        std::cout << deathLinkTimestamp.time_since_epoch().count() << std::endl;
 
         int deathLinkHit = (255 * deathLinkPercent) / 100 + 1;
         HP = std::clamp(HP - deathLinkHit, 0, 255);
