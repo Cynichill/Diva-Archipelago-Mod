@@ -14,7 +14,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{af7eaa72-5254-4585-a4d4-7a5e831beac8}</ProjectGuid>
-    <RootNamespace>ScoreShare</RootNamespace>
+    <RootNamespace>AP</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>ArchipelagoMod</ProjectName>
   </PropertyGroup>
