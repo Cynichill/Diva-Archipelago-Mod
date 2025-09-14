@@ -1,0 +1,8 @@
+enabled = true
+name = "Archipelago"
+author = "Cynichill"
+version = "1.0.8"
+reload = "F7"
+deathlink_percent = "100"
+dll = ["ArchipelagoMod.dll"]
+include = ["."]
