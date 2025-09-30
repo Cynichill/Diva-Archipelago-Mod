@@ -1,10 +1,11 @@
+# Mod options
 enabled = true
+reload = "F7"
+deathlink_percent = "100" # 0-100, default 100
+
+# Mod information
 name = "Archipelago"
 author = "Cynichill"
 version = "1.0.8"
 dll = ["ArchipelagoMod.dll"]
 include = ["."]
-
-# Mod options
-reload = "F7"
-deathlink_percent = "100" # 0-100, default 100
