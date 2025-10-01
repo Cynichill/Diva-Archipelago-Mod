@@ -6,6 +6,6 @@ deathlink_percent = "100" # 0-100, default 100
 # Mod information
 name = "Archipelago"
 author = "Cynichill"
-version = "1.0.8"
+version = "1.0.9"
 dll = ["ArchipelagoMod.dll"]
 include = ["."]
