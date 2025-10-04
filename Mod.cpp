@@ -47,12 +47,6 @@ void* MMUIScoreTrigger = sigScan(
 // Can definitely be better. Not quite the function, mostly AET related, but called on results in FTUI and not MMUI.
 const uint64_t FTUIScoreTrigger = 0x140237F30;
 
-// TODO: Meh trigger. Called twice: FAILURE and around Results screen. Differentiate with remaining HP.
-void* DivaDeathTrigger = sigScan(
-    "\x48\x89\x6C\x24\x18\x48\x89\x74\x24\x20\x41\x56\x48\x83\xEC\x30\x4C\x8B\x35",
-    "xxxxxxxxxxxxxxxxxxx"
-);
-
 // Difficulty percentage thresholds
 float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
 
@@ -117,7 +111,7 @@ HOOK(int, __fastcall, _MMUIResult, MMUIScoreTrigger, long long a1) {
     return original_MMUIResult(a1);
 };
 
-HOOK(int, __fastcall, _DeathLinkFail, DivaDeathTrigger, long long a1) {
+HOOK(int, __fastcall, _DeathLinkFail, 0x1514F0ED0, long long a1) {
     int HP = *(uint8_t*)DivaGameHPAddress;
 
     if (!deathLinked) {
