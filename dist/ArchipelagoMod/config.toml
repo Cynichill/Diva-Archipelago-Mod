@@ -1,6 +1,6 @@
 # Mod options
 enabled = true
-reload = "F7" # Recommend to use from the song list
+reload = "F7" # Recommended to use from the song list
 deathlink_percent = "100" # 0-100, default 100
 
 # Mod information
