@@ -262,7 +262,6 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
         if (untrapOriginalIcons != 39) {
             auto elapsed_icon = std::chrono::duration_cast<std::chrono::seconds>(now - iconTimestamp);
             if (elapsed_icon.count() < trapDuration) {
-                std::cout << elapsed_icon.count() << " / " << trapDuration << std::endl;
                 if (iconRerollDuration > 0 && elapsed_icon.count() % iconRerollDuration == 0)
                     rerollIcon();
             }
