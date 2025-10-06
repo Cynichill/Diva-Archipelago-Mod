@@ -10,6 +10,7 @@
 #include <toml++/toml.h>
 #include <iostream>
 #include <chrono>
+#include <random>
 
 // MegaMix+ addresses
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
@@ -29,15 +30,29 @@ const uint64_t DivaGameIconDisplayAddress = 0x00000001412B6374;
 
 // Archipelago Mod variables
 bool consoleEnabled = true;
+
 bool deathLinked = false;
 int deathLinkPercent = 100;
 int deathLinkSafetySeconds = 10; // Seconds after receiving a DL to avoid chain reaction DLs.
 std::chrono::steady_clock::time_point deathLinkTimestamp;
 
+int trapDuration = 10;
+std::chrono::steady_clock::time_point trapTimestamp;
+
 const std::string ConfigTOML = "config.toml"; // CWD within Init()
 const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
+
 const char* DeathLinkInFile = "mods/ArchipelagoMod/death_link_in";
 const std::string DeathLinkOutFile = "mods/ArchipelagoMod/death_link_out";
+
+const char* TrapSuddenInFile = "mods/ArchipelagoMod/sudden";
+const char* TrapHiddenInFile = "mods/ArchipelagoMod/hidden";
+const char* TrapIconInFile = "mods/ArchipelagoMod/icontrap";
+uint8_t untrapOriginalIcons = 39;
+
+std::random_device rd;
+std::mt19937 gen(rd());
+std::uniform_int_distribution<> nextIconGenerator(0, 4);
 
 // The original sigscan from ScoreDiva for MMUI (may have previously worked with FTUI?)
 void* MMUIScoreTrigger = sigScan(
@@ -153,10 +168,10 @@ void* gameplayLoopTrigger = sigScan(
 );
 
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
-    bool exists = std::filesystem::exists(DeathLinkInFile);
+    bool deathlink_exists = std::filesystem::exists(DeathLinkInFile);
     int HP = *(uint8_t*)DivaGameHPAddress;
 
-    if (exists && !deathLinked) {
+    if (deathlink_exists && !deathLinked) {
         std::cout << "[Archipelago] DeathLink < death_link_in exists" << std::endl;
         std::cout << "[Archipelago] DeathLink < Updating timestamp from " << deathLinkTimestamp.time_since_epoch().count() << " to ";
         deathLinkTimestamp = std::chrono::steady_clock::now();
@@ -177,19 +192,82 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
         deathLinked = false;
     }
 
+    // Do not interfere with modifier mods, even if they have a chance to stack.
+    // Need to track if set by AP.
+    int currentMod = *(int*)DivaGameModifierAddress;
+    if (currentMod <= 3) { 
+        bool sudden_exists = std::filesystem::exists(TrapSuddenInFile);
+        bool hidden_exists = std::filesystem::exists(TrapHiddenInFile);
+        bool icon_exists = std::filesystem::exists(TrapIconInFile);
+        bool newTrap = sudden_exists || hidden_exists; // || icon_exists;
+
+        if (sudden_exists) {
+            std::cout << "[Archipelago] Trap < Sudden" << std::endl;
+            WRITE_MEMORY(DivaGameModifierAddress, uint8_t, DIVA_MODIFIERS::Sudden);
+            remove(TrapSuddenInFile);
+        }
+
+        if (hidden_exists) {
+            std::cout << "[Archipelago] Trap < Hidden" << std::endl;
+            WRITE_MEMORY(DivaGameModifierAddress, uint8_t, DIVA_MODIFIERS::Hidden);
+            remove(TrapHiddenInFile);
+        }
+
+        if (icon_exists) {
+            std::cout << "[Archipelago] Trap < Icon" << std::endl;
+
+            // PS 0-3, Arrows 4, NSW 5-8, XBOX 9-12, any can switch in/out of arrows but should be tracked.
+            uint8_t curIcon = *(uint8_t*)DivaGameIconDisplayAddress;
+            uint8_t nextIcon = nextIconGenerator(gen);
+
+            if (untrapOriginalIcons == 39) {
+                std::cout << "[Archipelago] Trap < Original Icon is " << (int)curIcon << std::endl;
+                untrapOriginalIcons = curIcon;
+            }
+
+            // Catch Arrows, XBOX, and NSW
+            if (nextIcon != 4)
+                if (curIcon == 4)
+                    nextIcon = untrapOriginalIcons;
+            else if (curIcon >= 9)
+                nextIcon += 9;
+            else if (curIcon >= 5)
+                nextIcon += 5;
+
+            std::cout << "[Archipelago] Trap < Icons " << (int)curIcon << " -> " << (int)nextIcon << std::endl;
+            WRITE_MEMORY(DivaGameIconDisplayAddress, uint8_t, nextIcon);
+
+            remove(TrapIconInFile);
+        }
+
+        if (newTrap)
+            trapTimestamp = std::chrono::steady_clock::now();
+
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - trapTimestamp);
+
+        if (currentMod > 0 && trapDuration > 0 && elapsed.count() >= trapDuration) {
+            std::cout << "[Archipelago] Trap > Duration expired, unset" << std::endl;
+            WRITE_MEMORY(DivaGameModifierAddress, uint8_t, DIVA_MODIFIERS::None);
+        }
+    }
+
     return original_GameplayLoopTrigger(a1);
 }
 
 HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
-    // Called right as the gameplay is ending/fading out. Early enough to scrub modifier use.
-    // Happens alongside FAILURE too.
+    // Called right as the gameplay is ending/fading out. Early enough to scrub modifier use. Happens alongside FAILURE too.
+    // The intent is to not let traps prevent keeping scores.
 
     int currentMod = *(int*)DivaGameModifierAddress;
 
-    if (currentMod > 0 /* && MODIFIER_WAS_SET_BY_ARCHIPELAGO */) {
-        std::cout << "[Archipelago] Unset modifier: " << currentMod << " -> 0 " << std::endl;
+    if (currentMod > 0 && currentMod <= 3 /* && MODIFIER_WAS_SET_BY_ARCHIPELAGO */)
+        std::cout << "[Archipelago] Unset modifier: " << currentMod << " -> 0" << std::endl;
         WRITE_MEMORY(DivaGameModifierAddress, uint8_t, DIVA_MODIFIERS::None);
-    }
+
+    if (untrapOriginalIcons <= 12)
+        std::cout << "[Archipelago] Restoring Icons to " << (int)untrapOriginalIcons << std::endl;
+        WRITE_MEMORY(DivaGameIconDisplayAddress, uint8_t, untrapOriginalIcons);
+        untrapOriginalIcons = 39;
     
     return original_GameplayEnd();
 }
@@ -203,15 +281,16 @@ void processConfig() {
         }
 
         auto data = toml::parse(file);
-        std::string deathlink_percent = data["deathlink_percent"].value_or("100");
-        std::cout << "[Archipelago] Config deathlink_percent: " << deathlink_percent << std::endl;
 
+        std::string deathlink_percent = data["deathlink_percent"].value_or(std::to_string(deathLinkPercent));
+        std::cout << "[Archipelago] Config deathlink_percent: " << deathlink_percent << std::endl;
         deathLinkPercent = std::clamp(std::stoi(deathlink_percent), 0, 100);
         std::cout << "[Archipelago] Final deathlink_percent: " << deathLinkPercent << std::endl;
 
-        // trap duration (0-600 seconds)
-        //   0 = expire on results screen, default 30s?
-        // trap behavior? (replace/ignore)
+        std::string trap_duration = data["trap_duration"].value_or(std::to_string(trapDuration));
+        std::cout << "[Archipelago] Config trap_duration: " << trap_duration << std::endl;
+        trapDuration = std::clamp(std::stoi(trap_duration), 0, 60);
+        std::cout << "[Archipelago] Final trap_duration: " << trapDuration << std::endl;
     }
     catch (const std::exception& e) {
         std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
