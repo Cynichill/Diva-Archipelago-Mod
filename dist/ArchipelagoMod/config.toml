@@ -1,11 +1,12 @@
 # Mod options
 enabled = true
 reload = "F7" # Recommended to use from the song list.
-deathlink_percent = "100" # 0-100, default 100. How much max HP to lose on receive.
+deathlink_percent = "100" # 0-100, default 100. Percentage of total HP to lose on receive.
+trap_duration = "10" # 0-60, default 10. Seconds until traps expire. 0 to not expire for current attempt.
 
 # Mod information
 name = "Archipelago"
 author = "Cynichill"
-version = "1.1.0"
+version = "1.1.1"
 dll = ["ArchipelagoMod.dll"]
 include = ["AP", "."]
