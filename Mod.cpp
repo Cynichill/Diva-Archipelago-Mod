@@ -180,6 +180,44 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
     return original_GameplayLoopTrigger(a1);
 }
 
+HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
+    // Called right as the gameplay is ending/fading out. Early enough to scrub modifier use.
+    // Happens alongside FAILURE too.
+
+    int currentMod = *(int*)DivaGameModifierAddress;
+
+    if (currentMod > 0 /* && MODIFIER_WAS_SET_BY_ARCHIPELAGO */) {
+        std::cout << "[Archipelago] Unset modifier: " << currentMod << " -> 0 " << std::endl;
+        WRITE_MEMORY(DivaGameModifierAddress, uint8_t, DIVA_MODIFIERS::None);
+    }
+    
+    return original_GameplayEnd();
+}
+
+void processConfig() {
+    try {
+        std::ifstream file(ConfigTOML); // CWD is the mod folder within Init
+        if (!file.is_open()) {
+            std::cout << "[Archipelago] Error opening config file: " << ConfigTOML << std::endl;
+            return;
+        }
+
+        auto data = toml::parse(file);
+        std::string deathlink_percent = data["deathlink_percent"].value_or("100");
+        std::cout << "[Archipelago] Config deathlink_percent: " << deathlink_percent << std::endl;
+
+        deathLinkPercent = std::clamp(std::stoi(deathlink_percent), 0, 100);
+        std::cout << "[Archipelago] Final deathlink_percent: " << deathLinkPercent << std::endl;
+
+        // trap duration (0-600 seconds)
+        //   0 = expire on results screen, default 30s?
+        // trap behavior? (replace/ignore)
+    }
+    catch (const std::exception& e) {
+        std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
+    }
+}
+
 extern "C"
 {
     void __declspec(dllexport) Init()
@@ -188,24 +226,8 @@ extern "C"
         INSTALL_HOOK(_FTUIResult);
         INSTALL_HOOK(_DeathLinkFail);
         INSTALL_HOOK(_GameplayLoopTrigger);
+        INSTALL_HOOK(_GameplayEnd);
 
-        // TODO: Relocate
-        try {
-            std::ifstream file(ConfigTOML); // CWD is the mod folder within Init
-            if (!file.is_open()) {
-                std::cout << "[Archipelago] Error opening config file: " << ConfigTOML << std::endl;
-                return;
-            }
-
-            auto data = toml::parse(file);
-            std::string deathlink_percent = data["deathlink_percent"].value_or("100");
-            std::cout << "[Archipelago] Config deathlink_percent: " << deathlink_percent << std::endl;
-            
-            deathLinkPercent = std::clamp(std::stoi(deathlink_percent), 0, 100);
-            std::cout << "[Archipelago] Final deathlink_percent: " << deathLinkPercent << std::endl;
-        }
-        catch (const std::exception& e) {
-            std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
-        }
+        processConfig();
     }
 }
