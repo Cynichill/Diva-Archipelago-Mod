@@ -36,8 +36,14 @@ int deathLinkPercent = 100;
 int deathLinkSafetySeconds = 10; // Seconds after receiving a DL to avoid chain reaction DLs.
 std::chrono::steady_clock::time_point deathLinkTimestamp;
 
-int trapDuration = 10;
+int trapDuration = 15;
 std::chrono::steady_clock::time_point trapTimestamp;
+
+// The Icon trap is not a modifier, so keep its own time.
+int iconRerollDuration = 15;
+uint8_t untrapOriginalIcons = 39;
+std::chrono::steady_clock::time_point iconTimestamp;
+
 
 const std::string ConfigTOML = "config.toml"; // CWD within Init()
 const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
@@ -48,7 +54,6 @@ const std::string DeathLinkOutFile = "mods/ArchipelagoMod/death_link_out";
 const char* TrapSuddenInFile = "mods/ArchipelagoMod/sudden";
 const char* TrapHiddenInFile = "mods/ArchipelagoMod/hidden";
 const char* TrapIconInFile = "mods/ArchipelagoMod/icontrap";
-uint8_t untrapOriginalIcons = 39;
 
 std::random_device rd;
 std::mt19937 gen(rd());
@@ -167,9 +172,33 @@ void* gameplayLoopTrigger = sigScan(
     "xxxxxxxxxxxxxxxxxxxxxxxxx"    
 );
 
+void rerollIcon() {
+    // PS 0-3, Arrows 4, NSW 5-8, XBOX 9-12, any can switch in/out of arrows but should be tracked.
+    uint8_t curIcon = *(uint8_t*)DivaGameIconDisplayAddress;
+    uint8_t nextIcon = nextIconGenerator(gen);
+
+    if (untrapOriginalIcons == 39) {
+        std::cout << "[Archipelago] Trap < Original Icon is " << (int)curIcon << std::endl;
+        untrapOriginalIcons = curIcon;
+    }
+
+    // Catch Arrows, XBOX, and NSW
+    if (nextIcon != 4)
+        if (curIcon == 4)
+            nextIcon = untrapOriginalIcons;
+        else if (curIcon >= 9)
+            nextIcon += 9;
+        else if (curIcon >= 5)
+            nextIcon += 5;
+
+    std::cout << "[Archipelago] Trap < Icons " << (int)curIcon << " -> " << (int)nextIcon << std::endl;
+    WRITE_MEMORY(DivaGameIconDisplayAddress, uint8_t, nextIcon);
+}
+
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
     bool deathlink_exists = std::filesystem::exists(DeathLinkInFile);
     int HP = *(uint8_t*)DivaGameHPAddress;
+    auto now = std::chrono::steady_clock::now();
 
     if (deathlink_exists && !deathLinked) {
         std::cout << "[Archipelago] DeathLink < death_link_in exists" << std::endl;
@@ -216,38 +245,34 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
         if (icon_exists) {
             std::cout << "[Archipelago] Trap < Icon" << std::endl;
 
-            // PS 0-3, Arrows 4, NSW 5-8, XBOX 9-12, any can switch in/out of arrows but should be tracked.
-            uint8_t curIcon = *(uint8_t*)DivaGameIconDisplayAddress;
-            uint8_t nextIcon = nextIconGenerator(gen);
-
-            if (untrapOriginalIcons == 39) {
-                std::cout << "[Archipelago] Trap < Original Icon is " << (int)curIcon << std::endl;
-                untrapOriginalIcons = curIcon;
-            }
-
-            // Catch Arrows, XBOX, and NSW
-            if (nextIcon != 4)
-                if (curIcon == 4)
-                    nextIcon = untrapOriginalIcons;
-            else if (curIcon >= 9)
-                nextIcon += 9;
-            else if (curIcon >= 5)
-                nextIcon += 5;
-
-            std::cout << "[Archipelago] Trap < Icons " << (int)curIcon << " -> " << (int)nextIcon << std::endl;
-            WRITE_MEMORY(DivaGameIconDisplayAddress, uint8_t, nextIcon);
-
+            iconTimestamp = now;
             remove(TrapIconInFile);
+            rerollIcon();
         }
 
         if (newTrap)
-            trapTimestamp = std::chrono::steady_clock::now();
+            trapTimestamp = now;
 
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - trapTimestamp);
-
-        if (currentMod > 0 && trapDuration > 0 && elapsed.count() >= trapDuration) {
+        auto elapsed_modifier = std::chrono::duration_cast<std::chrono::seconds>(now - trapTimestamp);
+        if (currentMod > 0 && trapDuration > 0 && elapsed_modifier.count() >= trapDuration) {
             std::cout << "[Archipelago] Trap > Duration expired, unset" << std::endl;
             WRITE_MEMORY(DivaGameModifierAddress, uint8_t, DIVA_MODIFIERS::None);
+        }
+
+        if (untrapOriginalIcons != 39) {
+            auto elapsed_icon = std::chrono::duration_cast<std::chrono::seconds>(now - iconTimestamp);
+            if (elapsed_icon.count() < trapDuration) {
+                std::cout << elapsed_icon.count() << " / " << trapDuration << std::endl;
+                if (iconRerollDuration > 0 && elapsed_icon.count() % iconRerollDuration == 0)
+                    rerollIcon();
+            }
+            else {
+                std::cout << "Icon trap expired" << std::endl;
+                if (untrapOriginalIcons <= 12) {
+                    WRITE_MEMORY(DivaGameIconDisplayAddress, uint8_t, untrapOriginalIcons);
+                    untrapOriginalIcons = 39;
+                }
+            }
         }
     }
 
@@ -291,6 +316,11 @@ void processConfig() {
         std::cout << "[Archipelago] Config trap_duration: " << trap_duration << std::endl;
         trapDuration = std::clamp(std::stoi(trap_duration), 0, 60);
         std::cout << "[Archipelago] Final trap_duration: " << trapDuration << std::endl;
+
+        std::string icon_reroll = data["icon_reroll"].value_or(std::to_string(iconRerollDuration));
+        std::cout << "[Archipelago] Config icon_reroll: " << icon_reroll << std::endl;
+        iconRerollDuration = std::clamp(std::stoi(icon_reroll), 0, 60);
+        std::cout << "[Archipelago] Final icon_reroll: " << iconRerollDuration << std::endl;
     }
     catch (const std::exception& e) {
         std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
