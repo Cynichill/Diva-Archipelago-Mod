@@ -1,11 +1,11 @@
 # Mod options
 enabled = true
-reload = "F7"
-deathlink_percent = "100" # 0-100, default 100
+reload = "F7" # Recommended to use from the song list.
+deathlink_percent = "100" # 0-100, default 100. How much max HP to lose on receive.
 
 # Mod information
 name = "Archipelago"
 author = "Cynichill"
-version = "1.0.9"
+version = "1.0.10"
 dll = ["ArchipelagoMod.dll"]
-include = ["."]
+include = ["AP", "."]
