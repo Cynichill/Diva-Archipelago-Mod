@@ -26,7 +26,6 @@ const uint64_t DivaCurrentPVDifficultyExtraAddress = 0x0000000140DAE938;
 // Active gameplay addresses
 const uint64_t DivaGameHPAddress = 0x00000001412EF564;
 const uint64_t DivaGameModifierAddress = 0x00000001412EF450;
-const uint64_t DivaGameIconDisplayAddress = 0x00000001412B6374;
 
 // Archipelago Mod variables
 bool consoleEnabled = true;
@@ -42,8 +41,8 @@ std::chrono::steady_clock::time_point trapTimestamp;
 // The Icon trap is not a modifier, so keep its own time.
 int iconRerollDuration = 15;
 uint8_t untrapOriginalIcons = 39;
+int tick = 0;
 std::chrono::steady_clock::time_point iconTimestamp;
-
 
 const std::string ConfigTOML = "config.toml"; // CWD within Init()
 const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
@@ -66,6 +65,9 @@ void* MMUIScoreTrigger = sigScan(
 );
 // Can definitely be better. Not quite the function, mostly AET related, but called on results in FTUI and not MMUI.
 const uint64_t FTUIScoreTrigger = 0x140237F30;
+
+// Game functions
+static auto getGameControlConfig = reinterpret_cast<uint64_t(__fastcall*)(void)>(0x00000001401D6520);
 
 // Difficulty percentage thresholds
 float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
@@ -172,14 +174,23 @@ void* gameplayLoopTrigger = sigScan(
     "xxxxxxxxxxxxxxxxxxxxxxxxx"    
 );
 
-void rerollIcon() {
+void rerollIcon(bool restore) {
     // PS 0-3, Arrows 4, NSW 5-8, XBOX 9-12, any can switch in/out of arrows but should be tracked.
-    uint8_t curIcon = *(uint8_t*)DivaGameIconDisplayAddress;
-    uint8_t nextIcon = nextIconGenerator(gen);
+    
+    // TODO: Get only once sometime after SLP/EdenSDM changes the return address.
+    uint64_t GCConfigIcon = getGameControlConfig() + 0x28;
+    uint8_t curIcon = *(uint8_t*)GCConfigIcon;
+    uint8_t nextIcon = (restore) ? (untrapOriginalIcons <= 12) ? untrapOriginalIcons : 0 : nextIconGenerator(gen);
+
+    if (restore) {
+        untrapOriginalIcons = 39;
+        WRITE_MEMORY(GCConfigIcon, uint8_t, nextIcon);
+        return;
+    }
 
     if (untrapOriginalIcons == 39) {
         std::cout << "[Archipelago] Trap < Original Icon is " << (int)curIcon << std::endl;
-        untrapOriginalIcons = curIcon;
+        untrapOriginalIcons = (curIcon <= 12) ? curIcon : 0;
     }
 
     // Catch Arrows, XBOX, and NSW
@@ -191,8 +202,9 @@ void rerollIcon() {
         else if (curIcon >= 5)
             nextIcon += 5;
 
-    std::cout << "[Archipelago] Trap < Icons " << (int)curIcon << " -> " << (int)nextIcon << std::endl;
-    WRITE_MEMORY(DivaGameIconDisplayAddress, uint8_t, nextIcon);
+    //std::cout << "[Archipelago] Trap < Icons " << (int)curIcon << " -> " << (int)nextIcon << std::endl;
+
+    WRITE_MEMORY(GCConfigIcon, uint8_t, nextIcon);
 }
 
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
@@ -247,7 +259,8 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
 
             iconTimestamp = now;
             remove(TrapIconInFile);
-            rerollIcon();
+            rerollIcon(false);
+            return original_GameplayLoopTrigger(a1);
         }
 
         if (newTrap)
@@ -262,13 +275,16 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
         if (untrapOriginalIcons != 39) {
             auto elapsed_icon = std::chrono::duration_cast<std::chrono::seconds>(now - iconTimestamp);
             if (elapsed_icon.count() < trapDuration) {
-                if (iconRerollDuration > 0 && elapsed_icon.count() % iconRerollDuration == 0)
-                    rerollIcon();
+                if (iconRerollDuration > 0 && elapsed_icon.count() > tick && elapsed_icon.count() % iconRerollDuration == 0) {
+                    rerollIcon(false);
+                    tick += 1;
+                }
             }
             else {
                 std::cout << "Icon trap expired" << std::endl;
+                tick = 0;
                 if (untrapOriginalIcons <= 12) {
-                    WRITE_MEMORY(DivaGameIconDisplayAddress, uint8_t, untrapOriginalIcons);
+                    rerollIcon(true);
                     untrapOriginalIcons = 39;
                 }
             }
@@ -286,12 +302,12 @@ HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
 
     if (currentMod > 0 && currentMod <= 3 /* && MODIFIER_WAS_SET_BY_ARCHIPELAGO */)
         std::cout << "[Archipelago] Unset modifier: " << currentMod << " -> 0" << std::endl;
-        WRITE_MEMORY(DivaGameModifierAddress, uint8_t, DIVA_MODIFIERS::None);
+    WRITE_MEMORY(DivaGameModifierAddress, uint8_t, DIVA_MODIFIERS::None);
 
-    if (untrapOriginalIcons <= 12)
+    if (untrapOriginalIcons <= 12) {
         std::cout << "[Archipelago] Restoring Icons to " << (int)untrapOriginalIcons << std::endl;
-        WRITE_MEMORY(DivaGameIconDisplayAddress, uint8_t, untrapOriginalIcons);
-        untrapOriginalIcons = 39;
+        rerollIcon(true);
+    }
     
     return original_GameplayEnd();
 }
