@@ -41,7 +41,6 @@ std::chrono::steady_clock::time_point trapTimestamp;
 // The Icon trap is not a modifier, so keep its own time.
 int iconRerollDuration = 15;
 uint8_t untrapOriginalIcons = 39;
-int tick = 0;
 std::chrono::steady_clock::time_point iconTimestamp;
 
 const std::string ConfigTOML = "config.toml"; // CWD within Init()
@@ -273,9 +272,10 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
         }
 
         if (untrapOriginalIcons != 39) {
-            auto elapsed_icon = std::chrono::duration_cast<std::chrono::seconds>(now - iconTimestamp);
-            if (elapsed_icon.count() < trapDuration) {
-                if (iconRerollDuration > 0 && elapsed_icon.count() > tick && elapsed_icon.count() % iconRerollDuration == 0) {
+            auto elapsed_icon = std::chrono::duration_cast<std::chrono::milliseconds>(now - iconTimestamp);
+            if (elapsed_icon.count() / 1000 < trapDuration) {
+                if (iconRerollDuration > 0 && elapsed_icon.count() >= iconRerollDuration) {
+                    iconTimestamp = now;
                     rerollIcon(false);
                     tick += 1;
                 }
@@ -334,7 +334,7 @@ void processConfig() {
 
         std::string icon_reroll = data["icon_reroll"].value_or(std::to_string(iconRerollDuration));
         std::cout << "[Archipelago] Config icon_reroll: " << icon_reroll << std::endl;
-        iconRerollDuration = std::clamp(std::stoi(icon_reroll), 0, 60);
+        iconRerollDuration = std::clamp(std::stoi(icon_reroll), 0, 60000);
         std::cout << "[Archipelago] Final icon_reroll: " << iconRerollDuration << std::endl;
     }
     catch (const std::exception& e) {
