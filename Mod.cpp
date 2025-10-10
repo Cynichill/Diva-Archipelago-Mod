@@ -277,12 +277,10 @@ HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
                 if (iconRerollDuration > 0 && elapsed_icon.count() >= iconRerollDuration) {
                     iconTimestamp = now;
                     rerollIcon(false);
-                    tick += 1;
                 }
             }
             else {
                 std::cout << "Icon trap expired" << std::endl;
-                tick = 0;
                 if (untrapOriginalIcons <= 12) {
                     rerollIcon(true);
                     untrapOriginalIcons = 39;
