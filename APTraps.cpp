@@ -79,8 +79,7 @@ void APTraps::run()
 
 	auto deltaModifier = now - timestampModifier;
 	if (getCurrentModifier() > 0 && trapDuration > 0 && deltaModifier >= trapDuration) {
-		std::cout << getCurrentModifier() << std::endl;
-		std::cout << "[Archipelago] Trap > Modifier expired" << std::endl;
+		std::cout << "[Archipelago] Trap > Modifier " << getCurrentModifier() << " expired" << std::endl;
 		setModifier(DIVA_MODIFIERS::None);
 	}
 
@@ -158,7 +157,7 @@ void APTraps::rollIcon()
 			nextIcon += 5;
 	}
 
-	std::cout << nextIcon << std::endl;
+	//std::cout << nextIcon << std::endl;
 
 	WRITE_MEMORY(getIconAddress(), uint8_t, (uint8_t)nextIcon);
 }
