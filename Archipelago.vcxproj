@@ -87,8 +87,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="APTraps.h" />
     <ClInclude Include="core_types.h" />
     <ClInclude Include="core_win32_hacks.h" />
+    <ClInclude Include="APDeathLink.h" />
     <ClInclude Include="deck.h" />
     <ClInclude Include="Dependencies\Helpers.h" />
     <ClInclude Include="Dependencies\nlohmann\json.hpp" />
@@ -100,6 +102,8 @@
     <ClInclude Include="virtualKey.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="APTraps.cpp" />
+    <ClCompile Include="APDeathLink.cpp" />
     <ClCompile Include="Dependencies\SigScan.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="dllmainDebug.cpp" />

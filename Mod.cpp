@@ -10,6 +10,9 @@
 #include <toml++/toml.h>
 #include <iostream>
 #include <chrono>
+#include <random>
+#include "APDeathLink.h"
+#include "APTraps.h"
 
 // MegaMix+ addresses
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
@@ -22,22 +25,14 @@ const uint64_t DivaScoreCompletionRateAddress = 0x00000001412EF634;
 const uint64_t DivaCurrentPVDifficultyBaseAddress = 0x0000000140DAE934;
 const uint64_t DivaCurrentPVDifficultyExtraAddress = 0x0000000140DAE938;
 
-// Active gameplay addresses
-const uint64_t DivaGameHPAddress = 0x00000001412EF564;
-const uint64_t DivaGameModifierAddress = 0x00000001412EF450;
-const uint64_t DivaGameIconDisplayAddress = 0x00000001412B6374;
-
 // Archipelago Mod variables
 bool consoleEnabled = true;
-bool deathLinked = false;
-int deathLinkPercent = 100;
-int deathLinkSafetySeconds = 10; // Seconds after receiving a DL to avoid chain reaction DLs.
-std::chrono::steady_clock::time_point deathLinkTimestamp;
+
+APDeathLink DeathLink;
+APTraps Traps;
 
 const std::string ConfigTOML = "config.toml"; // CWD within Init()
 const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
-const char* DeathLinkInFile = "mods/ArchipelagoMod/death_link_in";
-const std::string DeathLinkOutFile = "mods/ArchipelagoMod/death_link_out";
 
 // The original sigscan from ScoreDiva for MMUI (may have previously worked with FTUI?)
 void* MMUIScoreTrigger = sigScan(
@@ -46,6 +41,9 @@ void* MMUIScoreTrigger = sigScan(
 );
 // Can definitely be better. Not quite the function, mostly AET related, but called on results in FTUI and not MMUI.
 const uint64_t FTUIScoreTrigger = 0x140237F30;
+
+// Game functions
+static auto getGameControlConfig = reinterpret_cast<uint64_t(__fastcall*)(void)>(0x00000001401D6520);
 
 // Difficulty percentage thresholds
 float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
@@ -87,7 +85,7 @@ void processResults() {
         {"pvName", DivaTitle},
         {"pvDifficulty", DivaDif},
         {"scoreGrade", finalGrade},
-        {"deathLinked", deathLinked},
+        {"deathLinked", DeathLink.deathLinked},
     };
 
     // Detach a thread that will be writing the result so the game doesn't hang
@@ -95,8 +93,8 @@ void processResults() {
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
-    std::cout << "[Archipelago] DeathLink: deathLinked = " << deathLinked << " -> " << false << std::endl;
-    deathLinked = false;
+    
+    DeathLink.reset();
 }
 
 HOOK(int, __fastcall, _FTUIResult, FTUIScoreTrigger, long long a1) {
@@ -112,36 +110,7 @@ HOOK(int, __fastcall, _MMUIResult, MMUIScoreTrigger, long long a1) {
 };
 
 HOOK(int, __fastcall, _DeathLinkFail, 0x1514F0ED0, long long a1) {
-    int HP = *(uint8_t*)DivaGameHPAddress;
-
-    if (!deathLinked) {
-        if (HP == 0) { // Results screen 
-            deathLinked = true;
-
-            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - deathLinkTimestamp);
-            std::cout << "[Archipelago] DeathLink > Seconds since received: " << elapsed.count() << " (safety: " << deathLinkSafetySeconds << "s)" << std::endl;
-
-            if (elapsed.count() < deathLinkSafetySeconds) {
-                std::cout << "[Archipelago] DeathLink > In safety window so no death_link_out" << std::endl;
-            }
-            else {
-                std::ofstream outputFile(DeathLinkOutFile);
-                if (outputFile.is_open()) {
-                    outputFile.close();
-                    std::cout << "[Archipelago] DeathLink > Sending death_link_out" << std::endl;
-                }
-                else {
-                    std::cout << "[Archipelago] DeathLink > Failed to send death_link_out" << std::endl;
-                }
-            }
-        }
-        else {
-            std::cout << "[Archipelago] DeathLink > Called with " << HP << " HP != 0, not sending death_link_out" << std::endl;
-        }
-    }
-    else {
-        std::cout << "[Archipelago] DeathLink > Currently dying so no death_link_out" << std::endl;
-    }
+    DeathLink.fail();
 
     return original_DeathLinkFail(a1);
 };
@@ -153,31 +122,40 @@ void* gameplayLoopTrigger = sigScan(
 );
 
 HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
-    bool exists = std::filesystem::exists(DeathLinkInFile);
-    int HP = *(uint8_t*)DivaGameHPAddress;
+    DeathLink.run();
+    Traps.run();
 
-    if (exists && !deathLinked) {
-        std::cout << "[Archipelago] DeathLink < death_link_in exists" << std::endl;
-        std::cout << "[Archipelago] DeathLink < Updating timestamp from " << deathLinkTimestamp.time_since_epoch().count() << " to ";
-        deathLinkTimestamp = std::chrono::steady_clock::now();
-        std::cout << deathLinkTimestamp.time_since_epoch().count() << std::endl;
-
-        int deathLinkHit = (255 * deathLinkPercent) / 100 + 1;
-        HP = std::clamp(HP - deathLinkHit, 0, 255);
-        std::cout << "[Archipelago] DeathLink < Drop HP by " << deathLinkHit << " (" << deathLinkPercent << "%) total, result: " << HP << std::endl;
-
-        WRITE_MEMORY(DivaGameHPAddress, uint8_t, static_cast<uint8_t>(HP));
-
-        if (HP == 0)
-            deathLinked = true;
-
-        remove(DeathLinkInFile);
-    } else if (HP > 0 && deathLinked) {
-        // deathLinked reset alternative to results screen.
-        deathLinked = false;
-    }
 
     return original_GameplayLoopTrigger(a1);
+}
+
+HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
+    // Called right as the gameplay is ending/fading out. Early enough to scrub modifier use. Happens alongside FAILURE too.
+    // The intent is to not let traps prevent keeping scores.
+
+    Traps.reset();
+    
+    return original_GameplayEnd();
+}
+
+void processConfig() {
+    // Move to a class and do not do this on init time
+
+    try {
+        std::ifstream file(ConfigTOML); // CWD is the mod folder within Init
+        if (!file.is_open()) {
+            std::cout << "[Archipelago] Error opening config file: " << ConfigTOML << std::endl;
+            return;
+        }
+
+        auto data = toml::parse(file);
+
+        DeathLink.config(data);
+        Traps.config(data);
+    }
+    catch (const std::exception& e) {
+        std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
+    }
 }
 
 extern "C"
@@ -188,24 +166,9 @@ extern "C"
         INSTALL_HOOK(_FTUIResult);
         INSTALL_HOOK(_DeathLinkFail);
         INSTALL_HOOK(_GameplayLoopTrigger);
+        INSTALL_HOOK(_GameplayEnd);
 
-        // TODO: Relocate
-        try {
-            std::ifstream file(ConfigTOML); // CWD is the mod folder within Init
-            if (!file.is_open()) {
-                std::cout << "[Archipelago] Error opening config file: " << ConfigTOML << std::endl;
-                return;
-            }
 
-            auto data = toml::parse(file);
-            std::string deathlink_percent = data["deathlink_percent"].value_or("100");
-            std::cout << "[Archipelago] Config deathlink_percent: " << deathlink_percent << std::endl;
-            
-            deathLinkPercent = std::clamp(std::stoi(deathlink_percent), 0, 100);
-            std::cout << "[Archipelago] Final deathlink_percent: " << deathLinkPercent << std::endl;
-        }
-        catch (const std::exception& e) {
-            std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
-        }
+        processConfig();
     }
 }
