@@ -17,7 +17,6 @@ void APTraps::config(toml::v3::ex::parse_result& data)
 	std::cout << "[Archipelago] trap_duration: " << trapDuration << " (config: " << config_duration << ")" << std::endl;
 
 	std::string config_iconinterval = data["icon_reroll"].value_or(std::to_string(iconInterval));
-	std::cout << std::stof(config_iconinterval) << std::endl;
 	iconInterval = std::clamp(std::stof(config_iconinterval), 0.0f, 60.0f);
 
 	std::cout << "[Archipelago] icon_reroll: " << iconInterval << " (config: " << config_iconinterval << ")" << std::endl;
@@ -39,6 +38,9 @@ int APTraps::reset()
 
 void APTraps::resetIcon()
 {
+	if (savedIcon == 39)
+		return;
+
 	int restoredIcon = ((savedIcon <= 12 && savedIcon >= 0) ? savedIcon : 4);
 	if (getCurrentIcon() != restoredIcon) {
 		WRITE_MEMORY(getIconAddress(), uint8_t, (uint8_t)restoredIcon);
