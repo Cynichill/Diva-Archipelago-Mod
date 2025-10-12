@@ -3,7 +3,7 @@ enabled = true
 reload = "F7" # Recommended to use from the song list.
 deathlink_percent = "100" # 0-100, default 100 percent of total HP to lose on receive.
 trap_duration = "15.0" # 0-180, default 15.0 seconds until traps expire. 0 to not expire for current attempt.
-icon_reroll = "60.0" # 0.0, default 60.0 seconds between icon rerolls while Icon trap is active. 0 to not reroll.
+icon_reroll = "60.0" # 0-60, default 60.0 seconds between icon rerolls while Icon trap is active. 0 to reroll once.
 
 # Mod information
 name = "Archipelago"
