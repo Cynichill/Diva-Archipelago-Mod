@@ -1,18 +1,16 @@
-#include "pch.h"
-#include "Helpers.h"
-#include <SigScan.h>
-#include <detours.h>
-#include <thread>
-#include <string>
-#include <fstream>
-#include <nlohmann/json.hpp>
-#include "Diva.h"
-#include <toml++/toml.h>
-#include <iostream>
-#include <chrono>
-#include <random>
 #include "APDeathLink.h"
 #include "APTraps.h"
+#include "Diva.h"
+#include "Helpers.h"
+#include "pch.h"
+#include <detours.h>
+#include <fstream>
+#include <iostream>
+#include <nlohmann/json.hpp>
+#include <SigScan.h>
+#include <string>
+#include <thread>
+#include <toml++/toml.h>
 
 // MegaMix+ addresses
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
