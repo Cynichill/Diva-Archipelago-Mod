@@ -39,11 +39,6 @@ void* MMUIScoreTrigger = sigScan(
     "\x48\x89\x5C\x24\x00\x48\x89\x74\x24\x00\x48\x89\x7C\x24\x00\x55\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8B\xEC\x48\x83\xEC\x60\x48\x8B\x05\x00\x00\x00\x00\x48\x33\xC4\x48\x89\x45\xF8\x48\x8B\xF9\x80\xB9\x00\x00\x00\x00\x00\x0F\x85\x00\x00\x00\x00",
     "xxxx?xxxx?xxxx?xxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxx?????xx????"
 );
-// Can definitely be better. Not quite the function, mostly AET related, but called on results in FTUI and not MMUI.
-const uint64_t FTUIScoreTrigger = 0x140237F30;
-
-// Game functions
-static auto getGameControlConfig = reinterpret_cast<uint64_t(__fastcall*)(void)>(0x00000001401D6520);
 
 // Difficulty percentage thresholds
 float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
@@ -92,12 +87,14 @@ void processResults() {
     std::cout << "[Archipelago] Writing out results.json" << std::endl << results << std::endl;
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
-
     
     DeathLink.reset();
 }
 
-HOOK(int, __fastcall, _FTUIResult, FTUIScoreTrigger, long long a1) {
+HOOK(int, __fastcall, _FTUIResult, 0x140237F30, long long a1) {
+    // AOB: 48 89 5C 24 10 48 89 74 24 18 48 89 7C 24 20 55 48 8D AC 24 40 FF FF FF 48 81 EC C0 01 00 00 48 8B 05 12 44 B6 00
+    // Can definitely be better. Not quite the function, mostly AET related, but called on results in FTUI and not MMUI.
+
     std::cout << "[Archipelago] FTUIResult a1: " << a1 << std::endl;
     processResults();
     return original_FTUIResult(a1);
@@ -115,21 +112,18 @@ HOOK(int, __fastcall, _DeathLinkFail, 0x1514F0ED0, long long a1) {
     return original_DeathLinkFail(a1);
 };
 
-// TODO: Called rapidly during gameplay. A more precise function and name is preferred.
-void* gameplayLoopTrigger = sigScan(
-    "\x48\x89\x5c\x24\x10\x48\x89\x74\x24\x18\x57\x48\x83\xec\x20\x48\x8b\xf9\x33\xdb\xe8\xe7\x91\x03\x00",
-    "xxxxxxxxxxxxxxxxxxxxxxxxx"    
-);
+HOOK(int, __fastcall, _GameplayLoopTrigger, 0x140244BA0, long long a1) {
+    // AOB: 48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 20 48 8B f9 33 DB E8 E7 91 03 00
+    // TODO: Called rapidly during gameplay. A more precise function and name is preferred.
 
-HOOK(int, __fastcall, _GameplayLoopTrigger, gameplayLoopTrigger, long long a1) {
     DeathLink.run();
     Traps.run();
-
 
     return original_GameplayLoopTrigger(a1);
 }
 
 HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
+    // AOB: 48 83 EC 28 BA 08 00 00 00 65 48 8B 04 25 58 00 00 00 48 8B 08 8B 04 0A 39 05 42 0C A2 0C
     // Called right as the gameplay is ending/fading out. Early enough to scrub modifier use. Happens alongside FAILURE too.
     // The intent is to not let traps prevent keeping scores.
 
