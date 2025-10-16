@@ -83,13 +83,13 @@ void APDeathLink::run()
     std::cout << "[Archipelago] DeathLink < death_link_in" << std::endl;
 
     lastDeathLink = *(float*)DivaGameTimer;
-    uint8_t currentHP = (uint8_t)DivaGameHP;
+    int currentHP = *(uint8_t*)DivaGameHP;
 
     int hit = (255 * percent) / 100 + 1;
     currentHP = std::clamp(currentHP - hit, 0, 255);
     deathLinked = (currentHP > 0) ? false : true;
 
-    WRITE_MEMORY(DivaGameHP, uint8_t, static_cast<uint8_t>(currentHP));
+    WRITE_MEMORY(DivaGameHP, int, static_cast<uint8_t>(currentHP));
 
     remove(DeathLinkInFile.c_str());
 }
