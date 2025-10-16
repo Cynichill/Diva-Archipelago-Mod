@@ -49,7 +49,7 @@ void APTraps::resetIcon()
 	savedIcon = 39;
 }
 
-bool APTraps::exists(std::string in)
+bool APTraps::exists(const std::string& in)
 {
 	return std::filesystem::exists(in.c_str());
 }
@@ -120,14 +120,14 @@ uint64_t APTraps::getIconAddress()
 	return getGameControlConfig() + 0x28;
 }
 
-int APTraps::getCurrentModifier()
-{
-	return *(int*)DivaGameModifier;
-}
-
 uint8_t APTraps::getCurrentIcon()
 {
 	return *(uint8_t*)getIconAddress();
+}
+
+int APTraps::getCurrentModifier()
+{
+	return *(int*)DivaGameModifier;
 }
 
 void APTraps::setModifier(int index)
@@ -156,8 +156,6 @@ void APTraps::rollIcon()
 		else if (currentIcon >= 5)
 			nextIcon += 5;
 	}
-
-	//std::cout << nextIcon << std::endl;
 
 	WRITE_MEMORY(getIconAddress(), uint8_t, (uint8_t)nextIcon);
 }

@@ -36,7 +36,7 @@ class APTraps
 		const std::string TrapHiddenInFile = "mods/ArchipelagoMod/hidden";
 		const std::string TrapIconInFile = "mods/ArchipelagoMod/icontrap";
 
-		bool exists(std::string in);
+		bool exists(const std::string& in);
 		uint64_t getGameControlConfig() const;
 		uint64_t getIconAddress();
 		int getCurrentModifier();
