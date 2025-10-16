@@ -61,13 +61,14 @@ void APDeathLink::reset()
 void APDeathLink::fail()
 {
     if (deathLinked) {
-        std::cout << "[Archipelago] DeathLink > Fail: Currently dying" << std::endl;
+        std::cout << "[Archipelago] DeathLink > Fail: Already dying" << std::endl;
         return;
     }
 
     auto deltaLast = *(float*)DivaGameTimer - lastDeathLink;
 
     if (deltaLast < safety) {
+        deathLinked = true;
         std::cout << "[Archipelago] DeathLink > Fail: Died in safety window" << std::endl;
         return;
     }
