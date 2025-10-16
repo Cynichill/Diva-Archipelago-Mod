@@ -17,6 +17,11 @@ void APDeathLink::config(toml::v3::ex::parse_result& data)
 
     std::cout << "[Archipelago] deathlink_percent set to " << percent << " (config: " << config_percent << ")" << std::endl;
 
+    std::string config_safety = data["deathlink_safety"].value_or(std::to_string(safety));
+    safety = std::clamp(std::stof(config_safety), 0.0f, 30.0f);
+
+    std::cout << "[Archipelago] deathlink_safety set to " << safety << " (config: " << config_safety << ")" << std::endl;
+
     reset();
 }
 
