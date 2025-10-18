@@ -48,6 +48,12 @@
     <ClInclude Include="virtualKey.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="APDeathLink.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="APTraps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -66,6 +72,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MemSigScan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APDeathLink.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APTraps.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
