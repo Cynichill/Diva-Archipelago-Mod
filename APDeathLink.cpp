@@ -78,13 +78,18 @@ void APDeathLink::fail()
 
 void APDeathLink::run()
 {
+    int currentHP = *(uint8_t*)DivaGameHP;
+
+    // Exception for No Fail > DL to 0 HP > Return to song select instead of results > Play
+    if (currentHP > 0 && deathLinked)
+        reset();
+
     if (deathLinked || !exists())
         return;
 
     std::cout << "[Archipelago] DeathLink < death_link_in" << std::endl;
 
     lastDeathLink = *(float*)DivaGameTimer;
-    int currentHP = *(uint8_t*)DivaGameHP;
 
     int hit = (255 * percent) / 100 + 1;
     currentHP = std::clamp(currentHP - hit, 0, 255);
