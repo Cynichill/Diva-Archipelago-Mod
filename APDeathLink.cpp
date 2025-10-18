@@ -78,7 +78,7 @@ void APDeathLink::fail()
 
 void APDeathLink::run()
 {
-    if (!exists() || deathLinked)
+    if (deathLinked || !exists())
         return;
 
     std::cout << "[Archipelago] DeathLink < death_link_in" << std::endl;
