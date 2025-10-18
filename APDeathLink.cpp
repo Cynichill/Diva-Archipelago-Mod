@@ -78,9 +78,13 @@ void APDeathLink::fail()
 
 void APDeathLink::run()
 {
+    // Avoid stopping the fade in from white animation at the start of a song.
+    if (*(float*)DivaGameTimer == 0.0f)
+        return;
+
     int currentHP = *(uint8_t*)DivaGameHP;
 
-    // Exception for No Fail > DL to 0 HP > Return to song select instead of results > Play
+    // Exception for No Fail -> DL to 0 HP -> Return to song select instead of results -> Play
     if (currentHP > 0 && deathLinked)
         reset();
 
