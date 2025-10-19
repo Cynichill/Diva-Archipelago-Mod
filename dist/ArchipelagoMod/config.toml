@@ -9,6 +9,6 @@ icon_reroll = "60.0" # 0-60, default 60.0 seconds between icon rerolls while Ico
 # Mod information
 name = "Archipelago"
 author = "Cynichill"
-version = "1.1.1"
+version = "1.2.0"
 dll = ["ArchipelagoMod.dll"]
 include = ["AP", "."]
