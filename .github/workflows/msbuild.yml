@@ -25,7 +25,9 @@ jobs:
       uses: actions/cache@v4
       with:
         key: ${{ runner.os }}-ap_build_cache
-        path: .\x64\Release\
+        path: |
+          .\ArchipelagoMod\
+          .\x64\Release\
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
