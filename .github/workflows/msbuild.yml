@@ -24,8 +24,8 @@ jobs:
     - name: Build Cache
       uses: actions/cache@v4
       with:
-        path: |
-          .\x64\Release\
+        key: ${{ runner.os }}-ap_build_cache
+        path: .\x64\Release\
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
