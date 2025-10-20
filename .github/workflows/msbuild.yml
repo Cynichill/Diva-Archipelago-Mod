@@ -41,4 +41,4 @@ jobs:
       with:
         name: artifact-mod
         path: .\dist\*
-        compression-level: 9 # not my compute
+        compression-level: 1 # not my compute
