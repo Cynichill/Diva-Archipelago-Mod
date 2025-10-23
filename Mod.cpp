@@ -1,4 +1,5 @@
 #include "APDeathLink.h"
+#include "APIDHandler.h"
 #include "APTraps.h"
 #include "Diva.h"
 #include "Helpers.h"
@@ -26,6 +27,7 @@ const uint64_t DivaCurrentPVDifficultyExtraAddress = 0x0000000140DAE938;
 // Archipelago Mod variables
 bool consoleEnabled = true;
 
+APIDHandler IDHandler;
 APDeathLink DeathLink;
 APTraps Traps;
 
@@ -130,6 +132,18 @@ HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
     return original_GameplayEnd();
 }
 
+HOOK(long long, __fastcall, _ReadDBs, 0x1404c5950, int a1, long long a2) {
+    // AOB: 48 83 ec 38 80 39 00
+    // Called on re/load. Super scuffed. Filter songs by ID by reporting 0 for the difficulty lengths.
+
+    std::string line = *(char**)a2;
+
+    if (!IDHandler.check(line))
+        return 0;
+
+    return original_ReadDBs(a1, a2); // Default: Enable
+}
+
 void processConfig() {
     // Move to a class and do not do this on init time
 
@@ -159,6 +173,7 @@ extern "C"
         INSTALL_HOOK(_DeathLinkFail);
         INSTALL_HOOK(_GameplayLoopTrigger);
         INSTALL_HOOK(_GameplayEnd);
+        INSTALL_HOOK(_ReadDBs);
 
 
         processConfig();

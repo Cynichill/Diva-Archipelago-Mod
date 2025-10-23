@@ -54,6 +54,9 @@
     <ClInclude Include="APTraps.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="APIDHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -78,6 +81,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="APTraps.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APIDHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
