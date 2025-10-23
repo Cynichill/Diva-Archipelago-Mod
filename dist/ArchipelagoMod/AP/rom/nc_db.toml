@@ -1,0 +1,34 @@
+[[songs]]
+id = 144
+
+[[songs.easy]]
+style = "ARCADE"
+
+[[songs.easy]]
+style = "CONSOLE"
+script_file_name = "rom/script_nc/pv_144.dsc"
+level = "PV_LV_07_5"
+
+[[songs.normal]]
+style = "ARCADE"
+
+[[songs.normal]]
+style = "CONSOLE"
+script_file_name = "rom/script_nc/pv_144.dsc"
+level = "PV_LV_07_5"
+
+[[songs.hard]]
+style = "ARCADE"
+
+[[songs.hard]]
+style = "CONSOLE"
+script_file_name = "rom/script_nc/pv_144.dsc"
+level = "PV_LV_07_5"
+
+[[songs.extreme]]
+style = "ARCADE"
+
+[[songs.extreme]]
+style = "CONSOLE"
+script_file_name = "rom/script_nc/pv_144.dsc"
+level = "PV_LV_07_5"
