@@ -1,5 +1,7 @@
 #include "APIDHandler.h"
 #include <regex>
+#include <fstream>
+#include <iostream>
 
 bool APIDHandler::check(std::string line)
 {
@@ -21,6 +23,24 @@ bool APIDHandler::check(std::string line)
 void APIDHandler::clear()
 {
 	enabledIDs.clear();
+}
+
+void APIDHandler::update()
+{
+	std::string buf;
+	std::ifstream file("mods/ArchipelagoMod/enabled.txt");
+	if (file.is_open()) {
+		enabledIDs = { 144, 700 };
+		std::cout << "[Archipelago] Enabling IDs: ";
+		while (std::getline(file, buf)) {
+			if (!contains(std::stoi(buf))) {
+				std::cout << buf << " ";
+				enabledIDs.push_back(std::stoi(buf));
+			}
+		}
+		std::cout << std::endl;
+		file.close();
+	}
 }
 
 void APIDHandler::add(int newID)

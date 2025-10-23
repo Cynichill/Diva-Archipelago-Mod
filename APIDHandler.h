@@ -7,7 +7,9 @@ class APIDHandler
 		std::vector<int> enabledIDs = { }; // If empty, allow everything.
 
 		bool check(std::string line);
-		void clear(); 
+		void clear();
+		void update();
+
 		void add(int songID);
 		bool contains(int songID);
 

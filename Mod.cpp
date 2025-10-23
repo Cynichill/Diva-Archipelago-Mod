@@ -89,6 +89,7 @@ void processResults() {
     fileWriteThread.detach();
     
     DeathLink.reset();
+    IDHandler.update();
 }
 
 HOOK(int, __fastcall, _FTUIResult, 0x140237F30, long long a1) {
