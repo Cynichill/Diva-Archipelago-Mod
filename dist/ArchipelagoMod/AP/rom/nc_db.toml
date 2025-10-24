@@ -32,3 +32,11 @@ style = "ARCADE"
 style = "CONSOLE"
 script_file_name = "rom/script_nc/pv_144.dsc"
 level = "PV_LV_07_5"
+
+[[songs.ex_extreme]]
+style = "ARCADE"
+
+[[songs.ex_extreme]]
+style = "CONSOLE"
+script_file_name = "rom/script_nc/pv_144.dsc"
+level = "PV_LV_07_5"
