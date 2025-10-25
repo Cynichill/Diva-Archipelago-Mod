@@ -33,8 +33,9 @@ class APIDHandler
 	private:
 		const std::string SongListFile = "mods/ArchipelagoMod/song_list.txt";
 
-		void cacheExists();
 		bool exists = false;
+		// Was way too slow verifying it per pv_db line, so don't do that.
+		void cacheExists();
 
 		// Debounce STARTUP/DATA_TEST states.
 		bool reloading = false;
