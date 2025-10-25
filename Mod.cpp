@@ -169,7 +169,6 @@ HOOK(void, __fastcall, _StateThunk, 0x1519e1650, int a1, long long a2, long long
 
     if (a1 == 10) { // The if comparison of stability.
         std::string str_to = (char*)state_to;
-        std::cout << str_to << std::endl;
 
         if (str_to.compare(0, 9, "DATA_TEST") == 0)
             IDHandler.reload_needed = false;
