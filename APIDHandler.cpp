@@ -32,6 +32,7 @@ bool APIDHandler::check(std::string& line)
 	if (reload_needed || "pv_" != line.substr(0, 3) || !exists())
 		return true;
 
+	// Always enabled to prevent softlocks or crashing.
 	auto shortID = line.substr(3, 4);
 	if ("144." == shortID || "700." == shortID || "701." == shortID)
 		return true;
