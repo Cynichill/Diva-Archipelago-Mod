@@ -1,4 +1,5 @@
 #include "APDeathLink.h"
+#include "APIDHandler.h"
 #include "APTraps.h"
 #include "Diva.h"
 #include "Helpers.h"
@@ -26,10 +27,11 @@ const uint64_t DivaCurrentPVDifficultyExtraAddress = 0x0000000140DAE938;
 // Archipelago Mod variables
 bool consoleEnabled = true;
 
+APIDHandler IDHandler;
 APDeathLink DeathLink;
 APTraps Traps;
 
-const std::string ConfigTOML = "config.toml"; // CWD within Init()
+const std::string ConfigTOML = "mods/ArchipelagoMod/config.toml";
 const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
 
 // The original sigscan from ScoreDiva for MMUI (may have previously worked with FTUI?)
@@ -85,7 +87,7 @@ void processResults() {
     std::cout << "[Archipelago] Writing out results.json" << std::endl << results << std::endl;
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
-    
+
     DeathLink.reset();
 }
 
@@ -126,8 +128,20 @@ HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
     // The intent is to not let traps prevent keeping scores.
 
     Traps.reset();
-    
+
     return original_GameplayEnd();
+}
+
+HOOK(long long, __fastcall, _ReadDBs, 0x1404c5950, int a1, long long a2) {
+    // AOB: 48 83 ec 38 80 39 00
+    // Called during re/load. Super scuffed. Filter songs by ID by reporting 0 for the difficulty lengths.
+
+    std::string line = *(char**)a2;
+
+    if (!IDHandler.check(line))
+        return 0;
+
+    return original_ReadDBs(a1, a2); // Default: Enable
 }
 
 void processConfig() {
@@ -150,6 +164,27 @@ void processConfig() {
     }
 }
 
+HOOK(void, __fastcall, _StateThunk, 0x1519e1650, int a1, long long a2, long long state_from, long long state_to) {
+    // State-change related. Not a fan of hooking the gamestate change directly.
+
+    if (a1 == 10) { // The if comparison of stability.
+        std::string str_to = (char*)state_to;
+
+        if (str_to.compare(0, 9, "DATA_TEST") == 0)
+            IDHandler.reload_needed = false;
+
+        if (str_to.compare(0, 9, "DATA_TEST") == 0 || str_to.compare(0, 7, "STARTUP") == 0)
+            IDHandler.update();
+
+        if (str_to.compare(0, 9, "ADVERTISE") == 0) {
+            IDHandler.unlock();
+            processConfig();
+        }
+    }
+
+    original_StateThunk(a1, a2, state_from, state_to);
+}
+
 extern "C"
 {
     void __declspec(dllexport) Init()
@@ -159,8 +194,7 @@ extern "C"
         INSTALL_HOOK(_DeathLinkFail);
         INSTALL_HOOK(_GameplayLoopTrigger);
         INSTALL_HOOK(_GameplayEnd);
-
-
-        processConfig();
+        INSTALL_HOOK(_ReadDBs);
+        INSTALL_HOOK(_StateThunk);
     }
 }
