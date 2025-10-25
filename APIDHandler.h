@@ -6,8 +6,6 @@ class APIDHandler
 	public:
 		APIDHandler();
 
-		bool exists();
-
 		bool checkNC();
 
 		// Mostly for New Classics, but improves stability overall.
@@ -34,6 +32,9 @@ class APIDHandler
 
 	private:
 		const std::string SongListFile = "mods/ArchipelagoMod/song_list.txt";
+
+		void cacheExists();
+		bool exists = false;
 
 		// Debounce STARTUP/DATA_TEST states.
 		bool reloading = false;

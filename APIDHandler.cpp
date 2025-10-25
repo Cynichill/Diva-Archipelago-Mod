@@ -2,14 +2,13 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <regex>
 #include <Windows.h>
 
 APIDHandler::APIDHandler() {
 }
 
-bool APIDHandler::exists() {
-	return std::filesystem::exists(SongListFile);
+void APIDHandler::cacheExists() {
+	exists = std::filesystem::exists(SongListFile);
 }
 
 bool APIDHandler::checkNC() {
@@ -29,27 +28,19 @@ bool APIDHandler::checkNC() {
 
 bool APIDHandler::check(std::string& line)
 {
-	if (reload_needed || "pv_" != line.substr(0, 3) || !exists())
+	if (reload_needed || !exists || line.find(".difficulty") == std::string::npos || line.rfind(".length") == std::string::npos)
 		return true;
+
+	size_t start = line.find_first_of("_");
+	auto pvID = line.substr(start + 1, line.find_first_of(".") - start - 1);
 
 	// Always enabled to prevent softlocks or crashing.
-	auto shortID = line.substr(3, 4);
-	if ("144." == shortID || "700." == shortID || "701." == shortID)
+	if ("144" == pvID || "700" == pvID || "701" == pvID)
 		return true;
 
-	std::cmatch matches;
-	static std::regex pattern("^pv_([0-9]+).difficulty.(easy|normal|hard|extreme).length");
+	bool c = contains(std::stoi(pvID));
 
-	if (!std::regex_search(line.c_str(), matches, pattern))
-		return true;
-
-	if (!matches.empty()) {
-		bool c = contains(std::stoi(matches[1]));
-
-		return freeplay ? !c : c;
-	}
-
-	return false;
+	return freeplay ? !c : c;
 }
 
 void APIDHandler::reset()
@@ -75,12 +66,17 @@ void APIDHandler::update()
 		std::cout << "[Archipelago] Toggle IDs: ";
 
 		while (std::getline(file, buf)) {
-			if (buf.substr(0, 1) == "-")
-				freeplay = true;
-
 			try {
-				add(std::stoi(buf));
+				auto pvID = std::stoi(buf);
+
 				std::cout << buf << " ";
+
+				if (pvID == 0) {
+					freeplay = true;
+					continue;
+				}
+
+				add(std::stoi(buf));
 			}
 			catch (std::invalid_argument const& ex) {
 				std::cout << "(inv: " << buf << ") ";
@@ -117,10 +113,12 @@ bool APIDHandler::contains(int songID)
 
 void APIDHandler::lock()
 {
+	cacheExists();
 	reloading = true;
 }
 
 void APIDHandler::unlock()
 {
+	cacheExists();
 	reloading = false;
 }
