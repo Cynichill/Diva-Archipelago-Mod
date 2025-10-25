@@ -6,12 +6,17 @@ class APIDHandler
 	public:
 		APIDHandler();
 
+		bool exists();
+
 		bool checkNC();
 
 		// Mostly for New Classics, but improves stability overall.
 		// Load "everything" first then require a manual refresh.
 		// If true, do not act on toggleIDs.
 		bool reload_needed = true;
+
+		// reloading = false
+		void unlock();
 
 		// Do not modify while first_run is true. If empty, allow everything.
 		// If freeplay is true these will be hidden instead.
@@ -20,7 +25,7 @@ class APIDHandler
 		// If true, hide toggleIDs instead of only showing.
 		bool freeplay = false;
 
-		bool check(std::string line);
+		bool check(std::string& line);
 		void reset();
 		void update();
 
@@ -29,5 +34,11 @@ class APIDHandler
 
 	private:
 		const std::string SongListFile = "mods/ArchipelagoMod/song_list.txt";
+
+		// Debounce STARTUP/DATA_TEST states.
+		bool reloading = false;
+
+		// reloading = true
+		void lock();
 };
 

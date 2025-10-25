@@ -8,6 +8,10 @@
 APIDHandler::APIDHandler() {
 }
 
+bool APIDHandler::exists() {
+	return std::filesystem::exists(SongListFile);
+}
+
 bool APIDHandler::checkNC() {
 	if (!reload_needed)
 		return false;
@@ -23,9 +27,13 @@ bool APIDHandler::checkNC() {
 	return false;
 }
 
-bool APIDHandler::check(std::string line)
+bool APIDHandler::check(std::string& line)
 {
-	if ("pv_" != line.substr(0, 3) || toggleIDs.empty())
+	if (reload_needed || "pv_" != line.substr(0, 3) || !exists())
+		return true;
+
+	auto shortID = line.substr(3, 4);
+	if ("144." == shortID || "700." == shortID || "701." == shortID)
 		return true;
 
 	std::cmatch matches;
@@ -45,47 +53,46 @@ bool APIDHandler::check(std::string line)
 
 void APIDHandler::reset()
 {
-	std::cout << "[Archipelago] ID Handler reset" << std::endl;
+	//std::cout << "[Archipelago] ID Handler reset" << std::endl;
+	unlock();
 	freeplay = false;
 	toggleIDs.clear();
 }
 
 void APIDHandler::update()
 {
-	if (reload_needed || checkNC())
+	if (reloading || checkNC())
 		return;
 
-	if (!std::filesystem::exists(SongListFile))
-		reset();
+	reset();
+	lock();
 
 	std::string buf;
 	std::ifstream file(SongListFile);
 
-	freeplay = false;
-
 	if (file.is_open()) {
 		std::cout << "[Archipelago] Toggle IDs: ";
-		
+
 		while (std::getline(file, buf)) {
 			if (buf.substr(0, 1) == "-")
 				freeplay = true;
 
-			if (!contains(abs(std::stoi(buf)))) {
+			try {
+				add(std::stoi(buf));
 				std::cout << buf << " ";
-				toggleIDs.push_back(abs(std::stoi(buf)));
+			}
+			catch (std::invalid_argument const& ex) {
+				std::cout << "(inv: " << buf << ") ";
+			}
+			catch (std::out_of_range const& ex) {
+				std::cout << "(range: " << buf << ") ";
 			}
 		}
 
-		std::cout << " (freeplay: " << freeplay << ")" << std::endl;
+		std::cout << "(freeplay: " << freeplay << ")" << std::endl;
+	}
 
-		if (!freeplay)
-			toggleIDs.insert(toggleIDs.end(), { 144, 700 });
-		
-		file.close();
-	}
-	else {
-		reset();
-	}
+	file.close();
 }
 
 void APIDHandler::add(int newID)
@@ -95,6 +102,8 @@ void APIDHandler::add(int newID)
 		return;
 	}
 
+	newID = abs(newID);
+
 	if (!contains(newID))
 		toggleIDs.push_back(newID);
 }
@@ -103,4 +112,14 @@ bool APIDHandler::contains(int songID)
 {
 	// Potentially very slow as the song list grows.
 	return std::find(toggleIDs.begin(), toggleIDs.end(), songID) != toggleIDs.end();
+}
+
+void APIDHandler::lock()
+{
+	reloading = true;
+}
+
+void APIDHandler::unlock()
+{
+	reloading = false;
 }
