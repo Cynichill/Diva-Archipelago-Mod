@@ -132,16 +132,14 @@ HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
     return original_GameplayEnd();
 }
 
-HOOK(long long, __fastcall, _ReadDBs, 0x1404c5950, int a1, long long a2) {
-    // AOB: 48 83 ec 38 80 39 00
-    // Called during re/load. Super scuffed. Filter songs by ID by reporting 0 for the difficulty lengths.
+HOOK(unsigned long long**, __fastcall, _ReadDBLine, 0x14018b030, char a1, unsigned long long **pv_db_prop, unsigned long long start, unsigned long long end)
+{
+    std::string line((char*)pv_db_prop[0], (char*)pv_db_prop[1] - (char*)pv_db_prop[0]);
 
-    std::string line = *(char**)a2;
+    if (line.find("pv_") != std::string::npos && !IDHandler.check(line))
+        return nullptr;
 
-    if (!IDHandler.check(line))
-        return 0;
-
-    return original_ReadDBs(a1, a2); // Default: Enable
+    return original_ReadDBLine(a1, pv_db_prop, start, end);
 }
 
 void processConfig() {
@@ -194,7 +192,7 @@ extern "C"
         INSTALL_HOOK(_DeathLinkFail);
         INSTALL_HOOK(_GameplayLoopTrigger);
         INSTALL_HOOK(_GameplayEnd);
-        INSTALL_HOOK(_ReadDBs);
+        INSTALL_HOOK(_ReadDBLine);
         INSTALL_HOOK(_StateThunk);
     }
 }
