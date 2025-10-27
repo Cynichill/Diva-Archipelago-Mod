@@ -7,11 +7,13 @@
 APIDHandler::APIDHandler() {
 }
 
-void APIDHandler::cacheExists() {
+void APIDHandler::cacheExists()
+{
 	exists = std::filesystem::exists(SongListFile);
 }
 
-bool APIDHandler::checkNC() {
+bool APIDHandler::checkNC()
+{
 	if (!reload_needed)
 		return false;
 
