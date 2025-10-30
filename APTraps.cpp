@@ -55,13 +55,19 @@ bool APTraps::exists(const std::string& in)
 }
 
 // Very happening function.
-void APTraps::run() 
+void APTraps::run()
 {
 	auto now = *(float*)DivaGameTimer;
+
+	if (now - lastRun < 0.2)
+		return;
+
+	lastRun = now;
+
 	bool sudden_exists = exists(TrapSuddenInFile);
 	bool hidden_exists = exists(TrapHiddenInFile);
 	bool icon_exists = exists(TrapIconInFile);
-	
+
 	if (sudden_exists) {
 		std::cout << "[Archipelago] Trap < Sudden" << std::endl;
 		setModifier(DIVA_MODIFIERS::Sudden);
@@ -84,7 +90,7 @@ void APTraps::run()
 	}
 
 	if (icon_exists) {
-		std::cout << "[Archipelago] Trap < Icon" << std::endl;		
+		std::cout << "[Archipelago] Trap < Icon" << std::endl;
 		timestampIconStart = now;
 		rollIcon();
 		remove(TrapIconInFile.c_str());

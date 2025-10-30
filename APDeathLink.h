@@ -31,6 +31,6 @@ class APDeathLink
 
 		int percent = 100; // Percentage of max HP to lose on receive. "If at or below this, die."
 		float safety = 10.0f; // Seconds after receiving a DL to avoid chain reaction DLs.
-		float lastDeathLink = 0.0f; // Compared against DeathLink::safety
+		float lastDeathLink = 0.0f; // Compared against APDeathLink::safety
 };
 

@@ -31,6 +31,7 @@ class APTraps
 		float timestampModifier = 0.0f;
 		float timestampIconStart = 0.0f;
 		float timestampIconLast = 0.0f;
+		float lastRun = 0.0f; // For delta time against APTraps::DivaGameTimer
 
 		const std::string TrapSuddenInFile = "mods/ArchipelagoMod/sudden";
 		const std::string TrapHiddenInFile = "mods/ArchipelagoMod/hidden";
