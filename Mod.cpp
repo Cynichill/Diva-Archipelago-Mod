@@ -166,15 +166,13 @@ HOOK(void, __fastcall, _StateThunk, 0x1519e1650, long long a1, char* a2, long lo
     // State-change related. Not a fan of hooking the gamestate change directly.
 
     if (a1 == 10) { // The if comparison of stability.
-        std::string str_to = state_to;
-
-        if (str_to.compare(0, 9, "DATA_TEST") == 0)
+        if (strcmp(state_to, "DATA_TEST") == 0)
             IDHandler.reload_needed = false;
 
-        if (str_to.compare(0, 9, "DATA_TEST") == 0 || str_to.compare(0, 7, "STARTUP") == 0)
+        if (strcmp(state_to, "DATA_TEST") == 0 || strcmp(state_to, "STARTUP") == 0)
             IDHandler.update();
 
-        if (str_to.compare(0, 9, "ADVERTISE") == 0) {
+        if (strcmp(state_to, "ADVERTISE") == 0) {
             IDHandler.unlock();
             processConfig();
         }
