@@ -132,7 +132,7 @@ HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
     return original_GameplayEnd();
 }
 
-HOOK(unsigned long long**, __fastcall, _ReadDBLine, 0x14018b030, char a1, unsigned long long **pv_db_prop, unsigned long long start, unsigned long long end)
+HOOK(unsigned long long**, __fastcall, _ReadDBLine, 0x14018b030, char a1, unsigned long long** pv_db_prop, unsigned long long** start, unsigned long long** end)
 {
     std::string line((char*)pv_db_prop[0], (char*)pv_db_prop[1] - (char*)pv_db_prop[0]);
 
