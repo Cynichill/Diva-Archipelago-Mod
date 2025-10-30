@@ -162,11 +162,11 @@ void processConfig() {
     }
 }
 
-HOOK(void, __fastcall, _StateThunk, 0x1519e1650, int a1, long long a2, long long state_from, long long state_to) {
+HOOK(void, __fastcall, _StateThunk, 0x1519e1650, long long a1, char* a2, long long* state_from, char* state_to) {
     // State-change related. Not a fan of hooking the gamestate change directly.
 
     if (a1 == 10) { // The if comparison of stability.
-        std::string str_to = (char*)state_to;
+        std::string str_to = state_to;
 
         if (str_to.compare(0, 9, "DATA_TEST") == 0)
             IDHandler.reload_needed = false;
