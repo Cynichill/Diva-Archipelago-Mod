@@ -1,9 +1,12 @@
 #include "APDeathLink.h"
+#include "APIDHandler.h"
+#include "APLogger.h"
 #include "APTraps.h"
 #include "Diva.h"
 #include "Helpers.h"
 #include "pch.h"
 #include <detours.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -11,6 +14,8 @@
 #include <string>
 #include <thread>
 #include <toml++/toml.h>
+
+namespace fs = std::filesystem;
 
 // MegaMix+ addresses
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
@@ -26,11 +31,13 @@ const uint64_t DivaCurrentPVDifficultyExtraAddress = 0x0000000140DAE938;
 // Archipelago Mod variables
 bool consoleEnabled = true;
 
+APIDHandler IDHandler;
 APDeathLink DeathLink;
 APTraps Traps;
 
-const std::string ConfigTOML = "config.toml"; // CWD within Init()
-const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
+const fs::path LocalPath = fs::current_path();
+const fs::path ConfigTOML = "config.toml";
+const fs::path OutputFileName = "results.json";
 
 // The original sigscan from ScoreDiva for MMUI (may have previously worked with FTUI?)
 void* MMUIScoreTrigger = sigScan(
@@ -44,7 +51,7 @@ float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
 void writeToFile(const nlohmann::json& results) {
 
     // Write the JSON to a file
-    std::ofstream outputFile(OutputFileName);
+    std::ofstream outputFile(LocalPath / OutputFileName);
     if (outputFile.is_open()) {
         outputFile << results.dump(4); // Pretty-print JSON with an indent of 4 spaces
         outputFile.close();
@@ -82,10 +89,10 @@ void processResults() {
     };
 
     // Detach a thread that will be writing the result so the game doesn't hang
-    std::cout << "[Archipelago] Writing out results.json" << std::endl << results << std::endl;
+    APLogger::print("Writing out results.json\n%s\n", results.dump().c_str());
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
-    
+
     DeathLink.reset();
 }
 
@@ -93,13 +100,13 @@ HOOK(int, __fastcall, _FTUIResult, 0x140237F30, long long a1) {
     // AOB: 48 89 5C 24 10 48 89 74 24 18 48 89 7C 24 20 55 48 8D AC 24 40 FF FF FF 48 81 EC C0 01 00 00 48 8B 05 12 44 B6 00
     // Can definitely be better. Not quite the function, mostly AET related, but called on results in FTUI and not MMUI.
 
-    std::cout << "[Archipelago] FTUIResult a1: " << a1 << std::endl;
+    APLogger::print("FTUI Result\n");
     processResults();
     return original_FTUIResult(a1);
 }
 
 HOOK(int, __fastcall, _MMUIResult, MMUIScoreTrigger, long long a1) {
-    std::cout << "[Archipelago] MMUIResult a1: " << a1 << std::endl;
+    APLogger::print("MMUI Result\n");
     processResults();
     return original_MMUIResult(a1);
 };
@@ -126,17 +133,28 @@ HOOK(void, __fastcall, _GameplayEnd, 0x14023F9A0) {
     // The intent is to not let traps prevent keeping scores.
 
     Traps.reset();
-    
+
     return original_GameplayEnd();
+}
+
+HOOK(unsigned long long**, __fastcall, _ReadDBLine, 0x14018b030, char a1, unsigned long long** pv_db_prop, unsigned long long** start, unsigned long long** end)
+{
+    std::string line((char*)pv_db_prop[0], (char*)pv_db_prop[1] - (char*)pv_db_prop[0]);
+
+    if (line.find("pv_") != std::string::npos && !IDHandler.check(line))
+        return nullptr;
+
+    return original_ReadDBLine(a1, pv_db_prop, start, end);
 }
 
 void processConfig() {
     // Move to a class and do not do this on init time
 
     try {
-        std::ifstream file(ConfigTOML); // CWD is the mod folder within Init
+
+        std::ifstream file(LocalPath / ConfigTOML); // CWD is the mod folder within Init
         if (!file.is_open()) {
-            std::cout << "[Archipelago] Error opening config file: " << ConfigTOML << std::endl;
+            APLogger::print("Error opening config file: %s\n", ConfigTOML.c_str());
             return;
         }
 
@@ -146,21 +164,41 @@ void processConfig() {
         Traps.config(data);
     }
     catch (const std::exception& e) {
-        std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
+        APLogger::print("Error parsing config file: %s\n", e.what());
     }
+}
+
+HOOK(void, __fastcall, _StateThunk, 0x1519e1650, long long a1, char* a2, long long* state_from, char* state_to) {
+    // State-change related. Not a fan of hooking the gamestate change directly.
+
+    if (a1 == 10) { // The if comparison of stability.
+        if (strcmp(state_to, "DATA_TEST") == 0)
+            IDHandler.reload_needed = false;
+
+        if (strcmp(state_to, "DATA_TEST") == 0 || strcmp(state_to, "STARTUP") == 0)
+            IDHandler.update();
+
+        if (strcmp(state_to, "ADVERTISE") == 0) {
+            IDHandler.unlock();
+            processConfig();
+        }
+    }
+
+    original_StateThunk(a1, a2, state_from, state_to);
 }
 
 extern "C"
 {
     void __declspec(dllexport) Init()
     {
+        if (freopen("CONOUT$", "w", stdout) == NULL) {}
+
         INSTALL_HOOK(_MMUIResult);
         INSTALL_HOOK(_FTUIResult);
         INSTALL_HOOK(_DeathLinkFail);
         INSTALL_HOOK(_GameplayLoopTrigger);
         INSTALL_HOOK(_GameplayEnd);
-
-
-        processConfig();
+        INSTALL_HOOK(_ReadDBLine);
+        INSTALL_HOOK(_StateThunk);
     }
 }
