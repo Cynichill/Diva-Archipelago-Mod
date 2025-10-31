@@ -11,7 +11,7 @@ APIDHandler::APIDHandler() {
 
 void APIDHandler::cacheExists()
 {
-	exists = std::filesystem::exists(SongListFile);
+	exists = fs::exists(LocalPath / SongListFile);
 }
 
 bool APIDHandler::checkNC()
@@ -64,7 +64,7 @@ void APIDHandler::update()
 	lock();
 
 	std::string buf;
-	std::ifstream file(SongListFile);
+	std::ifstream file(LocalPath / SongListFile);
 
 	if (file.is_open()) {
 		std::stringstream toggled;
@@ -82,14 +82,14 @@ void APIDHandler::update()
 				toggled << buf << " ";
 			}
 			catch (std::invalid_argument const& ex) {
-				APLogger::print("IDH > %s : %s\n", ex.what(), buf);
+				APLogger::print("IDH > %s\n", ex.what());
 			}
 			catch (std::out_of_range const& ex) {
-				APLogger::print("IDH > %s : %s\n", ex.what(), buf);
+				APLogger::print("IDH > %s\n", ex.what());
 			}
 		}
 
-		APLogger::print("IDH > Toggle IDs %s(freeplay: %i)\n", toggled.str().c_str(), freeplay);
+		APLogger::print("IDH < Toggle IDs %s(freeplay: %i)\n", toggled.str().c_str(), freeplay);
 	}
 
 	file.close();
@@ -98,7 +98,7 @@ void APIDHandler::update()
 void APIDHandler::add(int newID)
 {
 	if (reload_needed) {
-		APLogger::print("IDH > Attempted to add %i but a reload is needed\n", newID);
+		APLogger::print("IDH < Attempted to add %i but a reload is needed\n", newID);
 		return;
 	}
 

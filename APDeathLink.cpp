@@ -2,7 +2,6 @@
 #include "APLogger.h"
 #include "Helpers.h"
 #include "pch.h"
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 
@@ -28,7 +27,7 @@ void APDeathLink::config(toml::v3::ex::parse_result& data)
 
 bool APDeathLink::exists()
 {
-	return std::filesystem::exists(DeathLinkInFile);
+	return fs::exists(LocalPath / DeathLinkInFile);
 }
 
 int APDeathLink::touch()
@@ -36,7 +35,7 @@ int APDeathLink::touch()
     deathLinked = true;
 
 	if (!exists()) {
-        std::ofstream death_link_out(DeathLinkOutFile);
+        std::ofstream death_link_out(LocalPath / DeathLinkOutFile);
 
         if (!death_link_out.is_open()) {
             APLogger::print("DeathLink > Failed to send death_link_out\n");
@@ -55,8 +54,8 @@ void APDeathLink::reset()
     APLogger::print("DeathLink: deathLinked = %i -> 0\n", deathLinked);
 
     deathLinked = false;
-    remove(DeathLinkInFile.c_str());
-    remove(DeathLinkOutFile.c_str());
+    fs::remove(LocalPath / DeathLinkInFile);
+    fs::remove(LocalPath / DeathLinkOutFile);
 }
 
 void APDeathLink::fail()
@@ -102,5 +101,5 @@ void APDeathLink::run()
 
     WRITE_MEMORY(DivaGameHP, int, static_cast<uint8_t>(currentHP));
 
-    remove(DeathLinkInFile.c_str());
+    fs::remove(LocalPath / DeathLinkInFile);
 }

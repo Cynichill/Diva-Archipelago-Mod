@@ -1,10 +1,12 @@
 #include "APDeathLink.h"
 #include "APIDHandler.h"
+#include "APLogger.h"
 #include "APTraps.h"
 #include "Diva.h"
 #include "Helpers.h"
 #include "pch.h"
 #include <detours.h>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -12,7 +14,8 @@
 #include <string>
 #include <thread>
 #include <toml++/toml.h>
-#include "APLogger.h"
+
+namespace fs = std::filesystem;
 
 // MegaMix+ addresses
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
@@ -32,8 +35,9 @@ APIDHandler IDHandler;
 APDeathLink DeathLink;
 APTraps Traps;
 
-const std::string ConfigTOML = "mods/ArchipelagoMod/config.toml";
-const std::string OutputFileName = "mods/ArchipelagoMod/results.json";
+const fs::path LocalPath = fs::current_path();
+const fs::path ConfigTOML = "config.toml";
+const fs::path OutputFileName = "results.json";
 
 // The original sigscan from ScoreDiva for MMUI (may have previously worked with FTUI?)
 void* MMUIScoreTrigger = sigScan(
@@ -47,7 +51,7 @@ float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
 void writeToFile(const nlohmann::json& results) {
 
     // Write the JSON to a file
-    std::ofstream outputFile(OutputFileName);
+    std::ofstream outputFile(LocalPath / OutputFileName);
     if (outputFile.is_open()) {
         outputFile << results.dump(4); // Pretty-print JSON with an indent of 4 spaces
         outputFile.close();
@@ -85,7 +89,7 @@ void processResults() {
     };
 
     // Detach a thread that will be writing the result so the game doesn't hang
-    APLogger::print("Writing out results.json\n%s\n", results.dump());
+    APLogger::print("Writing out results.json\n%s\n", results.dump().c_str());
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
@@ -148,7 +152,7 @@ void processConfig() {
 
     try {
 
-        std::ifstream file(ConfigTOML); // CWD is the mod folder within Init
+        std::ifstream file(LocalPath / ConfigTOML); // CWD is the mod folder within Init
         if (!file.is_open()) {
             APLogger::print("Error opening config file: %s\n", ConfigTOML.c_str());
             return;
@@ -187,6 +191,8 @@ extern "C"
 {
     void __declspec(dllexport) Init()
     {
+        if (freopen("CONOUT$", "w", stdout) == NULL) {}
+
         INSTALL_HOOK(_MMUIResult);
         INSTALL_HOOK(_FTUIResult);
         INSTALL_HOOK(_DeathLinkFail);

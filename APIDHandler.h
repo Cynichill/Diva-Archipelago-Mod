@@ -1,6 +1,10 @@
 #pragma once
-#include <vector>
+#include <filesystem>
 #include <string>
+#include <vector>
+
+namespace fs = std::filesystem;
+
 class APIDHandler
 {
 	public:
@@ -31,7 +35,8 @@ class APIDHandler
 		bool contains(int songID);
 
 	private:
-		const std::string SongListFile = "mods/ArchipelagoMod/song_list.txt";
+		const fs::path LocalPath = fs::current_path();
+		const fs::path SongListFile = "song_list.txt";
 
 		bool exists = false;
 		// Was way too slow verifying it per pv_db line, so don't do that.

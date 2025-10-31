@@ -32,7 +32,7 @@ int APTraps::reset()
 {
 	resetIcon();
 	setModifier(DIVA_MODIFIERS::None);
-	remove(TrapIconInFile.c_str());
+	//fs::remove(LocalPath / TrapIconInFile);
 
 	return 0;
 }
@@ -50,9 +50,9 @@ void APTraps::resetIcon()
 	savedIcon = 39;
 }
 
-bool APTraps::exists(const std::string& in)
+bool APTraps::exists(const fs::path& in)
 {
-	return std::filesystem::exists(in.c_str());
+	return fs::exists(LocalPath / in);
 }
 
 // Very happening function.
@@ -72,13 +72,13 @@ void APTraps::run()
 	if (sudden_exists) {
 		APLogger::print("Trap < Sudden\n");
 		setModifier(DIVA_MODIFIERS::Sudden);
-		remove(TrapSuddenInFile.c_str());
+		fs::remove(LocalPath / TrapSuddenInFile);
 	}
 
 	if (hidden_exists) {
 		APLogger::print("Trap < Hidden\n");
 		setModifier(DIVA_MODIFIERS::Hidden);
-		remove(TrapHiddenInFile.c_str());
+		fs::remove(LocalPath / TrapHiddenInFile);
 	}
 
 	if (sudden_exists || hidden_exists)
@@ -94,7 +94,7 @@ void APTraps::run()
 		APLogger::print("Trap < Icon\n");
 		timestampIconStart = now;
 		rollIcon();
-		remove(TrapIconInFile.c_str());
+		fs::remove(LocalPath / TrapIconInFile);
 
 		if (timestampIconStart == now)
 			return;

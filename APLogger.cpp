@@ -4,14 +4,11 @@
 
 void APLogger::print(const char* const fmt, ...)
 {
-    static bool console = GetConsoleWindow() != NULL;
-
-    if (!console)
-        return;
-
-    printf("[Archipelago] ");
-    va_list args;
-    va_start(args, fmt);
-    vprintf(fmt, args);
-    va_end(args);
+    if (GetConsoleWindow()) {
+        printf("[Archipelago] ");
+        va_list args;
+        va_start(args, fmt);
+        vprintf(fmt, args);
+        va_end(args);
+    }
 }
