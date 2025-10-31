@@ -12,6 +12,7 @@
 #include <string>
 #include <thread>
 #include <toml++/toml.h>
+#include "APLogger.h"
 
 // MegaMix+ addresses
 const uint64_t DivaCurrentPVTitleAddress = 0x00000001412EF228;
@@ -84,7 +85,7 @@ void processResults() {
     };
 
     // Detach a thread that will be writing the result so the game doesn't hang
-    std::cout << "[Archipelago] Writing out results.json" << std::endl << results << std::endl;
+    APLogger::print("Writing out results.json\n%s\n", results.dump());
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
@@ -95,13 +96,13 @@ HOOK(int, __fastcall, _FTUIResult, 0x140237F30, long long a1) {
     // AOB: 48 89 5C 24 10 48 89 74 24 18 48 89 7C 24 20 55 48 8D AC 24 40 FF FF FF 48 81 EC C0 01 00 00 48 8B 05 12 44 B6 00
     // Can definitely be better. Not quite the function, mostly AET related, but called on results in FTUI and not MMUI.
 
-    std::cout << "[Archipelago] FTUIResult a1: " << a1 << std::endl;
+    APLogger::print("FTUI Result\n");
     processResults();
     return original_FTUIResult(a1);
 }
 
 HOOK(int, __fastcall, _MMUIResult, MMUIScoreTrigger, long long a1) {
-    std::cout << "[Archipelago] MMUIResult a1: " << a1 << std::endl;
+    APLogger::print("MMUI Result\n");
     processResults();
     return original_MMUIResult(a1);
 };
@@ -146,9 +147,10 @@ void processConfig() {
     // Move to a class and do not do this on init time
 
     try {
+
         std::ifstream file(ConfigTOML); // CWD is the mod folder within Init
         if (!file.is_open()) {
-            std::cout << "[Archipelago] Error opening config file: " << ConfigTOML << std::endl;
+            APLogger::print("Error opening config file: %s\n", ConfigTOML.c_str());
             return;
         }
 
@@ -158,7 +160,7 @@ void processConfig() {
         Traps.config(data);
     }
     catch (const std::exception& e) {
-        std::cout << "[Archipelago] Error parsing TOML file: " << e.what() << std::endl;
+        APLogger::print("Error parsing config file: %s\n", e.what());
     }
 }
 

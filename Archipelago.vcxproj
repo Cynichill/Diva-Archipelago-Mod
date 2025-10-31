@@ -88,6 +88,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="APIDHandler.h" />
+    <ClInclude Include="APLogger.h" />
     <ClInclude Include="APTraps.h" />
     <ClInclude Include="core_types.h" />
     <ClInclude Include="core_win32_hacks.h" />
@@ -104,6 +105,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="APIDHandler.cpp" />
+    <ClCompile Include="APLogger.cpp" />
     <ClCompile Include="APTraps.cpp" />
     <ClCompile Include="APDeathLink.cpp" />
     <ClCompile Include="Dependencies\SigScan.cpp" />

@@ -1,3 +1,4 @@
+#include "APLogger.h"
 #include "APTraps.h"
 #include "Diva.h"
 #include "Helpers.h"
@@ -14,12 +15,12 @@ void APTraps::config(toml::v3::ex::parse_result& data)
 	std::string config_duration = data["trap_duration"].value_or(std::to_string(trapDuration));
 	trapDuration = std::clamp(std::stof(config_duration), 0.0f, 180.0f);
 
-	std::cout << "[Archipelago] trap_duration: " << trapDuration << " (config: " << config_duration << ")" << std::endl;
+	APLogger::print("trap_duration: %.02f (config: %s)\n", trapDuration, config_duration);
 
 	std::string config_iconinterval = data["icon_reroll"].value_or(std::to_string(iconInterval));
 	iconInterval = std::clamp(std::stof(config_iconinterval), 0.0f, 60.0f);
 
-	std::cout << "[Archipelago] icon_reroll: " << iconInterval << " (config: " << config_iconinterval << ")" << std::endl;
+	APLogger::print("icon_reroll: %.02f (config: %s)\n", iconInterval, config_iconinterval);
 
 	std::random_device rd;
 	mt.seed(rd());
@@ -44,7 +45,7 @@ void APTraps::resetIcon()
 	int restoredIcon = ((savedIcon <= 12 && savedIcon >= 0) ? savedIcon : 4);
 	if (getCurrentIcon() != restoredIcon) {
 		WRITE_MEMORY(getIconAddress(), uint8_t, (uint8_t)restoredIcon);
-		std::cout << "[Archipelago] Icons restored to " << restoredIcon << std::endl;
+		APLogger::print("Icons restored to %i\n", restoredIcon);
 	}
 	savedIcon = 39;
 }
@@ -69,13 +70,13 @@ void APTraps::run()
 	bool icon_exists = exists(TrapIconInFile);
 
 	if (sudden_exists) {
-		std::cout << "[Archipelago] Trap < Sudden" << std::endl;
+		APLogger::print("Trap < Sudden\n");
 		setModifier(DIVA_MODIFIERS::Sudden);
 		remove(TrapSuddenInFile.c_str());
 	}
 
 	if (hidden_exists) {
-		std::cout << "[Archipelago] Trap < Hidden" << std::endl;
+		APLogger::print("Trap < Hidden\n");
 		setModifier(DIVA_MODIFIERS::Hidden);
 		remove(TrapHiddenInFile.c_str());
 	}
@@ -85,12 +86,12 @@ void APTraps::run()
 
 	auto deltaModifier = now - timestampModifier;
 	if (getCurrentModifier() > 0 && trapDuration > 0 && deltaModifier >= trapDuration) {
-		std::cout << "[Archipelago] Trap > Modifier " << getCurrentModifier() << " expired" << std::endl;
+		APLogger::print("Trap > Modifier %i expired\n", getCurrentModifier());
 		setModifier(DIVA_MODIFIERS::None);
 	}
 
 	if (icon_exists) {
-		std::cout << "[Archipelago] Trap < Icon" << std::endl;
+		APLogger::print("Trap < Icon\n");
 		timestampIconStart = now;
 		rollIcon();
 		remove(TrapIconInFile.c_str());
@@ -109,7 +110,7 @@ void APTraps::run()
 			}
 		}
 		else {
-			std::cout << "[Archipelago] Trap > Icon expired" << std::endl;
+			APLogger::print("Trap > Icon expired\n");
 			resetIcon();
 		}
 	}

@@ -1,7 +1,9 @@
 #include "APIDHandler.h"
+#include "APLogger.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <Windows.h>
 
 APIDHandler::APIDHandler() {
@@ -20,7 +22,7 @@ bool APIDHandler::checkNC()
 	HMODULE hModule = GetModuleHandle(L"NewClassics.dll");
 
 	if (hModule != NULL) {
-		std::cout << "[Archipelago] New Classics suspected, reload recommended" << std::endl;
+		APLogger::print("IDH: New Classics suspected, reload recommended\n");
 		return true;
 	}
 
@@ -47,7 +49,7 @@ bool APIDHandler::check(std::string& line)
 
 void APIDHandler::reset()
 {
-	//std::cout << "[Archipelago] ID Handler reset" << std::endl;
+	//APLogger::print("IDHandler reset\n");
 	unlock();
 	freeplay = false;
 	toggleIDs.clear();
@@ -65,30 +67,29 @@ void APIDHandler::update()
 	std::ifstream file(SongListFile);
 
 	if (file.is_open()) {
-		std::cout << "[Archipelago] Toggle IDs: ";
+		std::stringstream toggled;
 
 		while (std::getline(file, buf)) {
 			try {
 				auto pvID = std::stoi(buf);
-
-				std::cout << buf << " ";
 
 				if (pvID == 0) {
 					freeplay = true;
 					continue;
 				}
 
-				add(std::stoi(buf));
+				add(pvID);
+				toggled << buf << " ";
 			}
 			catch (std::invalid_argument const& ex) {
-				std::cout << "(inv: " << buf << ") ";
+				APLogger::print("IDH > %s : %s\n", ex.what(), buf);
 			}
 			catch (std::out_of_range const& ex) {
-				std::cout << "(range: " << buf << ") ";
+				APLogger::print("IDH > %s : %s\n", ex.what(), buf);
 			}
 		}
 
-		std::cout << "(freeplay: " << freeplay << ")" << std::endl;
+		APLogger::print("IDH > Toggle IDs %s(freeplay: %i)\n", toggled.str().c_str(), freeplay);
 	}
 
 	file.close();
@@ -97,7 +98,7 @@ void APIDHandler::update()
 void APIDHandler::add(int newID)
 {
 	if (reload_needed) {
-		std::cout << "[Archipelago] Attempted to add " << newID << " but a reload is needed" << std::endl;
+		APLogger::print("IDH > Attempted to add %i but a reload is needed\n", newID);
 		return;
 	}
 

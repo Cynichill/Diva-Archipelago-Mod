@@ -1,4 +1,5 @@
 #include "APDeathLink.h"
+#include "APLogger.h"
 #include "Helpers.h"
 #include "pch.h"
 #include <filesystem>
@@ -15,12 +16,12 @@ void APDeathLink::config(toml::v3::ex::parse_result& data)
     std::string config_percent = data["deathlink_percent"].value_or(std::to_string(percent));
     percent = std::clamp(std::stoi(config_percent), 0, 100);
 
-    std::cout << "[Archipelago] deathlink_percent set to " << percent << " (config: " << config_percent << ")" << std::endl;
+    APLogger::print("deathlink_percent set to %i (config: %s)\n", percent, config_percent);
 
     std::string config_safety = data["deathlink_safety"].value_or(std::to_string(safety));
     safety = std::clamp(std::stof(config_safety), 0.0f, 30.0f);
 
-    std::cout << "[Archipelago] deathlink_safety set to " << safety << " (config: " << config_safety << ")" << std::endl;
+    APLogger::print("deathlink_safety set to %.02f (config: %s)\n", safety, config_safety);
 
     reset();
 }
@@ -36,14 +37,14 @@ int APDeathLink::touch()
 
 	if (!exists()) {
         std::ofstream death_link_out(DeathLinkOutFile);
-        
+
         if (!death_link_out.is_open()) {
-            std::cout << "[Archipelago] DeathLink > Failed to send death_link_out" << std::endl;
+            APLogger::print("DeathLink > Failed to send death_link_out\n");
             return 1;
         }
 
         death_link_out.close();
-        std::cout << "[Archipelago] DeathLink > Sending death_link_out" << std::endl;
+        APLogger::print("DeathLink > Sending death_link_out\n");
 	}
 
 	return 0;
@@ -51,7 +52,7 @@ int APDeathLink::touch()
 
 void APDeathLink::reset()
 {
-    std::cout << "[Archipelago] DeathLink: deathLinked = " << deathLinked << " -> " << false << std::endl;
+    APLogger::print("DeathLink: deathLinked = %i -> 0\n", deathLinked);
 
     deathLinked = false;
     remove(DeathLinkInFile.c_str());
@@ -61,7 +62,7 @@ void APDeathLink::reset()
 void APDeathLink::fail()
 {
     if (deathLinked) {
-        std::cout << "[Archipelago] DeathLink > Fail: Already dying" << std::endl;
+        APLogger::print("DeathLink > Fail: Already dying\n");
         return;
     }
 
@@ -69,7 +70,7 @@ void APDeathLink::fail()
 
     if (deltaLast < safety) {
         deathLinked = true;
-        std::cout << "[Archipelago] DeathLink > Fail: Died in safety window" << std::endl;
+        APLogger::print("DeathLink > Fail: Died in safety window\n");
         return;
     }
 
@@ -91,7 +92,7 @@ void APDeathLink::run()
     if (deathLinked || !exists())
         return;
 
-    std::cout << "[Archipelago] DeathLink < death_link_in" << std::endl;
+    APLogger::print("DeathLink < death_link_in\n");
 
     lastDeathLink = *(float*)DivaGameTimer;
 

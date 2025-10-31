@@ -26,7 +26,7 @@ namespace EnableDebugMode
 
 	// Function to print debug information
 	void PrintDebugInfo() {
-		std::cout << "Reload key code: " << static_cast<int>(reloadKeyCode) << std::endl;
+		printf("[Archipelago] Reload key code: %i\n", static_cast<int>(reloadKeyCode));
 	}
 
 	std::string getAndPrintReloadValue(const std::string& filename) {
@@ -39,7 +39,8 @@ namespace EnableDebugMode
 		try {
 			auto data = toml::parse(file);
 			std::string reloadValue = data["reload"].value_or(""); // Retrieve the value associated with "reload"
-			std::cout << "Reload value: " << reloadValue << std::endl; // Print the reload value
+			if (GetConsoleWindow())
+				printf("[Archipelago] Reload value: %s\n", reloadValue.c_str()); // Print the reload value
 			return reloadValue; // Return the reload value
 		}
 		catch (const std::exception& e) {
