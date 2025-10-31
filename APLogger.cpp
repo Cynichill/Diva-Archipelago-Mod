@@ -4,7 +4,7 @@
 
 void APLogger::print(const char* const fmt, ...)
 {
-    static bool console = GetConsoleWindow();
+    static bool console = GetConsoleWindow() != NULL;
 
     if (!console)
         return;
