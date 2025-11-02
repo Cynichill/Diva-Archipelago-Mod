@@ -35,7 +35,7 @@ namespace EnableDebugMode
 	std::string getAndPrintReloadValue(const std::filesystem::path& filename) {
 		std::ifstream file(filename);
 		if (!file.is_open()) {
-			printf("Error opening file: %s", filename.string().c_str());
+			printf("Error opening file: %s\n", filename.string().c_str());
 			return "";
 		}
 
@@ -47,7 +47,7 @@ namespace EnableDebugMode
 			return reloadValue; // Return the reload value
 		}
 		catch (const std::exception& e) {
-			printf("Error parsing TOML file: %s", e.what());
+			printf("Error parsing TOML file: %s\n", e.what());
 			return "";
 		}
 	}
