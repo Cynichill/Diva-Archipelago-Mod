@@ -4,7 +4,7 @@
 
 void APLogger::print(const char* const fmt, ...)
 {
-    if (GetConsoleWindow()) {
+    if (GetConsoleWindow() != NULL) {
         printf("[Archipelago] ");
         va_list args;
         va_start(args, fmt);
