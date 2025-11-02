@@ -191,7 +191,7 @@ extern "C"
 {
     void __declspec(dllexport) Init()
     {
-        if (freopen("CONOUT$", "w", stdout) == NULL) {}
+        freopen("CONOUT$", "w", stdout);
 
         INSTALL_HOOK(_MMUIResult);
         INSTALL_HOOK(_FTUIResult);

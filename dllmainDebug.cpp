@@ -1,9 +1,10 @@
-#include "MemSigScan.h"
 #include "deck.h"
-#include <chrono>
-#include <thread>
+#include "MemSigScan.h"
 #include "pch.h"
 #include "virtualKey.h"
+#include <chrono>
+#include <filesystem>
+#include <thread>
 
 using namespace GameStates;
 
@@ -24,15 +25,17 @@ namespace EnableDebugMode
 	// Initialize reload key code
 	static u8 reloadKeyCode;
 
+	const std::filesystem::path LocalPath = std::filesystem::current_path();
+
 	// Function to print debug information
 	void PrintDebugInfo() {
 		printf("[Archipelago] Reload key code: %i\n", static_cast<int>(reloadKeyCode));
 	}
 
-	std::string getAndPrintReloadValue(const std::string& filename) {
+	std::string getAndPrintReloadValue(const std::filesystem::path& filename) {
 		std::ifstream file(filename);
 		if (!file.is_open()) {
-			std::cerr << "Error opening file: " << filename << std::endl;
+			printf("Error opening file: %s", filename.c_str());
 			return "";
 		}
 
@@ -44,7 +47,7 @@ namespace EnableDebugMode
 			return reloadValue; // Return the reload value
 		}
 		catch (const std::exception& e) {
-			std::cerr << "Error parsing TOML file: " << e.what() << std::endl;
+			printf("Error parsing TOML file: %s", e.what());
 			return "";
 		}
 	}
@@ -55,7 +58,7 @@ namespace EnableDebugMode
 	{
 		if (reloadVal == "")
 		{
-			reloadVal = getAndPrintReloadValue("mods/ArchipelagoMod/config.toml");
+			reloadVal = getAndPrintReloadValue(LocalPath / "config.toml");
 			reloadKeyCode = GetReloadKeyCode(reloadVal);
 		}
 		if (IsMainWindowFocused && IsKeyPressed(reloadKeyCode)) {
