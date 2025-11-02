@@ -35,7 +35,7 @@ namespace EnableDebugMode
 	std::string getAndPrintReloadValue(const std::filesystem::path& filename) {
 		std::ifstream file(filename);
 		if (!file.is_open()) {
-			printf("Error opening file: %s", filename.c_str());
+			printf("Error opening file: %s", filename.string().c_str());
 			return "";
 		}
 
@@ -137,6 +137,7 @@ extern "C"
 {
 	__declspec(dllexport) void PreInit()
 	{
+		freopen("CONOUT$", "w", stdout);
 		EnableDebugMode::OnPluginInitialize();
 	}
 }
