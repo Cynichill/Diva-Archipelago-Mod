@@ -137,7 +137,6 @@ extern "C"
 {
 	__declspec(dllexport) void PreInit()
 	{
-		freopen("CONOUT$", "w", stdout);
 		EnableDebugMode::OnPluginInitialize();
 	}
 }
