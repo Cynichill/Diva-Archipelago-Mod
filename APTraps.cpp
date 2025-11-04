@@ -60,6 +60,9 @@ void APTraps::run()
 {
 	auto now = *(float*)DivaGameTimer;
 
+	if (lastRun > now)
+		lastRun = now;
+
 	if (now - lastRun < 0.1)
 		return;
 

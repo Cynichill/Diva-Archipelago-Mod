@@ -65,7 +65,11 @@ void APDeathLink::fail()
         return;
     }
 
-    auto deltaLast = *(float*)DivaGameTimer - lastDeathLink;
+    auto now = *(float*)DivaGameTimer;
+    if (lastDeathLink > now)
+        lastDeathLink = now;
+
+    auto deltaLast = now - lastDeathLink;
 
     if (deltaLast < safety) {
         deathLinked = true;
