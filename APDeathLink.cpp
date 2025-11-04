@@ -51,9 +51,10 @@ int APDeathLink::touch()
 
 void APDeathLink::reset()
 {
-    APLogger::print("DeathLink: deathLinked = %i -> 0\n", deathLinked);
+    APLogger::print("DeathLink: reset\n", deathLinked);
 
     deathLinked = false;
+    lastDeathLink = 0;
     fs::remove(LocalPath / DeathLinkInFile);
     fs::remove(LocalPath / DeathLinkOutFile);
 }
@@ -73,7 +74,7 @@ void APDeathLink::fail()
 
     if (deltaLast < safety) {
         deathLinked = true;
-        APLogger::print("DeathLink > Fail: Died in safety window\n");
+        APLogger::print("DeathLink > Fail: Died in safety window @ %.02f + %.02f < %.02f\n", lastDeathLink, deltaLast, lastDeathLink + safety);
         return;
     }
 
@@ -85,8 +86,11 @@ void APDeathLink::run()
     auto now = *(float*)DivaGameTimer;
 
     // Avoid stopping the fade in from white animation at the start of a song.
-    if (now == 0.0f)
+    if (now == 0.0f) {
+        if (lastDeathLink != 0)
+            reset();
         return;
+    }
 
     int currentHP = *(uint8_t*)DivaGameHP;
 
@@ -97,7 +101,7 @@ void APDeathLink::run()
     if (deathLinked || !exists())
         return;
 
-    APLogger::print("DeathLink < death_link_in\n");
+    APLogger::print("DeathLink < death_link_in @ %.02f\n", now);
 
     lastDeathLink = now;
 
