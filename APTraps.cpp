@@ -30,8 +30,13 @@ void APTraps::config(toml::v3::ex::parse_result& data)
 
 int APTraps::reset()
 {
+	APLogger::print("Traps: reset\n");
+
 	resetIcon();
 	setModifier(DIVA_MODIFIERS::None);
+	timestampModifier = 0;
+	lastRun = 0;
+
 	//fs::remove(LocalPath / TrapIconInFile);
 
 	return 0;
@@ -60,8 +65,10 @@ void APTraps::run()
 {
 	auto now = *(float*)DivaGameTimer;
 
-	if (lastRun > now)
-		lastRun = now;
+	if (now == 0.0f && lastRun > 0) {
+		reset();
+		return;
+	}
 
 	if (now - lastRun < 0.1)
 		return;
@@ -73,13 +80,13 @@ void APTraps::run()
 	bool icon_exists = exists(TrapIconInFile);
 
 	if (sudden_exists) {
-		APLogger::print("Trap < Sudden\n");
+		APLogger::print("[%6.2f] Trap < Sudden\n", now);
 		setModifier(DIVA_MODIFIERS::Sudden);
 		fs::remove(LocalPath / TrapSuddenInFile);
 	}
 
 	if (hidden_exists) {
-		APLogger::print("Trap < Hidden\n");
+		APLogger::print("[%6.2f] Trap < Hidden\n", now);
 		setModifier(DIVA_MODIFIERS::Hidden);
 		fs::remove(LocalPath / TrapHiddenInFile);
 	}
@@ -89,12 +96,12 @@ void APTraps::run()
 
 	auto deltaModifier = now - timestampModifier;
 	if (getCurrentModifier() > 0 && trapDuration > 0 && deltaModifier >= trapDuration) {
-		APLogger::print("Trap > Modifier %i expired\n", getCurrentModifier());
+		APLogger::print("[%6.2f] Trap > Modifier %i expired\n", now, getCurrentModifier());
 		setModifier(DIVA_MODIFIERS::None);
 	}
 
 	if (icon_exists) {
-		APLogger::print("Trap < Icon\n");
+		APLogger::print("[%6.2f] Trap < Icon\n", now);
 		timestampIconStart = now;
 		rollIcon();
 		fs::remove(LocalPath / TrapIconInFile);
@@ -113,7 +120,7 @@ void APTraps::run()
 			}
 		}
 		else {
-			APLogger::print("Trap > Icon expired\n");
+			APLogger::print("[%6.2f] Trap > Icon expired\n", now);
 			resetIcon();
 		}
 	}

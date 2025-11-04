@@ -74,7 +74,8 @@ void APDeathLink::fail()
 
     if (deltaLast < safety) {
         deathLinked = true;
-        APLogger::print("DeathLink > Fail: Died in safety window @ %.02f + %.02f < %.02f\n", lastDeathLink, deltaLast, lastDeathLink + safety);
+        APLogger::print("[%6.2f] DeathLink > Fail: Died in safety window (%.02f + %.02f < %.02f)\n",
+                        now, lastDeathLink, deltaLast, lastDeathLink + safety);
         return;
     }
 
@@ -101,7 +102,7 @@ void APDeathLink::run()
     if (deathLinked || !exists())
         return;
 
-    APLogger::print("DeathLink < death_link_in @ %.02f\n", now);
+    APLogger::print("[%6.2f] DeathLink < death_link_in\n", now);
 
     lastDeathLink = now;
 
