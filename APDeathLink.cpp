@@ -82,8 +82,10 @@ void APDeathLink::fail()
 
 void APDeathLink::run()
 {
+    auto now = *(float*)DivaGameTimer;
+
     // Avoid stopping the fade in from white animation at the start of a song.
-    if (*(float*)DivaGameTimer == 0.0f)
+    if (now == 0.0f)
         return;
 
     int currentHP = *(uint8_t*)DivaGameHP;
@@ -97,7 +99,7 @@ void APDeathLink::run()
 
     APLogger::print("DeathLink < death_link_in\n");
 
-    lastDeathLink = *(float*)DivaGameTimer;
+    lastDeathLink = now;
 
     int hit = (255 * percent) / 100 + 1;
     currentHP = std::clamp(currentHP - hit, 0, 255);
