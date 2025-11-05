@@ -59,8 +59,11 @@ void APDeathLink::reset()
     fs::remove(LocalPath / DeathLinkOutFile);
 }
 
-void APDeathLink::fail()
+void APDeathLink::check_fail()
 {
+    if (*(uint8_t*)DivaGameHP > 0)
+        return;
+
     if (deathLinked) {
         APLogger::print("DeathLink > Fail: Already dying\n");
         return;

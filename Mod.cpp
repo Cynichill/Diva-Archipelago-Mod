@@ -106,12 +106,6 @@ HOOK(void, __fastcall, _MMUIResult, 0x140649e10, long long a1) {
     original_MMUIResult(a1);
 };
 
-HOOK(void, __fastcall, _DeathLinkFail, 0x1514F0ED0) {
-    DeathLink.fail();
-
-    original_DeathLinkFail();
-};
-
 HOOK(void, __fastcall, _GameplayLoopTrigger, 0x140244BA0, long long a1) {
     // AOB: 48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 20 48 8B f9 33 DB E8 E7 91 03 00
     // TODO: Called rapidly during gameplay. A more precise function and name is preferred.
@@ -127,6 +121,7 @@ HOOK(void**, __fastcall, _GameplayEnd, 0x14023F9A0) {
     // Called right as the gameplay is ending/fading out. Early enough to scrub modifier use. Happens alongside FAILURE too.
     // The intent is to not let traps prevent keeping scores.
 
+    DeathLink.check_fail();
     Traps.reset();
 
     return original_GameplayEnd();
@@ -188,7 +183,6 @@ extern "C"
     {
         INSTALL_HOOK(_MMUIResult);
         INSTALL_HOOK(_FTUIResult);
-        INSTALL_HOOK(_DeathLinkFail);
         INSTALL_HOOK(_GameplayLoopTrigger);
         INSTALL_HOOK(_GameplayEnd);
         INSTALL_HOOK(_ReadDBLine);

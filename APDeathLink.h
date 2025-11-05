@@ -19,7 +19,7 @@ class APDeathLink
 		int touch();
 
 		void reset();
-		void fail();
+		void check_fail();
 		void run();
 
 	private:
