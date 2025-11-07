@@ -32,7 +32,8 @@ bool APIDHandler::checkNC()
 
 bool APIDHandler::check(std::string& line)
 {
-	if (reload_needed || !exists || line.find(".difficulty") == std::string::npos || line.rfind(".length") == std::string::npos)
+	// line.find(".difficulty") == std::string::npos || line.rfind(".length") == std::string::npos
+	if (reload_needed || !exists || line.find(".bpm") == std::string::npos)
 		return true;
 
 	size_t start = line.find_first_of("_");
