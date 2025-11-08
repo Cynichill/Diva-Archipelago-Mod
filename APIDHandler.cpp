@@ -32,17 +32,27 @@ bool APIDHandler::checkNC()
 
 bool APIDHandler::check(std::string& line)
 {
-	if (reload_needed || !exists || line.find(".difficulty") == std::string::npos || line.rfind(".length") == std::string::npos)
+	if (reload_needed || !exists)
+		return true;
+
+	size_t diff_pos = line.find(".difficulty.");
+	size_t len_pos = line.rfind(".length");
+
+	if (diff_pos == std::string::npos || len_pos == std::string::npos)
+		return true;
+
+	// Naively restrict to pv_#.difficulty.easy.length (difficulty and length already confirmed in the string)
+	if (3 != std::count(line.begin(), line.end(), '.'))
 		return true;
 
 	size_t start = line.find_first_of("_");
-	auto pvID = line.substr(start + 1, line.find_first_of(".") - start - 1);
+	int pvID = std::stoi(line.substr(start + 1, line.find_first_of(".") - start - 1));
 
 	// Always enabled to prevent softlocks or crashing.
-	if ("144" == pvID || "700" == pvID || "701" == pvID)
+	if (144 == pvID || 700 == pvID || 701 == pvID)
 		return true;
 
-	bool c = contains(std::stoi(pvID));
+	bool c = contains(pvID);
 
 	return freeplay ? !c : c;
 }
