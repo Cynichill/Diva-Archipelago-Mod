@@ -127,12 +127,18 @@ HOOK(void**, __fastcall, _GameplayEnd, 0x14023F9A0) {
     return original_GameplayEnd();
 }
 
-HOOK(unsigned long long**, __fastcall, _ReadDBLine, 0x14018b030, char a1, unsigned long long** pv_db_prop, unsigned long long** start, unsigned long long** end)
+HOOK(unsigned long long**, __fastcall, _ReadDBLine, 0x14018b030, uint64_t a1, unsigned long long** pv_db_prop, unsigned long long** start, unsigned long long** end)
 {
-    std::string line((char*)pv_db_prop[0], (char*)pv_db_prop[1] - (char*)pv_db_prop[0]);
+    if (!pv_db_prop || !pv_db_prop[0] || !pv_db_prop[1])
+        return original_ReadDBLine(a1, pv_db_prop, start, end);
+
+    const char* prop_start = reinterpret_cast<const char*>(pv_db_prop[0]);
+    const char* prop_end = reinterpret_cast<const char*>(pv_db_prop[1]);
+    std::string line(prop_start, prop_end - prop_start);
 
     if (line.find("pv_") != std::string::npos && !IDHandler.check(line))
         return nullptr;
+
 
     return original_ReadDBLine(a1, pv_db_prop, start, end);
 }
