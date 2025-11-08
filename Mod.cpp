@@ -164,7 +164,7 @@ void processConfig() {
     }
 }
 
-HOOK(void, __fastcall, _StateThunk, 0x1519e1650, long long a1, char* a2, long long* state_from, char* state_to) {
+HOOK(void, __fastcall, _StateThunk, 0x1519e1650, long long a1, unsigned char* a2, long long* state_from, char* state_to) {
     // State-change related. Not a fan of hooking the gamestate change directly.
 
     if (a1 == 10) { // The if comparison of stability.
