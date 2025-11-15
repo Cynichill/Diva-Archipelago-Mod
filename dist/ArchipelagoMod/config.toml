@@ -11,4 +11,4 @@ name = "Archipelago"
 author = "Cynichill"
 version = "1.2.0"
 dll = ["ArchipelagoMod.dll"]
-include = ["AP", "."]
+include = ["AP"]
