@@ -136,7 +136,7 @@ HOOK(unsigned long long**, __fastcall, _ReadDBLine, 0x14018b030, uint64_t a1, un
     const char* prop_end = reinterpret_cast<const char*>(pv_db_prop[1]);
     std::string line(prop_start, prop_end - prop_start);
 
-    if (line.find("pv_") != std::string::npos && !IDHandler.check(line))
+    if (line.find("pv_") == 0 && !IDHandler.check(line))
         return nullptr;
 
 
