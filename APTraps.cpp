@@ -15,12 +15,12 @@ void APTraps::config(toml::v3::ex::parse_result& data)
 	std::string config_duration = data["trap_duration"].value_or(std::to_string(trapDuration));
 	trapDuration = std::clamp(std::stof(config_duration), 0.0f, 180.0f);
 
-	APLogger::print("trap_duration: %.02f (config: %s)\n", trapDuration, config_duration);
+	APLogger::print("trap_duration: %.02f (config: %s)\n", trapDuration, config_duration.c_str());
 
 	std::string config_iconinterval = data["icon_reroll"].value_or(std::to_string(iconInterval));
 	iconInterval = std::clamp(std::stof(config_iconinterval), 0.0f, 60.0f);
 
-	APLogger::print("icon_reroll: %.02f (config: %s)\n", iconInterval, config_iconinterval);
+	APLogger::print("icon_reroll: %.02f (config: %s)\n", iconInterval, config_iconinterval.c_str());
 
 	std::random_device rd;
 	mt.seed(rd());
@@ -126,9 +126,9 @@ void APTraps::run()
 	}
 }
 
-uint64_t APTraps::getGameControlConfig() const
+uint64_t APTraps::getGameControlConfig()
 {
-	static uint64_t GCC = reinterpret_cast<uint64_t(__fastcall*)(void)>(DivaGameControlConfig)();
+	uint64_t GCC = reinterpret_cast<uint64_t(__fastcall*)(void)>(DivaGameControlConfig)();
 	return GCC;
 }
 

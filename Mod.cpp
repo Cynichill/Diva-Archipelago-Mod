@@ -127,20 +127,19 @@ HOOK(void**, __fastcall, _GameplayEnd, 0x14023F9A0) {
     return original_GameplayEnd();
 }
 
-HOOK(unsigned long long**, __fastcall, _ReadDBLine, 0x14018b030, uint64_t a1, unsigned long long** pv_db_prop, unsigned long long** start, unsigned long long** end)
+HOOK(char**, __fastcall, _ReadDBLine, 0x1404c5950, uint64_t a1, char** pv_db_prop)
 {
-    if (!pv_db_prop || !pv_db_prop[0] || !pv_db_prop[1])
-        return original_ReadDBLine(a1, pv_db_prop, start, end);
+    std::string line(pv_db_prop[0], pv_db_prop[1]);
+    char** original = original_ReadDBLine(a1, pv_db_prop);
 
-    const char* prop_start = reinterpret_cast<const char*>(pv_db_prop[0]);
-    const char* prop_end = reinterpret_cast<const char*>(pv_db_prop[1]);
-    std::string line(prop_start, prop_end - prop_start);
+    if (original_ReadDBLine(a1, pv_db_prop) != nullptr && !IDHandler.check(line)) {
+        // Probably bad but not the worst? The idea is to persist the 0 length to whatever may refer to it past this function.
+        // The alternative was returning a static char.
+        strcpy(*original, "0");
+        return original;
+    }
 
-    if (line.find("pv_") == 0 && !IDHandler.check(line))
-        return nullptr;
-
-
-    return original_ReadDBLine(a1, pv_db_prop, start, end);
+    return original_ReadDBLine(a1, pv_db_prop);
 }
 
 void processConfig() {

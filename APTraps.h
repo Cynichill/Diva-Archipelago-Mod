@@ -41,7 +41,7 @@ class APTraps
 		const fs::path TrapIconInFile = "icontrap";
 
 		bool exists(const fs::path& in);
-		uint64_t getGameControlConfig() const;
+		uint64_t getGameControlConfig();
 		uint64_t getIconAddress();
 		int getCurrentModifier();
 

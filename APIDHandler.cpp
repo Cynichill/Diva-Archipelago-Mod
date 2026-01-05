@@ -32,7 +32,7 @@ bool APIDHandler::checkNC()
 
 bool APIDHandler::check(std::string& line)
 {
-	if (reload_needed || !exists)
+	if (reload_needed || !exists || line.find("pv_") != 0)
 		return true;
 
 	size_t diff_pos = line.find(".difficulty.");
@@ -99,7 +99,12 @@ void APIDHandler::update()
 			}
 		}
 
-		APLogger::print("IDH < Toggle IDs %s(freeplay: %i)\n", toggled.str().c_str(), freeplay);
+		APLogger::print("IDH < Toggle IDs (FP: %i) %s\n", freeplay, toggled.str().c_str());
+	}
+	else {
+		toggleIDs.clear();
+
+		APLogger::print("IDH < No list, clear\n");
 	}
 
 	file.close();

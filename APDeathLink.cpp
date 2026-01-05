@@ -15,12 +15,12 @@ void APDeathLink::config(toml::v3::ex::parse_result& data)
     std::string config_percent = data["deathlink_percent"].value_or(std::to_string(percent));
     percent = std::clamp(std::stoi(config_percent), 0, 100);
 
-    APLogger::print("deathlink_percent set to %i (config: %s)\n", percent, config_percent);
+    APLogger::print("deathlink_percent set to %i (config: %s)\n", percent, config_percent.c_str());
 
     std::string config_safety = data["deathlink_safety"].value_or(std::to_string(safety));
     safety = std::clamp(std::stof(config_safety), 0.0f, 30.0f);
 
-    APLogger::print("deathlink_safety set to %.02f (config: %s)\n", safety, config_safety);
+    APLogger::print("deathlink_safety set to %.02f (config: %s)\n", safety, config_safety.c_str());
 
     reset();
 }
