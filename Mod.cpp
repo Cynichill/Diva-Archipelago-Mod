@@ -127,12 +127,11 @@ HOOK(void**, __fastcall, _GameplayEnd, 0x14023F9A0) {
     return original_GameplayEnd();
 }
 
-HOOK(char**, __fastcall, _ReadDBLine, 0x1404C5950, uint64_t a1, char** pv_db_prop)
-{
+HOOK(char**, __fastcall, _ReadDBLine, 0x1404C5950, uint64_t a1, char** pv_db_prop) {
     std::string line(pv_db_prop[0], pv_db_prop[1]);
     char** original = original_ReadDBLine(a1, pv_db_prop);
 
-    if (original != nullptr && !IDHandler.check(line))
+    if (original != nullptr && *original != nullptr && !IDHandler.check(line))
         *original[0] = '0';
 
     return original;
