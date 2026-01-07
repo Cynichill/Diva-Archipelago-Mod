@@ -15,7 +15,7 @@ void APDeathLink::config(toml::v3::ex::parse_result& data)
     std::string config_percent = data["deathlink_percent"].value_or(std::to_string(percent));
     percent = std::clamp(std::stoi(config_percent), 0, 100);
 
-    APLogger::print("deathlink_percent set to %i (config: %s)\n", percent, config_percent.c_str());
+    APLogger::print("deathlink_percent set to %d (config: %s)\n", percent, config_percent.c_str());
 
     std::string config_safety = data["deathlink_safety"].value_or(std::to_string(safety));
     safety = std::clamp(std::stof(config_safety), 0.0f, 30.0f);
@@ -51,7 +51,7 @@ int APDeathLink::touch()
 
 void APDeathLink::reset()
 {
-    APLogger::print("DeathLink: reset\n", deathLinked);
+    APLogger::print("DeathLink: reset\n");
 
     deathLinked = false;
     lastDeathLink = 0;

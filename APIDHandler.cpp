@@ -99,7 +99,7 @@ void APIDHandler::update()
 			}
 		}
 
-		APLogger::print("IDH < Toggle IDs (FP: %i) %s\n", freeplay, toggled.str().c_str());
+		APLogger::print("IDH < Toggle IDs (FP: %d) %s\n", freeplay, toggled.str().c_str());
 	}
 	else {
 		toggleIDs.clear();
@@ -113,7 +113,7 @@ void APIDHandler::update()
 void APIDHandler::add(int newID)
 {
 	if (reload_needed) {
-		APLogger::print("IDH < Attempted to add %i but a reload is needed\n", newID);
+		APLogger::print("IDH < Attempted to add %d but a reload is needed\n", newID);
 		return;
 	}
 

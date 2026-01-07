@@ -21,7 +21,7 @@ void APTraps::config(toml::v3::ex::parse_result& data)
 	APLogger::print("icon_reroll: %.02f (config: %s)\n", iconInterval, config_iconinterval.c_str());
 
 	suhidden = data["suhidden"].value_or(false);
-	APLogger::print("suhidden: %d\n", suhidden, data["suhidden"]);
+	APLogger::print("suhidden: %d\n", suhidden);
 
 	std::random_device rd;
 	mt.seed(rd());
@@ -53,7 +53,7 @@ void APTraps::resetIcon()
 	int restoredIcon = ((savedIcon <= 12 && savedIcon >= 0) ? savedIcon : 4);
 	if (getCurrentIcon() != restoredIcon) {
 		WRITE_MEMORY(getIconAddress(), uint8_t, (uint8_t)restoredIcon);
-		APLogger::print("Icons restored to %i\n", restoredIcon);
+		APLogger::print("Icons restored to %d\n", restoredIcon);
 	}
 	savedIcon = 39;
 }
