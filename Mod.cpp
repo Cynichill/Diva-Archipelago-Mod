@@ -178,11 +178,11 @@ HOOK(void, __fastcall, _StateThunk, 0x1519e1650, long long a1, unsigned char* a2
 }
 
 HOOK(bool, __fastcall, _ModifierSudden, 0x14024b720, long long a1) {
-    return Traps.isSudden || original_ModifierSudden(a1);
+    return Traps.isSudden ? true : original_ModifierSudden(a1);
 }
 
 HOOK(bool, __fastcall, _ModifierHidden, 0x14024b730, long long a1) {
-    return Traps.isHidden || original_ModifierSudden(a1);
+    return Traps.isHidden ? true : original_ModifierHidden(a1);
 }
 
 extern "C"
