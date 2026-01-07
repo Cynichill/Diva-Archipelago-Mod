@@ -29,12 +29,15 @@ class APTraps
 		std::mt19937 mt;
 		std::uniform_int_distribution<int> dist;
 
+		// Config
 		float trapDuration = 15.0f;
 		float iconInterval = 60.0f;
 		float timestampSudden = 0.0f;
 		float timestampHidden = 0.0f;
 		float timestampIconStart = 0.0f;
 		float timestampIconLast = 0.0f;
+		bool suhidden = false;
+
 		float lastRun = 0.0f; // For delta time against APTraps::DivaGameTimer
 
 		const fs::path LocalPath = fs::current_path();

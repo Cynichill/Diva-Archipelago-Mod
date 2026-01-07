@@ -14,13 +14,14 @@ void APTraps::config(toml::v3::ex::parse_result& data)
 {
 	std::string config_duration = data["trap_duration"].value_or(std::to_string(trapDuration));
 	trapDuration = std::clamp(std::stof(config_duration), 0.0f, 180.0f);
-
 	APLogger::print("trap_duration: %.02f (config: %s)\n", trapDuration, config_duration.c_str());
 
 	std::string config_iconinterval = data["icon_reroll"].value_or(std::to_string(iconInterval));
 	iconInterval = std::clamp(std::stof(config_iconinterval), 0.0f, 60.0f);
-
 	APLogger::print("icon_reroll: %.02f (config: %s)\n", iconInterval, config_iconinterval.c_str());
+
+	suhidden = data["suhidden"].value_or(false);
+	APLogger::print("suhidden: %d\n", suhidden, data["suhidden"]);
 
 	std::random_device rd;
 	mt.seed(rd());
@@ -84,6 +85,12 @@ void APTraps::run()
 		fs::remove(LocalPath / TrapSuddenInFile);
 		timestampSudden = now;
 		isSudden = true;
+
+		if (!suhidden && isHidden) {
+			APLogger::print("[%6.2f] Trap < Hidden -> Sudden\n", now);
+			timestampHidden = 0.0f;
+			isHidden = false;
+		}
 	}
 	else if (isSudden) {
 		auto deltaSudden = now - timestampSudden;
@@ -99,6 +106,12 @@ void APTraps::run()
 		fs::remove(LocalPath / TrapHiddenInFile);
 		timestampHidden = now;
 		isHidden = true;
+
+		if (!suhidden && isSudden) {
+			APLogger::print("[%6.2f] Trap < Sudden -> Hidden\n", now);
+			timestampSudden = 0.0f;
+			isSudden = false;
+		}
 	}
 	else if (isHidden) {
 		auto deltaHidden = now - timestampHidden;
