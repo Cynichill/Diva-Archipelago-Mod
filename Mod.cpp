@@ -131,7 +131,7 @@ HOOK(char**, __fastcall, _ReadDBLine, 0x1404C5950, uint64_t a1, char** pv_db_pro
     std::string line(pv_db_prop[0], pv_db_prop[1]);
     char** original = original_ReadDBLine(a1, pv_db_prop);
 
-    if (original != nullptr && !IDHandler.check(line))
+    if (original != nullptr && **original >= '0' && **original <= '2' && !IDHandler.check(line))
         **original = '0';
 
     return original;
@@ -177,6 +177,14 @@ HOOK(void, __fastcall, _StateThunk, 0x1519e1650, long long a1, unsigned char* a2
     original_StateThunk(a1, a2, state_from, state_to);
 }
 
+HOOK(bool, __fastcall, _ModifierSudden, 0x14024b720, long long a1) {
+    return Traps.isSudden || original_ModifierSudden(a1);
+}
+
+HOOK(bool, __fastcall, _ModifierHidden, 0x14024b730, long long a1) {
+    return Traps.isHidden || original_ModifierSudden(a1);
+}
+
 extern "C"
 {
     void __declspec(dllexport) Init()
@@ -187,5 +195,7 @@ extern "C"
         INSTALL_HOOK(_GameplayEnd);
         INSTALL_HOOK(_ReadDBLine);
         INSTALL_HOOK(_StateThunk);
+        INSTALL_HOOK(_ModifierSudden);
+        INSTALL_HOOK(_ModifierHidden);
     }
 }

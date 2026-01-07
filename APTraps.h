@@ -18,11 +18,12 @@ class APTraps
 		void run();
 
 		uint8_t savedIcon = 39;
-		uint8_t appliedModifier = 0;
+		bool isSudden = false; // Had trouble with this as a bool(timestamp > 0)
+		bool isHidden = false; // Had trouble with this as a bool(timestamp > 0)
 
 	private:
 		const uint64_t DivaGameControlConfig = 0x00000001401D6520;
-		const uint64_t DivaGameModifier = 0x00000001412EF450;
+		//const uint64_t DivaGameModifier = 0x00000001412EF450;
 		const uint64_t DivaGameTimer = 0x00000001412EE340;
 
 		std::mt19937 mt;
@@ -30,7 +31,8 @@ class APTraps
 
 		float trapDuration = 15.0f;
 		float iconInterval = 60.0f;
-		float timestampModifier = 0.0f;
+		float timestampSudden = 0.0f;
+		float timestampHidden = 0.0f;
 		float timestampIconStart = 0.0f;
 		float timestampIconLast = 0.0f;
 		float lastRun = 0.0f; // For delta time against APTraps::DivaGameTimer
@@ -43,10 +45,8 @@ class APTraps
 		bool exists(const fs::path& in);
 		uint64_t getGameControlConfig();
 		uint64_t getIconAddress();
-		int getCurrentModifier();
 
 		uint8_t getCurrentIcon();
-		void setModifier(int index);
 		void rollIcon();
 };
 
