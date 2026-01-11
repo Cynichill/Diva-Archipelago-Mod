@@ -159,14 +159,24 @@ void processConfig() {
 }
 
 HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate) {
+    //APLogger::print("%d / %d\n", state, substate);
+    static bool skipped = false;
+
     if (state == 2 && substate == 47 || state == 12 && substate == 5) {
         Traps.reset();
     } else if (state == 3) {
+        skipped = false;
         IDHandler.update();
-    } else if (state == 9) {
+    } else if (state == 9 && substate == 47) {
         IDHandler.reload_needed = false;
         IDHandler.unlock();
         processConfig();
+
+        if (skipped == false) {
+            skipped = true;
+            original_ChangeGameSubState(2, 47);
+            return;
+        }
     }
 
     original_ChangeGameSubState(state, substate);
