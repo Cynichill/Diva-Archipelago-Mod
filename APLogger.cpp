@@ -29,5 +29,5 @@ void APLogger::print(const char* const fmt, ...)
 
     // Something is causing problems with the output reaching the console under Wine.
     // Probably the PreInit in dllmainDebug. "Temporary" long term fix.
-    //fflush(stdout);
+    fflush(stdout);
 }

@@ -131,7 +131,7 @@ HOOK(char**, __fastcall, _ReadDBLine, 0x1404C5950, uint64_t a1, char** pv_db_pro
     std::string line(pv_db_prop[0], pv_db_prop[1]);
     char** original = original_ReadDBLine(a1, pv_db_prop);
 
-    if (original != nullptr && **original >= '0' && **original <= '2' && !IDHandler.check(line))
+    if (original != nullptr && **original >= '1' && **original <= '2' && !IDHandler.check(line))
         **original = '0';
 
     return original;
@@ -158,23 +158,18 @@ void processConfig() {
     }
 }
 
-HOOK(void, __fastcall, _StateThunk, 0x1519e1650, long long a1, unsigned char* a2, long long* state_from, char* state_to) {
-    // State-change related. Not a fan of hooking the gamestate change directly.
-
-    if (a1 == 10) { // The if comparison of stability.
-        if (strcmp(state_to, "DATA_TEST") == 0)
-            IDHandler.reload_needed = false;
-
-        if (strcmp(state_to, "DATA_TEST") == 0 || strcmp(state_to, "STARTUP") == 0)
-            IDHandler.update();
-
-        if (strcmp(state_to, "ADVERTISE") == 0) {
-            IDHandler.unlock();
-            processConfig();
-        }
+HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate) {
+    if (state == 2 && substate == 47 || state == 12 && substate == 5) {
+        Traps.reset();
+    } else if (state == 3) {
+        IDHandler.update();
+    } else if (state == 9) {
+        IDHandler.reload_needed = false;
+        IDHandler.unlock();
+        processConfig();
     }
 
-    original_StateThunk(a1, a2, state_from, state_to);
+    original_ChangeGameSubState(state, substate);
 }
 
 HOOK(bool, __fastcall, _ModifierSudden, 0x14024b720, long long a1) {
@@ -194,7 +189,7 @@ extern "C"
         INSTALL_HOOK(_GameplayLoopTrigger);
         INSTALL_HOOK(_GameplayEnd);
         INSTALL_HOOK(_ReadDBLine);
-        INSTALL_HOOK(_StateThunk);
+        INSTALL_HOOK(_ChangeGameSubState);
         INSTALL_HOOK(_ModifierSudden);
         INSTALL_HOOK(_ModifierHidden);
     }

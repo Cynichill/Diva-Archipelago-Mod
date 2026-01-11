@@ -67,7 +67,7 @@ void APIDHandler::reset()
 
 void APIDHandler::update()
 {
-	if (reloading || checkNC())
+	if (reloading /* || checkNC() */)
 		return;
 
 	reset();
