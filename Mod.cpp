@@ -168,14 +168,14 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate
     } else if (state == 3) {
         skipped = false;
         IDHandler.update();
-    } else if (state == 9 && substate == 47) {
+    } else if (state == 9 && substate == 47 || state == 6 && substate == 47) {
         IDHandler.reload_needed = false;
         IDHandler.unlock();
         processConfig();
 
         if (skip_mainmenu && skipped == false) {
             skipped = true;
-            original_ChangeGameSubState(2, 47);
+            original_ChangeGameSubState(2, 5);
             return;
         }
     }
