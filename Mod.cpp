@@ -38,6 +38,7 @@ APTraps Traps;
 const fs::path LocalPath = fs::current_path();
 const fs::path ConfigTOML = "config.toml";
 const fs::path OutputFileName = "results.json";
+bool skip_mainmenu = false;
 
 // Difficulty percentage thresholds
 float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
@@ -141,7 +142,6 @@ void processConfig() {
     // Move to a class and do not do this on init time
 
     try {
-
         std::ifstream file(LocalPath / ConfigTOML); // CWD is the mod folder within Init
         if (!file.is_open()) {
             APLogger::print("Error opening config file: %s\n", ConfigTOML.c_str());
@@ -149,6 +149,7 @@ void processConfig() {
         }
 
         auto data = toml::parse(file);
+        skip_mainmenu = data["skip_mainmenu"].value_or(true);
 
         DeathLink.config(data);
         Traps.config(data);
@@ -172,7 +173,7 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate
         IDHandler.unlock();
         processConfig();
 
-        if (skipped == false) {
+        if (skip_mainmenu && skipped == false) {
             skipped = true;
             original_ChangeGameSubState(2, 47);
             return;
