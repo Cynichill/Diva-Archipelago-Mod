@@ -165,7 +165,7 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate
 
     if (state == 2 && substate == 47 || state == 12 && substate == 5) {
         Traps.reset();
-    } else if (state == 3) {
+    } else if (state == 0 || state == 3) {
         skipped = false;
         IDHandler.update();
     } else if (state == 9 && substate == 47 || state == 6 && substate == 47) {
@@ -174,6 +174,7 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate
         processConfig();
 
         if (skip_mainmenu && skipped == false) {
+            APLogger::print("Skipping main menu (state: %d)\n", state);
             skipped = true;
             original_ChangeGameSubState(2, 5);
             return;

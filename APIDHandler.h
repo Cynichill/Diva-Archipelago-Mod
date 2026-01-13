@@ -20,7 +20,7 @@ class APIDHandler
 		// reloading = false
 		void unlock();
 
-		// Do not modify while first_run is true. If empty, allow everything.
+		// Do not modify while reload_needed is true. If empty, allow everything.
 		// If freeplay is true these will be hidden instead.
 		std::vector<int> toggleIDs = { };
 
