@@ -21,6 +21,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: microsoft/setup-msbuild@v2
+    
+    - name: Build Cache
+      uses: actions/cache@v4
+      with:
+        key: ${{ runner.os }}-ap_build_cache
+        path: |
+          .\ArchipelagoMod\
+          .\x64\Release\
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -34,4 +42,4 @@ jobs:
       with:
         name: artifact-mod
         path: .\dist\*
-        compression-level: 9 # not my compute
+        compression-level: 1 # not my compute
