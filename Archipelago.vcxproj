@@ -87,6 +87,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="APLogger.h" />
     <ClInclude Include="APTraps.h" />
     <ClInclude Include="core_types.h" />
     <ClInclude Include="core_win32_hacks.h" />
@@ -102,6 +103,7 @@
     <ClInclude Include="virtualKey.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="APLogger.cpp" />
     <ClCompile Include="APTraps.cpp" />
     <ClCompile Include="APDeathLink.cpp" />
     <ClCompile Include="Dependencies\SigScan.cpp" />
