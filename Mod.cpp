@@ -126,30 +126,6 @@ HOOK(void**, __fastcall, _GameplayEnd, 0x14023F9A0) {
     return original_GameplayEnd();
 }
 
-HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate) {
-    //APLogger::print("%d / %d\n", state, substate);
-    static bool skipped = false;
-
-    if (state == 2 && substate == 47 || state == 12 && substate == 5) {
-        Traps.reset();
-    }
-    else if (state == 0 || state == 3) {
-        skipped = false;
-    }
-    else if (state == 9 && substate == 47 || state == 6 && substate == 47) {
-        processConfig();
-
-        if (skip_mainmenu && skipped == false) {
-            APLogger::print("Skipping main menu (state: %d)\n", state);
-            skipped = true;
-            original_ChangeGameSubState(2, 47);
-            return;
-        }
-    }
-
-    original_ChangeGameSubState(state, substate);
-}
-
 void processConfig() {
     // Move to a class and do not do this on init time
 
@@ -169,6 +145,28 @@ void processConfig() {
     catch (const std::exception& e) {
         APLogger::print("Error parsing config file: %s\n", e.what());
     }
+}
+
+HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate) {
+    //APLogger::print("%d / %d\n", state, substate);
+    static bool skipped = false;
+
+    if (state == 2 && substate == 47 || state == 12 && substate == 5) {
+        Traps.reset();
+    } else if (state == 0 || state == 3) {
+        skipped = false;
+    } else if (state == 9 && substate == 47 || state == 6 && substate == 47) {
+        processConfig();
+
+        if (skip_mainmenu && skipped == false) {
+            APLogger::print("Skipping main menu (state: %d)\n", state);
+            skipped = true;
+            original_ChangeGameSubState(2, 47);
+            return;
+        }
+    }
+
+    original_ChangeGameSubState(state, substate);
 }
 
 HOOK(bool, __fastcall, _ModifierSudden, 0x14024b720, long long a1) {
