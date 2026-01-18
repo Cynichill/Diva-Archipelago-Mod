@@ -94,7 +94,7 @@ void APTraps::run()
 	}
 	else if (isSudden) {
 		auto deltaSudden = now - timestampSudden;
-		if (deltaSudden >= trapDuration) {
+		if (trapDuration > 0.0f && deltaSudden >= trapDuration) {
 			APLogger::print("[%6.2f] Trap > Sudden expired\n", now);
 			timestampSudden = 0.0f;
 			isSudden = false;
@@ -115,7 +115,7 @@ void APTraps::run()
 	}
 	else if (isHidden) {
 		auto deltaHidden = now - timestampHidden;
-		if (deltaHidden >= trapDuration) {
+		if (trapDuration > 0.0f && deltaHidden >= trapDuration) {
 			APLogger::print("[%6.2f] Trap > Hidden expired\n", now);
 			timestampHidden = 0.0f;
 			isHidden = false;
@@ -141,7 +141,7 @@ void APTraps::run()
 				rollIcon();
 			}
 		}
-		else {
+		else if (trapDuration > 0.0f) {
 			APLogger::print("[%6.2f] Trap > Icon expired\n", now);
 			resetIcon();
 		}
