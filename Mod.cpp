@@ -176,7 +176,7 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate
         if (skip_mainmenu && skipped == false) {
             APLogger::print("Skipping main menu (state: %d)\n", state);
             skipped = true;
-            original_ChangeGameSubState(2, 5);
+            original_ChangeGameSubState(2, 47);
             return;
         }
     }
@@ -192,6 +192,30 @@ HOOK(bool, __fastcall, _ModifierHidden, 0x14024b730, long long a1) {
     return Traps.isHidden ? true : original_ModifierHidden(a1);
 }
 
+HOOK(void, __fastcall, _cust_crash, 0x1405946e0, long long* a1, unsigned int a2, char a3, long long a4) {
+    // Suppress an intermittent crash seemingly related to modules.
+    // It should not be handheld this way, but it's better than a game crash.
+
+    if (a1 == nullptr) {
+        APLogger::print("Customize Crash?\n");
+        return;
+    }
+
+    original_cust_crash(a1, a2, a3, a4);
+}
+
+HOOK(void, __fastcall, _load_crash, 0x1405948e0, long long* a1, unsigned long long a2, unsigned long long a3, unsigned long long a4) {
+    // Suppress an intermittent crash seemingly related to modules.
+    // It should not be handheld this way, but it's better than a game crash.
+
+    if (a1 == nullptr) {
+        APLogger::print("Load Crash?\n");
+        return;
+    }
+
+    original_load_crash(a1, a2, a3, a4);
+}
+
 extern "C"
 {
     void __declspec(dllexport) Init()
@@ -204,5 +228,8 @@ extern "C"
         INSTALL_HOOK(_ChangeGameSubState);
         INSTALL_HOOK(_ModifierSudden);
         INSTALL_HOOK(_ModifierHidden);
+
+        INSTALL_HOOK(_cust_crash);
+        INSTALL_HOOK(_load_crash);
     }
 }
