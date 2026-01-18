@@ -23,7 +23,7 @@ namespace APLogger
             vprintf(fmt, args);
             fflush(stdout);
         }
-        else {
+        /*else {
             FILE* log = fopen("AP.txt", "a");
 
             if (log != NULL) {
@@ -31,7 +31,7 @@ namespace APLogger
                 vfprintf(log, fmt, args);
                 fclose(log);
             }
-        }
+        }*/
 
         va_end(args);
     }
