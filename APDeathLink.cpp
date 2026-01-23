@@ -1,7 +1,7 @@
 #include "APDeathLink.h"
+#include "APLogger.h"
 #include "Helpers.h"
 #include "pch.h"
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 
@@ -15,19 +15,19 @@ void APDeathLink::config(toml::v3::ex::parse_result& data)
     std::string config_percent = data["deathlink_percent"].value_or(std::to_string(percent));
     percent = std::clamp(std::stoi(config_percent), 0, 100);
 
-    std::cout << "[Archipelago] deathlink_percent set to " << percent << " (config: " << config_percent << ")" << std::endl;
+    APLogger::print("deathlink_percent set to %d (config: %s)\n", percent, config_percent.c_str());
 
     std::string config_safety = data["deathlink_safety"].value_or(std::to_string(safety));
     safety = std::clamp(std::stof(config_safety), 0.0f, 30.0f);
 
-    std::cout << "[Archipelago] deathlink_safety set to " << safety << " (config: " << config_safety << ")" << std::endl;
+    APLogger::print("deathlink_safety set to %.02f (config: %s)\n", safety, config_safety.c_str());
 
     reset();
 }
 
 bool APDeathLink::exists()
 {
-	return std::filesystem::exists(DeathLinkInFile);
+	return fs::exists(LocalPath / DeathLinkInFile);
 }
 
 int APDeathLink::touch()
@@ -35,15 +35,15 @@ int APDeathLink::touch()
     deathLinked = true;
 
 	if (!exists()) {
-        std::ofstream death_link_out(DeathLinkOutFile);
-        
+        std::ofstream death_link_out(LocalPath / DeathLinkOutFile);
+
         if (!death_link_out.is_open()) {
-            std::cout << "[Archipelago] DeathLink > Failed to send death_link_out" << std::endl;
+            APLogger::print("DeathLink > Failed to send death_link_out\n");
             return 1;
         }
 
         death_link_out.close();
-        std::cout << "[Archipelago] DeathLink > Sending death_link_out" << std::endl;
+        APLogger::print("DeathLink > Sending death_link_out\n");
 	}
 
 	return 0;
@@ -51,25 +51,34 @@ int APDeathLink::touch()
 
 void APDeathLink::reset()
 {
-    std::cout << "[Archipelago] DeathLink: deathLinked = " << deathLinked << " -> " << false << std::endl;
+    APLogger::print("DeathLink: reset\n");
 
     deathLinked = false;
-    remove(DeathLinkInFile.c_str());
-    remove(DeathLinkOutFile.c_str());
+    lastDeathLink = 0;
+    fs::remove(LocalPath / DeathLinkInFile);
+    fs::remove(LocalPath / DeathLinkOutFile);
 }
 
-void APDeathLink::fail()
+void APDeathLink::check_fail()
 {
+    if (*(uint8_t*)DivaGameHP > 0)
+        return;
+
     if (deathLinked) {
-        std::cout << "[Archipelago] DeathLink > Fail: Already dying" << std::endl;
+        APLogger::print("DeathLink > Fail: Already dying\n");
         return;
     }
 
-    auto deltaLast = *(float*)DivaGameTimer - lastDeathLink;
+    auto now = *(float*)DivaGameTimer;
+    if (lastDeathLink > now)
+        lastDeathLink = now;
+
+    auto deltaLast = now - lastDeathLink;
 
     if (deltaLast < safety) {
         deathLinked = true;
-        std::cout << "[Archipelago] DeathLink > Fail: Died in safety window" << std::endl;
+        APLogger::print("[%6.2f] DeathLink > Fail: Died in safety window (%.02f + %.02f < %.02f)\n",
+                        now, lastDeathLink, deltaLast, lastDeathLink + safety);
         return;
     }
 
@@ -78,9 +87,14 @@ void APDeathLink::fail()
 
 void APDeathLink::run()
 {
+    auto now = *(float*)DivaGameTimer;
+
     // Avoid stopping the fade in from white animation at the start of a song.
-    if (*(float*)DivaGameTimer == 0.0f)
+    if (now == 0.0f) {
+        if (lastDeathLink != 0)
+            reset();
         return;
+    }
 
     int currentHP = *(uint8_t*)DivaGameHP;
 
@@ -91,9 +105,9 @@ void APDeathLink::run()
     if (deathLinked || !exists())
         return;
 
-    std::cout << "[Archipelago] DeathLink < death_link_in" << std::endl;
+    APLogger::print("[%6.2f] DeathLink < death_link_in\n", now);
 
-    lastDeathLink = *(float*)DivaGameTimer;
+    lastDeathLink = now;
 
     int hit = (255 * percent) / 100 + 1;
     currentHP = std::clamp(currentHP - hit, 0, 255);
@@ -101,5 +115,5 @@ void APDeathLink::run()
 
     WRITE_MEMORY(DivaGameHP, int, static_cast<uint8_t>(currentHP));
 
-    remove(DeathLinkInFile.c_str());
+    fs::remove(LocalPath / DeathLinkInFile);
 }
