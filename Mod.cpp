@@ -137,7 +137,7 @@ void processConfig() {
         }
 
         auto data = toml::parse(file);
-        skip_mainmenu = data["skip_mainmenu"].value_or(true);
+        skip_mainmenu = data["skip_mainmenu"].value_or(false);
 
         DeathLink.config(data);
         Traps.config(data);
