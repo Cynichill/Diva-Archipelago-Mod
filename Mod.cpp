@@ -36,7 +36,6 @@ APTraps Traps;
 const fs::path LocalPath = fs::current_path();
 const fs::path ConfigTOML = "config.toml";
 const fs::path OutputFileName = "results.json";
-bool skip_mainmenu = false;
 
 // Difficulty percentage thresholds
 float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
@@ -137,7 +136,6 @@ void processConfig() {
         }
 
         auto data = toml::parse(file);
-        skip_mainmenu = data["skip_mainmenu"].value_or(false);
 
         DeathLink.config(data);
         Traps.config(data);
@@ -145,28 +143,6 @@ void processConfig() {
     catch (const std::exception& e) {
         APLogger::print("Error parsing config file: %s\n", e.what());
     }
-}
-
-HOOK(void, __fastcall, _ChangeGameSubState, 0x1527e49e0, int state, int substate) {
-    //APLogger::print("%d / %d\n", state, substate);
-    static bool skipped = false;
-
-    if (state == 2 && substate == 47 || state == 12 && substate == 5) {
-        Traps.reset();
-    } else if (state == 0 || state == 3) {
-        skipped = false;
-    } else if (state == 9 && substate == 47 || state == 6 && substate == 47) {
-        processConfig();
-
-        if (skip_mainmenu && skipped == false) {
-            APLogger::print("Skipping main menu (state: %d)\n", state);
-            skipped = true;
-            original_ChangeGameSubState(2, 47);
-            return;
-        }
-    }
-
-    original_ChangeGameSubState(state, substate);
 }
 
 HOOK(bool, __fastcall, _ModifierSudden, 0x14024b720, long long a1) {
@@ -181,11 +157,12 @@ extern "C"
 {
     void __declspec(dllexport) Init()
     {
+        processConfig();
+
         INSTALL_HOOK(_MMUIResult);
         INSTALL_HOOK(_FTUIResult);
         INSTALL_HOOK(_GameplayLoopTrigger);
         INSTALL_HOOK(_GameplayEnd);
-        INSTALL_HOOK(_ChangeGameSubState);
         INSTALL_HOOK(_ModifierSudden);
         INSTALL_HOOK(_ModifierHidden);
     }
