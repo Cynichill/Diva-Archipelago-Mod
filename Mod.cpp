@@ -148,8 +148,8 @@ void processConfig() {
 
             int msgboxID = MessageBox(
                 NULL,
-                (LPCWSTR)msg.c_str(),
-                (LPCWSTR)L"Archipelago Mod",
+                msg.c_str(),
+                L"Archipelago Mod",
                 MB_OK
             );
         }
