@@ -13,4 +13,5 @@ name = "Archipelago"
 author = "Cynichill"
 version = "1.2.0"
 dll = ["ArchipelagoMod.dll"]
+# If the Archipelago song is missing make sure this is set to ["AP", "."]
 include = ["AP", "."]
