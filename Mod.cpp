@@ -139,6 +139,20 @@ void processConfig() {
 
         DeathLink.config(data);
         Traps.config(data);
+
+        bool reload_warning = data["reload_warning"].value_or(true);
+        if (reload_warning) {
+            std::wstring msg = L"Press the reload key on the song list to get new songs.\n"
+                                "Disable this message and more in the mod config file.\n\n"
+                                "Current reload key: " + data["reload_key"].value_or(L"F7");
+
+            int msgboxID = MessageBox(
+                NULL,
+                (LPCWSTR)msg.c_str(),
+                (LPCWSTR)L"Archipelago Mod",
+                MB_OK
+            );
+        }
     }
     catch (const std::exception& e) {
         APLogger::print("Error parsing config file: %s\n", e.what());
