@@ -140,10 +140,15 @@ void processConfig() {
         DeathLink.config(data);
         Traps.config(data);
 
-        bool reload_warning = data["reload_warning"].value_or(true);
-        if (reload_warning) {
+        // toml++ does not persist comments and most formatting which is intended for players.
+        // Save an option at the cost of a file to inform new players about reloading and the config.
+        fs::path reload_file = LocalPath / ".reload_warning";
+        if (!fs::exists(reload_file)) {
+            std::ofstream reload_out(reload_file);
+            reload_out.close();
+
             std::wstring msg = L"Press the reload key on the song list to get new songs.\n"
-                                "Disable this message and more in the mod config file.\n\n"
+                                "Configure the reload key and more in the mod's config.toml.\n\n"
                                 "Current reload key: " + data["reload_key"].value_or(L"F7");
 
             int msgboxID = MessageBox(
