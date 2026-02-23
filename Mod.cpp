@@ -148,6 +148,7 @@ void processConfig() {
             reload_out.close();
 
             std::wstring msg = L"Press the reload key on the song list to get new songs.\n"
+                                "Songs can be cleared on any available difficulty for the same checks.\n"
                                 "Configure the reload key and more in the mod's config.toml.\n\n"
                                 "Current reload key: " + data["reload_key"].value_or(L"F7");
 
