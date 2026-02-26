@@ -40,8 +40,47 @@ const fs::path OutputFileName = "results.json";
 // Difficulty percentage thresholds
 float thresholds[5] = { 30.0, 50.0, 60.0, 70.0, 70.0 };
 
-void writeToFile(const nlohmann::json& results) {
+void processConfig() {
+    // Move to a class and do not do this on init time
 
+    try {
+        std::ifstream file(LocalPath / ConfigTOML); // CWD is the mod folder within Init
+        if (!file.is_open()) {
+            APLogger::print("Error opening config file: %s\n", ConfigTOML.c_str());
+            return;
+        }
+
+        auto data = toml::parse(file);
+
+        DeathLink.config(data);
+        Traps.config(data);
+
+        // toml++ does not persist comments and most formatting which is intended for players.
+        // Save an option at the cost of a file to inform new players about reloading and the config.
+        fs::path reload_file = LocalPath / ".reload_warning";
+        if (!fs::exists(reload_file)) {
+            std::ofstream reload_out(reload_file);
+            reload_out.close();
+
+            std::wstring msg = L"Press the reload key on the song list to get new songs.\n"
+                "Songs can be cleared on any available difficulty for the same checks.\n"
+                "Configure the reload key and more in the mod's config.toml.\n\n"
+                "Current reload key: " + data["reload_key"].value_or(L"F7");
+
+            int msgboxID = MessageBox(
+                NULL,
+                msg.c_str(),
+                L"Archipelago Mod",
+                MB_OK
+            );
+        }
+    }
+    catch (const std::exception& e) {
+        APLogger::print("Error parsing config file: %s\n", e.what());
+    }
+}
+
+void writeToFile(const nlohmann::json& results) {
     // Write the JSON to a file
     std::ofstream outputFile(LocalPath / OutputFileName);
     if (outputFile.is_open()) {
@@ -85,7 +124,8 @@ void processResults() {
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
-    DeathLink.reset();
+    // Previously DeathLink.reset() here, but doing config again also resets.
+    processConfig();
 }
 
 HOOK(void, __fastcall, _FTUIResult, 0x140237F30, long long a1) {
@@ -123,46 +163,6 @@ HOOK(void**, __fastcall, _GameplayEnd, 0x14023F9A0) {
     Traps.reset();
 
     return original_GameplayEnd();
-}
-
-void processConfig() {
-    // Move to a class and do not do this on init time
-
-    try {
-        std::ifstream file(LocalPath / ConfigTOML); // CWD is the mod folder within Init
-        if (!file.is_open()) {
-            APLogger::print("Error opening config file: %s\n", ConfigTOML.c_str());
-            return;
-        }
-
-        auto data = toml::parse(file);
-
-        DeathLink.config(data);
-        Traps.config(data);
-
-        // toml++ does not persist comments and most formatting which is intended for players.
-        // Save an option at the cost of a file to inform new players about reloading and the config.
-        fs::path reload_file = LocalPath / ".reload_warning";
-        if (!fs::exists(reload_file)) {
-            std::ofstream reload_out(reload_file);
-            reload_out.close();
-
-            std::wstring msg = L"Press the reload key on the song list to get new songs.\n"
-                                "Songs can be cleared on any available difficulty for the same checks.\n"
-                                "Configure the reload key and more in the mod's config.toml.\n\n"
-                                "Current reload key: " + data["reload_key"].value_or(L"F7");
-
-            int msgboxID = MessageBox(
-                NULL,
-                msg.c_str(),
-                L"Archipelago Mod",
-                MB_OK
-            );
-        }
-    }
-    catch (const std::exception& e) {
-        APLogger::print("Error parsing config file: %s\n", e.what());
-    }
 }
 
 HOOK(bool, __fastcall, _ModifierSudden, 0x14024b720, long long a1) {
