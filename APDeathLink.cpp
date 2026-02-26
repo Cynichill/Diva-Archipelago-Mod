@@ -182,7 +182,8 @@ void APDeathLink::run()
 {
     auto now = *(float*)DivaGameTimer;
 
-    // Avoid stopping the fade in from white animation at the start of a song.
+    // Avoid stopping the fade in from white animation at the start of a song and
+    // prevents No Fail -> DL to 0 HP -> Return to song select instead of results -> Play
     if (now == 0.0f) {
         reset();
         return;
