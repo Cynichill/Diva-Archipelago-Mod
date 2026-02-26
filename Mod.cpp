@@ -173,6 +173,16 @@ HOOK(bool, __fastcall, _ModifierHidden, 0x14024b730, long long a1) {
     return Traps.isHidden ? true : original_ModifierHidden(a1);
 }
 
+HOOK(float, __fastcall, _SafetyDuration, 0x14024a5f0, long long a1) {
+    auto time = original_SafetyDuration(a1);
+
+    DeathLink.safetyExpired = (time <= 0.0f);
+    if (DeathLink.safetyExpired && DeathLink.HPdenominator > 1)
+        return 65535.0f; // Surely there's no 18 hour song
+
+    return original_SafetyDuration(a1);
+}
+
 extern "C"
 {
     void __declspec(dllexport) Init()
@@ -185,5 +195,6 @@ extern "C"
         INSTALL_HOOK(_GameplayEnd);
         INSTALL_HOOK(_ModifierSudden);
         INSTALL_HOOK(_ModifierHidden);
+        INSTALL_HOOK(_SafetyDuration);
     }
 }
