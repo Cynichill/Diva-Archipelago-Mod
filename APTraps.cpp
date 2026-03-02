@@ -13,7 +13,7 @@ APTraps::APTraps() : dist(0, 4)
 void APTraps::config(toml::v3::ex::parse_result& data)
 {
 	std::string config_duration = data["trap_duration"].value_or(std::to_string(trapDuration));
-	trapDuration = std::clamp(std::stof(config_duration), 0.0f, 180.0f);
+	trapDuration = std::clamp(std::stof(config_duration), 0.0f, 300.0f);
 	APLogger::print("trap_duration: %.02f (config: %s)\n", trapDuration, config_duration.c_str());
 
 	std::string config_iconinterval = data["icon_reroll"].value_or(std::to_string(iconInterval));
