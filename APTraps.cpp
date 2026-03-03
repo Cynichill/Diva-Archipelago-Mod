@@ -66,7 +66,7 @@ bool APTraps::exists(const fs::path& in)
 // Very happening function.
 void APTraps::run()
 {
-	auto now = *(float*)DivaGameTimer;
+	float now = *(float*)DivaGameTimer;
 
 	if (now == 0.0f && lastRun > 0.0f) {
 		reset();
@@ -77,15 +77,16 @@ void APTraps::run()
 		return;
 
 	lastRun = now;
+	float expires = (trapDuration > 0.0f) ? now + trapDuration : 0.0f;
 
 	if (exists(TrapSuddenInFile)) {
-		APLogger::print("[%6.2f] Trap < Sudden\n", now);
+		APLogger::print("[%6.2f] Trap < Sudden (expires: %.2f)\n", now, expires);
 		fs::remove(LocalPath / TrapSuddenInFile);
 		timestampSudden = now;
 		isSudden = true;
 
 		if (!suhidden && isHidden) {
-			APLogger::print("[%6.2f] Trap < Hidden -> Sudden\n", now);
+			APLogger::print("[%6.2f] Trap < Hidden -> Sudden (expires: %.2f)\n", now, expires);
 			timestampHidden = 0.0f;
 			isHidden = false;
 		}
@@ -100,13 +101,13 @@ void APTraps::run()
 	}
 
 	if (exists(TrapHiddenInFile)) {
-		APLogger::print("[%6.2f] Trap < Hidden\n", now);
+		APLogger::print("[%6.2f] Trap < Hidden (expires: %.2f)\n", now, expires);
 		fs::remove(LocalPath / TrapHiddenInFile);
 		timestampHidden = now;
 		isHidden = true;
 
 		if (!suhidden && isSudden) {
-			APLogger::print("[%6.2f] Trap < Sudden -> Hidden\n", now);
+			APLogger::print("[%6.2f] Trap < Sudden -> Hidden (expires: %.2f)\n", now, expires);
 			timestampSudden = 0.0f;
 			isSudden = false;
 		}
@@ -121,7 +122,7 @@ void APTraps::run()
 	}
 
 	if (exists(TrapIconInFile)) {
-		APLogger::print("[%6.2f] Trap < Icon\n", now);
+		APLogger::print("[%6.2f] Trap < Icon (expires: %.2f)\n", now, expires);
 		fs::remove(LocalPath / TrapIconInFile);
 		timestampIconStart = now;
 		rollIcon();
