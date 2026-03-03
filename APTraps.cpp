@@ -78,8 +78,6 @@ void APTraps::run()
 
 	lastRun = now;
 
-	bool icon_exists = exists(TrapIconInFile);
-
 	if (exists(TrapSuddenInFile)) {
 		APLogger::print("[%6.2f] Trap < Sudden\n", now);
 		fs::remove(LocalPath / TrapSuddenInFile);
@@ -122,6 +120,8 @@ void APTraps::run()
 		}
 	}
 
+
+	bool icon_exists = exists(TrapIconInFile);
 	if (icon_exists) {
 		APLogger::print("[%6.2f] Trap < Icon\n", now);
 		fs::remove(LocalPath / TrapIconInFile);
@@ -135,7 +135,7 @@ void APTraps::run()
 	if (savedIcon <= 12) {
 		float deltaStart = now - timestampIconStart;
 		float deltaLast = now - timestampIconLast;
-		if (deltaStart < trapDuration) {
+		if (trapDuration == 0.0f || deltaStart < trapDuration) {
 			if (iconInterval > 0.0f && deltaLast >= iconInterval) {
 				timestampIconLast = now;
 				rollIcon();
