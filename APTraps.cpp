@@ -53,7 +53,7 @@ void APTraps::resetIcon()
 	int restoredIcon = ((savedIcon <= 12 && savedIcon >= 0) ? savedIcon : 4);
 	if (getCurrentIcon() != restoredIcon) {
 		WRITE_MEMORY(getIconAddress(), uint8_t, (uint8_t)restoredIcon);
-		APLogger::print("Icons restored to %d\n", restoredIcon);
+		APLogger::print("Traps: Icons restored to %d\n", restoredIcon);
 	}
 	savedIcon = 39;
 }
@@ -120,9 +120,7 @@ void APTraps::run()
 		}
 	}
 
-
-	bool icon_exists = exists(TrapIconInFile);
-	if (icon_exists) {
+	if (exists(TrapIconInFile)) {
 		APLogger::print("[%6.2f] Trap < Icon\n", now);
 		fs::remove(LocalPath / TrapIconInFile);
 		timestampIconStart = now;
