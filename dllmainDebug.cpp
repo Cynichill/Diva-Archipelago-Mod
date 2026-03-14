@@ -74,7 +74,7 @@ namespace EnableDebugMode
 		{
 			auto elapsed = std::chrono::steady_clock::now() - delayStart;
 
-			if (elapsed > std::chrono::milliseconds(500))
+			if (elapsed > std::chrono::seconds(1))
 			{
 				DLLWindowProc(nullptr, WM_COMMAND, 0, 0);
 				waitingForCommand = false;
