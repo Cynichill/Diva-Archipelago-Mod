@@ -65,7 +65,7 @@ namespace EnableDebugMode
 			int* substate = (int*)0x14CC61094;
 
 			if (*state == 2 && *substate == 7) {
-				// In game, including FTUI, music video, practice, and results.
+				// In game including FTUI, music video, practice, and results.
 				reloadKeyWasDown = keyDown;
 				printf("[Archipelago] Reloading blocked for state %i/%i\n", *state, *substate);
 				return;
