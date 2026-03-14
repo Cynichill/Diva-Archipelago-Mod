@@ -23,9 +23,12 @@ namespace EnableDebugMode
 	static bool IsKeyPressed(u8 keyCode) { return (::GetAsyncKeyState(keyCode) & 0x8000) != 0; }
 
 	// Initialize reload key code
-	static u8 reloadKeyCode;
-
-	const std::filesystem::path LocalPath = std::filesystem::current_path();
+	std::string reloadVal;
+	std::filesystem::path LocalPath;
+	u8 reloadKeyCode;
+	bool reloadKeyWasDown = false;
+	bool waitingForCommand = false;
+	std::chrono::steady_clock::time_point delayStart;
 
 	// Function to print debug information
 	void PrintDebugInfo() {
@@ -52,25 +55,30 @@ namespace EnableDebugMode
 		}
 	}
 
-	std::string reloadVal = "";
-
 	static void pluginLoop()
 	{
-		if (reloadVal == "")
+		bool keyDown = IsKeyPressed(reloadKeyCode);
+
+		if (IsMainWindowFocused && keyDown && !reloadKeyWasDown)
 		{
-			reloadVal = getAndPrintReloadValue(LocalPath / "config.toml");
-			reloadKeyCode = GetReloadKeyCode(reloadVal);
-		}
-		if (IsMainWindowFocused && IsKeyPressed(reloadKeyCode)) {
-			//PrintDebugInfo();
 			Original_ChangeGameState(GameState::DATA_TEST);
 			CurrentState = PluginState::WaitingToSelectDataTest;
 
-			// Create a thread to wait for 1 seconds before calling DLLWindowProc
-			std::thread([]() {
-				std::this_thread::sleep_for(std::chrono::seconds(1));
+			delayStart = std::chrono::steady_clock::now();
+			waitingForCommand = true;
+		}
+
+		reloadKeyWasDown = keyDown;
+
+		if (waitingForCommand)
+		{
+			auto elapsed = std::chrono::steady_clock::now() - delayStart;
+
+			if (elapsed > std::chrono::milliseconds(500))
+			{
 				DLLWindowProc(nullptr, WM_COMMAND, 0, 0);
-				}).detach();
+				waitingForCommand = false;
+			}
 		}
 	}
 
@@ -100,6 +108,11 @@ namespace EnableDebugMode
 	static void OnPluginInitialize()
 	{
 		printf(__FUNCTION__"(): EnableDebug is initializing...\n");
+
+		LocalPath = std::filesystem::current_path();
+		reloadVal = getAndPrintReloadValue(LocalPath / "config.toml");
+		reloadKeyCode = GetReloadKeyCode(reloadVal);
+		PrintDebugInfo();
 
 		Original_ChangeGameState = reinterpret_cast<void(__fastcall*)(GameState)>(memSigScan("\x48\x83\xEC\x28\xE8\x00\x00\x00\x00\x83\x78\x04\x05\x75\x06\x80\x78\x10\x00\x75\x0B\x89\x48\x04\xC6\x40\x10\x01\xC6\x40\x2C\x00\x48\x83\xC4\x28\xC3", "xxxxx????xxxxxxxxxxxxxxxxxxxxxxxxxxxx", (void*)0x1402c4bb0));
 		Original_ChangeGameSubState = reinterpret_cast<void(__fastcall*)(GameState, GameSubState)>(memSigScan("\x48\x89\x5C\x24\x00\x48\x89\x74\x24\x00\x57\x48\x83\xEC\x20\x89\xD6\xE8\x00\x00\x00\x00\x31\xDB\x48\x89\xC7\x83\xF9\x0C", "xxxx?xxxx?xxxxxxxx????xxxxxxxx", (void*)0x1527e49e0));
