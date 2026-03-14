@@ -61,6 +61,15 @@ namespace EnableDebugMode
 
 		if (IsMainWindowFocused && keyDown && !reloadKeyWasDown)
 		{
+			int* state = (int*)0x14CC61078;
+			int* substate = (int*)0x14CC61094;
+
+			if (*state == 2 && *substate == 7) {
+				reloadKeyWasDown = keyDown;
+				printf("[Archipelago] Reloading blocked for state %i/%i\n", *state, *substate);
+				return;
+			}
+
 			Original_ChangeGameState(GameState::DATA_TEST);
 			CurrentState = PluginState::WaitingToSelectDataTest;
 
