@@ -1,4 +1,5 @@
 #include "APDeathLink.h"
+#include "APIDHandler.h"
 #include "APLogger.h"
 #include "APTraps.h"
 #include "Diva.h"
@@ -29,8 +30,10 @@ const uint64_t DivaCurrentPVDifficultyExtraAddress = 0x0000000140DAE938;
 
 // Archipelago Mod variables
 bool consoleEnabled = true;
+bool skip_mainmenu = false;
 
 APDeathLink DeathLink;
+APIDHandler IDHandler;
 APTraps Traps;
 
 const fs::path LocalPath = fs::current_path();
@@ -52,6 +55,7 @@ void processConfig() {
 
         auto data = toml::parse(file);
 
+        skip_mainmenu = data["skip_mainmenu"].value_or(true);
         DeathLink.config(data);
         Traps.config(data);
 
@@ -124,8 +128,7 @@ void processResults() {
     std::thread fileWriteThread(writeToFile, results);
     fileWriteThread.detach();
 
-    // Previously DeathLink.reset() here, but doing config again also resets.
-    processConfig();
+    DeathLink.reset();
 }
 
 HOOK(void, __fastcall, _FTUIResult, 0x140237F30, long long a1) {
@@ -183,12 +186,70 @@ HOOK(float, __fastcall, _SafetyDuration, 0x14024a5f0, long long a1) {
     return original_SafetyDuration(a1);
 }
 
+HOOK(char**, __fastcall, _ReadDBLine, 0x1404C5950, uint64_t a1, char** pv_db_prop) {
+    std::string line(pv_db_prop[0], pv_db_prop[1]);
+    char** original = original_ReadDBLine(a1, pv_db_prop);
+
+    if (original != nullptr && **original >= '1' && **original <= '2' && !IDHandler.check(line))
+        **original = '0';
+
+    return original;
+}
+
+HOOK(void, __fastcall, _ChangeGameSubState, 0x1527E49E0, int state, int substate) {
+    // This is most likely a greedy hook (especially against Debug without sigscanning).
+    // If it becomes a problem, directly watching state change bytes is possible from 0x1402C4810()
+
+    static bool skipped = false;
+
+    if (state == 2 && substate == 47 || state == 12 && substate == 5) {
+        Traps.reset();
+    }
+    else if (state == 0 || state == 3) {
+        skipped = false;
+        IDHandler.update();
+    }
+    else if (state == 9 && substate == 47 || state == 6 && substate == 47) {
+        IDHandler.reload_needed = false;
+        IDHandler.unlock();
+        processConfig();
+
+        if (skip_mainmenu && skipped == false) {
+            APLogger::print("Skipping main menu (state: %d)\n", state);
+            skipped = true;
+            original_ChangeGameSubState(2, 47);
+            return;
+        }
+    }
+
+    original_ChangeGameSubState(state, substate);
+}
+
+HOOK(void, __fastcall, _cust_null, 0x1405946E0, long long* a1, unsigned int a2, char a3, long long a4) {
+    // When entering Customize: Suppress an intermittent nullptr at 0x1405947A7 related to reloading and possibly modules.
+    // It should not be handheld this way, but it's better than a game crash?
+
+    if (a1 == nullptr)
+        return;
+
+    original_cust_null(a1, a2, a3, a4);
+}
+
+HOOK(void, __fastcall, _load_null, 0x1405948E0, long long* a1, unsigned long long a2, unsigned long long a3, unsigned long long a4) {
+    // When entering Gameplay: Suppress an intermittent nullptr at 0x1405949D9 related to reloading and possibly modules.
+    // It should not be handheld this way, but it's better than a game crash?
+
+    // 3D PVs will have broken/invis modules.
+    if (a1 == nullptr)
+        return;
+
+    original_load_null(a1, a2, a3, a4);
+}
+
 extern "C"
 {
     void __declspec(dllexport) Init()
     {
-        processConfig();
-
         INSTALL_HOOK(_MMUIResult);
         INSTALL_HOOK(_FTUIResult);
         INSTALL_HOOK(_GameplayLoopTrigger);
@@ -196,5 +257,10 @@ extern "C"
         INSTALL_HOOK(_ModifierSudden);
         INSTALL_HOOK(_ModifierHidden);
         INSTALL_HOOK(_SafetyDuration);
+
+        INSTALL_HOOK(_ChangeGameSubState);
+        INSTALL_HOOK(_ReadDBLine);
+        INSTALL_HOOK(_load_null);
+        INSTALL_HOOK(_cust_null);
     }
 }
