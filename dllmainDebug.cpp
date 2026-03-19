@@ -71,6 +71,8 @@ namespace EnableDebugMode
 				return;
 			}
 
+			printf("[Archipelago] Reloading from state %i/%i\n", *state, *substate);
+
 			Original_ChangeGameState(GameState::DATA_TEST);
 			CurrentState = PluginState::WaitingToSelectDataTest;
 
@@ -145,7 +147,7 @@ LRESULT WINAPI DLLWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		// handle other messages.
 	case WM_COMMAND:
 		using namespace EnableDebugMode;
-		Original_ChangeGameSubState(static_cast<GameState>(0), static_cast<GameSubState>(0));
+		Original_ChangeGameSubState(static_cast<GameState>(0), static_cast<GameSubState>(1));
 		CurrentState = PluginState::InDataTest;
 		return 0;
 
