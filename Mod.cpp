@@ -210,8 +210,17 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527E49E0, int state, int substate
         IDHandler.update();
     }
     else if (state == 9 && substate == 47 || state == 6 && substate == 47) {
+        bool reload_was_needed = IDHandler.reload_needed;
         IDHandler.reload_needed = false;
         IDHandler.unlock();
+
+        if (reload_was_needed) {
+            APLogger::print("Forcing needed reload\n");
+            IDHandler.update();
+            original_ChangeGameSubState(0, 1);
+            return;
+        }
+
         processConfig();
 
         if (skip_mainmenu && skipped == false) {
