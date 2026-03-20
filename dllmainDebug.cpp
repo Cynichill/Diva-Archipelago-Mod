@@ -5,10 +5,11 @@
 #include <chrono>
 #include <filesystem>
 #include <thread>
+#include "APLogger.h"
 
 using namespace GameStates;
 
-namespace EnableDebugMode
+namespace EnableDebugMode_AP
 {
 	enum class PluginState { RegularGame, WaitingToSelectDataTest, InDataTest };
 
@@ -22,36 +23,36 @@ namespace EnableDebugMode
 
 	static bool IsKeyPressed(u8 keyCode) { return (::GetAsyncKeyState(keyCode) & 0x8000) != 0; }
 
-	// Initialize reload key code
-	std::string reloadVal;
+	// Reload key stuff
 	std::filesystem::path LocalPath;
-	u8 reloadKeyCode;
+	unsigned int reloadDelay = 1000;
+	std::string reloadVal = "F7";
+	u8 reloadKeyCode = 0x76;
 	bool reloadKeyWasDown = false;
 	bool waitingForCommand = false;
 	std::chrono::steady_clock::time_point delayStart;
 
-	// Function to print debug information
-	void PrintDebugInfo() {
-		printf("[Archipelago] Reload key code: %i\n", static_cast<int>(reloadKeyCode));
-	}
-
-	std::string getAndPrintReloadValue(const std::filesystem::path& filename) {
+	void configReload(const std::filesystem::path& filename) {
 		std::ifstream file(filename);
 		if (!file.is_open()) {
 			printf("Error opening file: %s\n", filename.string().c_str());
-			return "";
 		}
 
 		try {
 			auto data = toml::parse(file);
-			std::string reloadValue = data["reload"].value_or(""); // Retrieve the value associated with "reload"
-			if (GetConsoleWindow())
-				printf("[Archipelago] Reload value: %s\n", reloadValue.c_str()); // Print the reload value
-			return reloadValue; // Return the reload value
+
+			reloadVal = data["reload"].value_or("F7");
+			reloadKeyCode = GetReloadKeyCode(reloadVal);
+
+			APLogger::print("[Archipelago] Reload value: %s (code %i)\n",
+							reloadVal.c_str(), static_cast<int>(reloadKeyCode));
+
+			reloadDelay = std::clamp(data["reload_delay"].value_or(1000), 100, 2000);
+			APLogger::print("[Archipelago] Reload delay: %ims\n", reloadDelay);
+
 		}
 		catch (const std::exception& e) {
 			printf("Error parsing TOML file: %s\n", e.what());
-			return "";
 		}
 	}
 
@@ -86,7 +87,7 @@ namespace EnableDebugMode
 		{
 			auto elapsed = std::chrono::steady_clock::now() - delayStart;
 
-			if (elapsed > std::chrono::seconds(1))
+			if (elapsed > std::chrono::milliseconds(reloadDelay))
 			{
 				DLLWindowProc(nullptr, WM_COMMAND, 0, 0);
 				waitingForCommand = false;
@@ -122,9 +123,7 @@ namespace EnableDebugMode
 		printf(__FUNCTION__"(): EnableDebug is initializing...\n");
 
 		LocalPath = std::filesystem::current_path();
-		reloadVal = getAndPrintReloadValue(LocalPath / "config.toml");
-		reloadKeyCode = GetReloadKeyCode(reloadVal);
-		PrintDebugInfo();
+		configReload(LocalPath / "config.toml");
 
 		Original_ChangeGameState = reinterpret_cast<void(__fastcall*)(GameState)>(memSigScan("\x48\x83\xEC\x28\xE8\x00\x00\x00\x00\x83\x78\x04\x05\x75\x06\x80\x78\x10\x00\x75\x0B\x89\x48\x04\xC6\x40\x10\x01\xC6\x40\x2C\x00\x48\x83\xC4\x28\xC3", "xxxxx????xxxxxxxxxxxxxxxxxxxxxxxxxxxx", (void*)0x1402c4bb0));
 		Original_ChangeGameSubState = reinterpret_cast<void(__fastcall*)(GameState, GameSubState)>(memSigScan("\x48\x89\x5C\x24\x00\x48\x89\x74\x24\x00\x57\x48\x83\xEC\x20\x89\xD6\xE8\x00\x00\x00\x00\x31\xDB\x48\x89\xC7\x83\xF9\x0C", "xxxx?xxxx?xxxxxxxx????xxxxxxxx", (void*)0x1527e49e0));
@@ -146,7 +145,7 @@ LRESULT WINAPI DLLWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		// handle other messages.
 	case WM_COMMAND:
-		using namespace EnableDebugMode;
+		using namespace EnableDebugMode_AP;
 		Original_ChangeGameSubState(static_cast<GameState>(0), static_cast<GameSubState>(1));
 		CurrentState = PluginState::InDataTest;
 		return 0;
@@ -162,6 +161,6 @@ extern "C"
 {
 	__declspec(dllexport) void PreInit()
 	{
-		EnableDebugMode::OnPluginInitialize();
+		EnableDebugMode_AP::OnPluginInitialize();
 	}
 }

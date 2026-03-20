@@ -1,6 +1,7 @@
 # Mod options
 enabled = true
 reload = "F7" # Recommended to use from the song list.
+reload_delay = 1000 # 100-2000, default 1000 milliseconds to wait for the reload. may break if too low
 deathlink_percent = "100" # 0-100, default 100 percent of max HP to lose on receive
 deathlink_safety = "10.0" # 0-30, default 10.0 seconds after receiving a DL where dying does not send one out
 trap_duration = "15.0" # 0-300, default 15.0 seconds until traps expire. 0 to not expire for current attempt
