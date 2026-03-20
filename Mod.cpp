@@ -63,9 +63,6 @@ void processConfig() {
         // Save an option at the cost of a file to inform new players about reloading and the config.
         fs::path reload_file = LocalPath / ".reload_warning";
         if (!fs::exists(reload_file)) {
-            std::ofstream reload_out(reload_file);
-            reload_out.close();
-
             std::wstring msg = L"Press the reload key on the song list to get new songs.\n"
                 "Songs can be cleared on any available difficulty for the same checks.\n"
                 "Configure the reload key and more in the mod's config.toml.\n\n"
@@ -77,6 +74,9 @@ void processConfig() {
                 L"Archipelago Mod",
                 MB_OK
             );
+
+            std::ofstream reload_out(reload_file);
+            reload_out.close();
         }
     }
     catch (const std::exception& e) {
