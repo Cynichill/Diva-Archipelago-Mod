@@ -183,7 +183,7 @@ HOOK(float, __fastcall, _SafetyDuration, 0x14024a5f0, long long a1) {
     if (DeathLink.safetyExpired && DeathLink.HPdenominator > 1)
         return 65535.0f; // Surely there's no 18 hour song
 
-    return original_SafetyDuration(a1);
+    return time;
 }
 
 HOOK(char**, __fastcall, _ReadDBLine, 0x1404C5950, uint64_t a1, char** pv_db_prop) {

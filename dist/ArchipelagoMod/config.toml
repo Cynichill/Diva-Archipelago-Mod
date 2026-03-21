@@ -1,13 +1,15 @@
 # Mod options
 enabled = true
 reload = "F7" # Recommended to use from the song list.
-reload_delay = 1000 # 100-1000, default 1000 milliseconds to wait for the reload. may break if too low
-deathlink_percent = "100" # 0-100, default 100 percent of max HP to lose on receive
-deathlink_safety = "10.0" # 0-30, default 10.0 seconds after receiving a DL where dying does not send one out
-trap_duration = "15.0" # 0-300, default 15.0 seconds until traps expire. 0 to not expire for current attempt
-icon_reroll = "60.0" # 0-60, default 60.0 seconds between icon rerolls while Icon trap is active. 0 to reroll once
-suhidden = false # true/false, default false. true to let sudden and hidden modifiers overlap otherwise replace each other
-skip_mainmenu = false # true/false, default false. skip the main menu after title screen. combine with IntroPatch to skip to song select
+reload_delay = 10 # 1-10, default 10 to wait for reload. lower is faster but may break. best with DivaModLoader PR #36
+
+# These options can be changed while the game is running and updated by visiting the Main Menu or reloading
+deathlink_percent = 100     # 0-100, default 100 percent of max HP to lose on receive. <100 for non-lethal
+deathlink_safety  = 10.0    # 0-30, default 10.0 seconds after receiving a DL where dying does not send one out
+trap_duration     = 15.0    # 0-300, default 15.0 seconds until traps expire. 0 to not expire for current attempt
+icon_reroll       = 60.0    # 0-60, default 60.0 seconds between icon rerolls while Icon trap is active. 0 to reroll once
+suhidden          = false   # true/false, default false. true to let sudden and hidden modifiers overlap otherwise replace each other
+skip_mainmenu     = false   # true/false, default false. skip the main menu after title screen. combine with IntroPatch to skip to song select
 
 # Mod information
 name = "Archipelago"

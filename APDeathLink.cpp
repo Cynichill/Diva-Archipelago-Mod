@@ -12,15 +12,15 @@ APDeathLink::APDeathLink()
 
 void APDeathLink::config(toml::v3::ex::parse_result& data)
 {
-    std::string config_percent = data["deathlink_percent"].value_or(std::to_string(percent));
-    percent = std::clamp(std::stoi(config_percent), 0, 100);
+    int config_percent = data["deathlink_percent"].value_or(percent);
+    percent = std::clamp(config_percent, 0, 100);
 
-    APLogger::print("deathlink_percent set to %d (config: %s)\n", percent, config_percent.c_str());
+    APLogger::print("deathlink_percent set to %d (config: %d)\n", percent, config_percent);
 
-    std::string config_safety = data["deathlink_safety"].value_or(std::to_string(safety));
-    safety = std::clamp(std::stof(config_safety), 0.0f, 30.0f);
+    float config_safety = data["deathlink_safety"].value_or(safety);
+    safety = std::clamp(config_safety, 0.0f, 30.0f);
 
-    APLogger::print("deathlink_safety set to %.02f (config: %s)\n", safety, config_safety.c_str());
+    APLogger::print("deathlink_safety set to %.02f (config: %.02f)\n", safety, config_safety);
 
     fs::remove(LocalPath / DeathLinkInFile);
     fs::remove(LocalPath / DeathLinkOutFile);

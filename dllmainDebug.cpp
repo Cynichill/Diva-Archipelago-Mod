@@ -35,7 +35,7 @@ namespace EnableDebugMode_AP
 	void configReload(const std::filesystem::path& filename) {
 		std::ifstream file(filename);
 		if (!file.is_open()) {
-			printf("Error opening file: %s\n", filename.string().c_str());
+			APLogger::print("Error opening file: %s\n", filename.string().c_str());
 		}
 
 		try {
@@ -44,35 +44,35 @@ namespace EnableDebugMode_AP
 			reloadVal = data["reload"].value_or("F7");
 			reloadKeyCode = GetReloadKeyCode(reloadVal);
 
-			APLogger::print("[Archipelago] Reload value: %s (code %i)\n",
+			APLogger::print("Reload value: %s (0x%x)\n",
 							reloadVal.c_str(), static_cast<int>(reloadKeyCode));
 
-			reloadDelay = std::clamp(data["reload_delay"].value_or(1000), 100, 1000);
-			APLogger::print("[Archipelago] Reload delay: %ims\n", reloadDelay);
+			reloadDelay = std::clamp(data["reload_delay"].value_or(10), 1, 10) * 100;
+			APLogger::print("Reload delay: %ims\n", reloadDelay);
 
 		}
 		catch (const std::exception& e) {
-			printf("Error parsing TOML file: %s\n", e.what());
+			APLogger::print("Error parsing TOML file: %s\n", e.what());
 		}
 	}
 
 	static void pluginLoop()
 	{
 		bool keyDown = IsKeyPressed(reloadKeyCode);
+		int* state = (int*)0x14CC61078;
+		int* substate = (int*)0x14CC61094;
 
 		if (IsMainWindowFocused && keyDown && !reloadKeyWasDown)
 		{
-			int* state = (int*)0x14CC61078;
-			int* substate = (int*)0x14CC61094;
-
 			if (*state == 2 && *substate == 7) {
-				// In game including FTUI, music video, practice, and results.
+				// In game including FTUI, MV, practice, and results.
+				// || *state == 7, reproducible when reloading on Cust screen with 4 or more charas.
 				reloadKeyWasDown = keyDown;
-				printf("[Archipelago] Reloading blocked for state %i/%i\n", *state, *substate);
+				APLogger::print("Reloading blocked for state %i/%i\n", *state, *substate);
 				return;
 			}
 
-			printf("[Archipelago] Reloading from state %i/%i\n", *state, *substate);
+			APLogger::print("Reloading from state %i/%i\n", *state, *substate);
 
 			Original_ChangeGameState(GameState::DATA_TEST);
 			CurrentState = PluginState::WaitingToSelectDataTest;
@@ -83,6 +83,7 @@ namespace EnableDebugMode_AP
 
 		reloadKeyWasDown = keyDown;
 
+		// Instead of waiting reloadDay it may be fine to poll the states and change immediately.
 		if (waitingForCommand)
 		{
 			auto elapsed = std::chrono::steady_clock::now() - delayStart;
@@ -120,7 +121,7 @@ namespace EnableDebugMode_AP
 
 	static void OnPluginInitialize()
 	{
-		printf(__FUNCTION__"(): EnableDebug is initializing...\n");
+		APLogger::print(__FUNCTION__"(): EnableDebug is initializing...\n");
 
 		LocalPath = std::filesystem::current_path();
 		configReload(LocalPath / "config.toml");

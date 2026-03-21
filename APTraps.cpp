@@ -12,13 +12,13 @@ APTraps::APTraps() : dist(0, 4)
 
 void APTraps::config(toml::v3::ex::parse_result& data)
 {
-	std::string config_duration = data["trap_duration"].value_or(std::to_string(trapDuration));
-	trapDuration = std::clamp(std::stof(config_duration), 0.0f, 300.0f);
-	APLogger::print("trap_duration: %.02f (config: %s)\n", trapDuration, config_duration.c_str());
+	float config_duration = data["trap_duration"].value_or(trapDuration);
+	trapDuration = std::clamp(config_duration, 0.0f, 300.0f);
+	APLogger::print("trap_duration: %.02f (config: %.02f)\n", trapDuration, config_duration);
 
-	std::string config_iconinterval = data["icon_reroll"].value_or(std::to_string(iconInterval));
-	iconInterval = std::clamp(std::stof(config_iconinterval), 0.0f, 60.0f);
-	APLogger::print("icon_reroll: %.02f (config: %s)\n", iconInterval, config_iconinterval.c_str());
+	float config_iconinterval = data["icon_reroll"].value_or(iconInterval);
+	iconInterval = std::clamp(config_iconinterval, 0.0f, 60.0f);
+	APLogger::print("icon_reroll: %.02f (config: %.02f)\n", iconInterval, config_iconinterval);
 
 	suhidden = data["suhidden"].value_or(false);
 	APLogger::print("suhidden: %d\n", suhidden);
