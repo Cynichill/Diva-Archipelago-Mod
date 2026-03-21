@@ -41,7 +41,7 @@ namespace EnableDebugMode_AP
 		try {
 			auto data = toml::parse(file);
 
-			reloadVal = data["reload"].value_or("F7");
+			reloadVal = data["reload_key"].value_or("F7");
 			reloadKeyCode = GetReloadKeyCode(reloadVal);
 
 			APLogger::print("Reload value: %s (0x%x)\n",
