@@ -64,8 +64,8 @@ namespace EnableDebugMode_AP
 
 		if (IsMainWindowFocused && keyDown && !reloadKeyWasDown)
 		{
-			if (*state == 2 && *substate == 7) {
-				// In game including FTUI, MV, practice, and results.
+			if (*state == 2 && *substate == 7 || *state == 0 || *state == 3) {
+				// In game including FTUI, MV, practice, and results. Init and test.
 				// || *state == 7, reproducible when reloading on Cust screen with 4 or more charas.
 				reloadKeyWasDown = keyDown;
 				APLogger::print("Reloading blocked for state %i/%i\n", *state, *substate);
