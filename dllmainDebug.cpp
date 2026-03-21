@@ -44,11 +44,11 @@ namespace EnableDebugMode_AP
 			reloadVal = data["reload_key"].value_or("F7");
 			reloadKeyCode = GetReloadKeyCode(reloadVal);
 
-			APLogger::print("Reload value: %s (0x%x)\n",
+			APLogger::print("reload_key: %s (0x%x)\n",
 							reloadVal.c_str(), static_cast<int>(reloadKeyCode));
 
 			reloadDelay = std::clamp(data["reload_delay"].value_or(10), 1, 10) * 100;
-			APLogger::print("Reload delay: %ims\n", reloadDelay);
+			APLogger::print("reload_delay: %ims\n", reloadDelay);
 
 		}
 		catch (const std::exception& e) {
