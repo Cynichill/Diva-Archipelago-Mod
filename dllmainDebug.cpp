@@ -47,7 +47,7 @@ namespace EnableDebugMode_AP
 			APLogger::print("[Archipelago] Reload value: %s (code %i)\n",
 							reloadVal.c_str(), static_cast<int>(reloadKeyCode));
 
-			reloadDelay = std::clamp(data["reload_delay"].value_or(1000), 100, 2000);
+			reloadDelay = std::clamp(data["reload_delay"].value_or(1000), 100, 1000);
 			APLogger::print("[Archipelago] Reload delay: %ims\n", reloadDelay);
 
 		}
