@@ -9,11 +9,8 @@ namespace APLogger
 {
     void print(const char* const fmt, ...)
     {
-        if (GetConsoleWindow() == NULL) {
+        if (GetConsoleWindow() == NULL || !freopen("CONOUT$", "w", stdout)) {
             return;
-        }
-        else {
-            freopen("CONOUT$", "w", stdout);
         }
 
         va_list args;
