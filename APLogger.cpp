@@ -9,20 +9,27 @@ namespace APLogger
 {
     void print(const char* const fmt, ...)
     {
+        if (GetConsoleWindow() == NULL) {
+            return;
+        }
+        else {
+            freopen("CONOUT$", "w", stdout);
+        }
+
         va_list args;
         va_start(args, fmt);
 
         time_t t = time(NULL);
-        struct tm* tm = localtime(&t);
+        struct tm tm;
+        localtime_s(&tm, &t);
 
         char buf[64];
-        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
+        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
 
-        if (GetConsoleWindow() != NULL) {
-            printf("[Archipelago] [%s] ", buf);
-            vprintf(fmt, args);
-            fflush(stdout);
-        }
+        printf("[Archipelago] [%s] ", buf);
+        vprintf(fmt, args);
+        fflush(stdout);
+
         /*else {
             FILE* log = fopen("AP.txt", "a");
 
