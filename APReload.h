@@ -10,9 +10,8 @@ class APReload
 
 		// Config
 		int reloadDelay = 1000; // ms delay to allow state change
-		std::string reloadVal = "F7"; // human readable reload key
-		int reloadKeyCode = 0x76;
-		bool wasPressed = false;
+		std::string reloadVal = "F7"; // human readable reload key to convert to key code
+		int reloadKeyCode = 0x76; // key code of reloadVal
 
 	private:
 		void ChangeGameState(int32_t state);

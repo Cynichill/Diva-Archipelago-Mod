@@ -23,7 +23,10 @@ void APReload::config(toml::v3::ex::parse_result& data)
 
 void APReload::scan()
 {
-	bool pressed = (GetAsyncKeyState(reloadKeyCode) & 0x8000) != 0;
+	static bool pressed = false;
+
+	bool wasPressed = pressed;
+	pressed = (GetAsyncKeyState(reloadKeyCode) & 0x8000) != 0;
 
 	if (pressed && !wasPressed) {
 		int* state = (int*)0x14CC61078;
@@ -43,8 +46,6 @@ void APReload::scan()
 		std::thread startup(&APReload::sleepStartup, this);
 		startup.detach();
 	}
-
-	wasPressed = pressed;
 }
 
 void APReload::sleepStartup()
