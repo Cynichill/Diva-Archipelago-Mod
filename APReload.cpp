@@ -1,10 +1,9 @@
 #include "APLogger.h"
 #include "APReload.h"
+#include "Helpers.h"
 #include "virtualKey.h"
-#include "WinUser.h"
 #include <algorithm>
 #include <thread>
-#include "Helpers.h"
 
 void APReload::config(toml::v3::ex::parse_result& data)
 {
@@ -12,12 +11,12 @@ void APReload::config(toml::v3::ex::parse_result& data)
 	reloadKeyCode = GetReloadKeyCode(reloadVal);
 
 	APLogger::print("reload_key: %s (0x%x)\n",
-		reloadVal.c_str(), static_cast<int>(reloadKeyCode));
+					reloadVal.c_str(), static_cast<int>(reloadKeyCode));
 
 	reloadDelay = std::clamp(data["reload_delay"].value_or(10), 1, 10) * 100;
 	APLogger::print("reload_delay: %ims\n", reloadDelay);
 
-	// DATA_TEST patch thanks to Debug mod: samyuu, nastys, vixen256, korenkonder, Skyth
+	// DATA_TEST patch thanks to Debug mod: samyuu, nastys, vixen256, korenkonder, skyth
 	WRITE_MEMORY(0x140441153, uint8_t, 0xE9, 0x1E, 0x00, 0x00, 0x00, 0x00);
 }
 
