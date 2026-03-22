@@ -36,15 +36,6 @@
     <ClInclude Include="core_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="core_win32_hacks.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="deck.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MemSigScan.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="virtualKey.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -57,11 +48,14 @@
     <ClInclude Include="APLogger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="APIDHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="APReload.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -71,12 +65,6 @@
     <ClCompile Include="Dependencies\SigScan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dllmainDebug.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MemSigScan.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="APDeathLink.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,6 +72,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="APLogger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APIDHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APReload.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

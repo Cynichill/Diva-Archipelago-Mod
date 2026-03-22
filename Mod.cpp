@@ -1,6 +1,7 @@
 #include "APDeathLink.h"
 #include "APIDHandler.h"
 #include "APLogger.h"
+#include "APReload.h"
 #include "APTraps.h"
 #include "Diva.h"
 #include "Helpers.h"
@@ -35,6 +36,7 @@ bool skip_mainmenu = false;
 APDeathLink DeathLink;
 APIDHandler IDHandler;
 APTraps Traps;
+APReload Reloader;
 
 const fs::path LocalPath = fs::current_path();
 const fs::path ConfigTOML = "config.toml";
@@ -58,6 +60,7 @@ void processConfig() {
         skip_mainmenu = data["skip_mainmenu"].value_or(true);
         DeathLink.config(data);
         Traps.config(data);
+        Reloader.config(data);
 
         // toml++ does not persist comments and most formatting which is intended for players.
         // Save an option at the cost of a file to inform new players about reloading and the config.
@@ -257,8 +260,15 @@ HOOK(void, __fastcall, _load_null, 0x1405948E0, long long* a1, unsigned long lon
 
 extern "C"
 {
+    void __declspec(dllexport) OnFrame(/*IDXGISwapChain* swapChain*/)
+    {
+        Reloader.scan();
+    }
+
     void __declspec(dllexport) Init()
     {
+        freopen("CONOUT$", "w", stdout);
+
         INSTALL_HOOK(_MMUIResult);
         INSTALL_HOOK(_FTUIResult);
         INSTALL_HOOK(_GameplayLoopTrigger);

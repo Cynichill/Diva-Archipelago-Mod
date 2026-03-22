@@ -1,3 +1,4 @@
+#pragma warning( disable : 4244 )
 #include "APDeathLink.h"
 #include "APLogger.h"
 #include "Helpers.h"
