@@ -102,6 +102,9 @@ void APDeathLink::prog_hp_update()
 
             i += 1;
         }
+
+        if (HPnumerator > HPdenominator)
+            HPnumerator = HPdenominator;
     }
 
     if (changed) {
