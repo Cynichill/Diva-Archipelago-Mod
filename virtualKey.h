@@ -1,13 +1,12 @@
 #ifndef VIRTUALKEY_H
 #define VIRTUALKEY_H
 
+#include "core_types.h"
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <unordered_map>
-#include <toml++/toml.h>
 #include <windows.h>
-#include "deck.h"
 
 
 // Function to convert key name to virtual key code
