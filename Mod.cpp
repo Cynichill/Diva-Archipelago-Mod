@@ -61,26 +61,6 @@ void processConfig() {
         DeathLink.config(data);
         Traps.config(data);
         Reloader.config(data);
-
-        // toml++ does not persist comments and most formatting which is intended for players.
-        // Save an option at the cost of a file to inform new players about reloading and the config.
-        fs::path reload_file = LocalPath / ".reload_warning";
-        if (!fs::exists(reload_file)) {
-            std::wstring msg = L"Press the reload key on the song list to get new songs.\n"
-                "Songs can be cleared on any available difficulty for the same checks.\n"
-                "Configure the reload key and more in the mod's config.toml.\n\n"
-                "Current reload key: " + data["reload_key"].value_or(L"F7");
-
-            int msgboxID = MessageBox(
-                NULL,
-                msg.c_str(),
-                L"Archipelago Mod",
-                MB_OK
-            );
-
-            std::ofstream reload_out(reload_file);
-            reload_out.close();
-        }
     }
     catch (const std::exception& e) {
         APLogger::print("Error parsing config file: %s\n", e.what());
@@ -263,6 +243,39 @@ extern "C"
     void __declspec(dllexport) OnFrame(/*IDXGISwapChain* swapChain*/)
     {
         Reloader.scan();
+    }
+
+    void __declspec(dllexport) PreInit()
+    {
+        // toml++ does not persist comments and most formatting which is intended for players.
+        // Save an option at the cost of a dropped file to inform new players about reloading and the config.
+        fs::path reload_file = LocalPath / ".reload_warning";
+
+        if (!fs::exists(reload_file)) {
+            try {
+                // This is a wasteful read, but it "should" only ever happens one time ever
+                std::ifstream file(LocalPath / ConfigTOML);
+                auto data = toml::parse(file);
+
+                std::wstring msg = L"Press the reload key on the song list to get new songs.\n"
+                    "Songs can be cleared on any available difficulty for the same checks.\n"
+                    "Configure the reload key and more in the mod's config.toml.\n\n"
+                    "Current reload key: " + data["reload_key"].value_or(L"F7");
+
+                int msgboxID = MessageBox(
+                    NULL,
+                    msg.c_str(),
+                    L"Archipelago Mod",
+                    MB_OK
+                );
+            }
+            catch (const std::exception& e) {
+                APLogger::print("(PreInit) Error parsing config file: %s\n", e.what());
+            }
+
+            std::ofstream reload_out(reload_file);
+            reload_out.close();
+        }
     }
 
     void __declspec(dllexport) Init()
