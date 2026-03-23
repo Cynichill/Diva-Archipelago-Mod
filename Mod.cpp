@@ -164,7 +164,7 @@ HOOK(float, __fastcall, _SafetyDuration, 0x14024a5f0, long long a1) {
 
     DeathLink.safetyExpired = (time <= 0.0f);
     if (DeathLink.safetyExpired && DeathLink.HPdenominator > 1)
-        return 65535.0f; // Surely there's no 18 hour song
+        return 0.39f;
 
     return time;
 }

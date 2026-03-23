@@ -115,10 +115,10 @@ void APDeathLink::prog_hp_update()
 
         // Get portion of HP
         int available = (255.0f / (float)HPdenominator) * HPnumerator;
-        available = std::clamp((int)available + 1, 1, 255);
+        available = std::clamp((int)available, 1, 255);
 
         HPfloor = 255 - available;
-        HPpercent = 1 + ((float)HPfloor / 255.0f) * 100.0f;
+        HPpercent = ((float)HPfloor / 255.0f) * 100.0f - 1;
 
         APLogger::print("[%6.2f] DeathLinkHP < %i / %i = %i%% (%i HP)\n",
                         lastCheckedHP, HPnumerator, HPdenominator, HPpercent, HPfloor);
