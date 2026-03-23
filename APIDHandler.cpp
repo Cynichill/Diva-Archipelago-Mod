@@ -32,7 +32,7 @@ bool APIDHandler::checkNC()
 
 bool APIDHandler::check(std::string& line)
 {
-	if (reload_needed || !exists || line.find("pv_") != 0)
+	if (toggleIDs.size() == 0 || reload_needed || !exists || line.find("pv_") != 0)
 		return true;
 
 	size_t diff_pos = line.find(".difficulty.");

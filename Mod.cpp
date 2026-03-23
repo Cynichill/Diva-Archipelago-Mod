@@ -197,11 +197,14 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527E49E0, int state, int substate
         IDHandler.reload_needed = false;
         IDHandler.unlock();
 
-        if (reload_was_needed && IDHandler.toggleIDs.size() > 0) {
-            APLogger::print("Forcing needed reload\n");
+        if (reload_was_needed) {
             IDHandler.update();
-            original_ChangeGameSubState(0, 1);
-            return;
+
+            if (IDHandler.toggleIDs.size() > 0) {
+                APLogger::print("Forcing needed reload (have IDs)\n");
+                original_ChangeGameSubState(0, 1);
+                return;
+            }
         }
 
         processConfig();
