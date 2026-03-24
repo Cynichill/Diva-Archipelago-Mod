@@ -31,9 +31,10 @@ void APReload::scan()
 		int* state = (int*)0x14CC61078;
 		int* substate = (int*)0x14CC61094;
 
-		if (*state == 2 && *substate == 7 || *state == 0 || *state == 3) {
-			// In game including FTUI, MV, practice, and results. Init and test.
-			// || *state == 7, reproducible infinite load/crash when reloading on Cust screen with 4 or more charas.
+		if (*state == 2 && *substate == 7 || *state == 0 || *state == 3 || *state == 7) {
+			// Init, test, and Cust. In game including FTUI, MV, practice, and results.
+			// state 7: reproducible infinite load/crash when reloading on Cust screen with 4 or more charas.
+			//          only covers main menu -> cust, not song list -> cust
 			APLogger::print("Reloading blocked for state %i/%i\n", *state, *substate);
 			return;
 		}
