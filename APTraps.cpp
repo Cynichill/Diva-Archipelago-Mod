@@ -36,6 +36,8 @@ int APTraps::reset()
 	resetIcon();
 	timestampSudden = 0.0f;
 	timestampHidden = 0.0f;
+	timestampIconStart = 0.0f;
+	timestampIconLast = 0.0f;
 	isHidden = false;
 	isSudden = false;
 	lastRun = 0.0f;
