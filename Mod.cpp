@@ -256,7 +256,7 @@ extern "C"
 
         if (!fs::exists(reload_file)) {
             try {
-                // This is a wasteful read, but it "should" only ever happens one time ever
+                // This is a wasteful read, but it "should" only ever happen one time ever
                 std::ifstream file(LocalPath / ConfigTOML);
                 auto data = toml::parse(file);
 
