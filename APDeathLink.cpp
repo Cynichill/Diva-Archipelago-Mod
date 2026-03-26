@@ -66,51 +66,52 @@ void APDeathLink::reset()
 
 void APDeathLink::prog_hp_update()
 {
-    if (!exists(HPFile) && !exists(HPFileNext)) {
+    fs::path hp_path = LocalPath / HPFile;
+
+    std::ifstream file;
+    file.open(hp_path);
+
+    // TODO: remove the non-.txt fallback after reasonable migration time.
+    if (!file.is_open()) {
+        hp_path.replace_extension("");
+        file.open(hp_path);
+    }
+
+    if (!file.is_open()) {
         prog_hp_reset();
         return;
     }
 
     bool changed = false;
+    int i = 0;
 
-    std::ifstream file;
-    file.open(LocalPath / HPFileNext);
+    while (std::getline(file, buf)) {
+        if (i >= 2)
+            break;
 
-    if (!file.is_open()) // Fallback to original
-        file.open(LocalPath / HPFile);
+        try {
+            auto val = std::clamp(std::stoi(buf), 1, 255);
 
-    if (file.is_open()) {
-        int i = 0;
-
-        while (std::getline(file, buf)) {
-            if (i >= 2)
-                break;
-
-            try {
-                auto val = std::clamp(std::stoi(buf), 1, 255);
-
-                if (i == 0 && val != HPnumerator) {
-                    changed = true;
-                    HPnumerator = val;
-                }
-                if (i == 1 && val != HPdenominator) {
-                    changed = true;
-                    HPdenominator = val;
-                }
+            if (i == 0 && val != HPnumerator) {
+                changed = true;
+                HPnumerator = val;
             }
-            catch (std::invalid_argument const& ex) {
-                APLogger::print("DeathLinkHP > %s\n", ex.what());
+            if (i == 1 && val != HPdenominator) {
+                changed = true;
+                HPdenominator = val;
             }
-            catch (std::out_of_range const& ex) {
-                APLogger::print("DeathLinkHP > %s\n", ex.what());
-            }
-
-            i += 1;
+        }
+        catch (std::invalid_argument const& ex) {
+            APLogger::print("DeathLinkHP > %s\n", ex.what());
+        }
+        catch (std::out_of_range const& ex) {
+            APLogger::print("DeathLinkHP > %s\n", ex.what());
         }
 
-        if (HPnumerator > HPdenominator)
-            HPnumerator = HPdenominator;
+        i += 1;
     }
+
+    HPnumerator = min(HPnumerator, HPdenominator);
 
     if (changed) {
         if (HPdenominator == HPnumerator) {

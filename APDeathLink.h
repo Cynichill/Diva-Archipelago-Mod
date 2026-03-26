@@ -48,8 +48,7 @@ class APDeathLink
 		const fs::path DeathLinkInFile = "death_link_in"; // Inbound communication file
 		const fs::path DeathLinkOutFile = "death_link_out"; // Outbound communication file
 
-		const fs::path HPFile = "hp"; // Progressive HP file
-		const fs::path HPFileNext = "hp.txt"; // Progressive HP file with ext for easy editing
+		const fs::path HPFile = "hp.txt"; // Progressive HP file with ext for easy editing
 		float lastCheckedHP = 0.0f; // HP: For delta time against APDeathLink::DivaGameTimer
 
 		int percent = 100; // Percentage of max HP to lose on receive. "If at or below this, die."
