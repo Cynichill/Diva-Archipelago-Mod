@@ -66,13 +66,18 @@ void APDeathLink::reset()
 
 void APDeathLink::prog_hp_update()
 {
-    if (!exists(HPFile)) {
+    if (!exists(HPFile) && !exists(HPFileNext)) {
         prog_hp_reset();
         return;
     }
 
     bool changed = false;
-    std::ifstream file(LocalPath / HPFile);
+
+    std::ifstream file;
+    file.open(LocalPath / HPFileNext);
+
+    if (!file.is_open()) // Fallback to original
+        file.open(LocalPath / HPFile);
 
     if (file.is_open()) {
         int i = 0;
