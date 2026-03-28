@@ -18,10 +18,16 @@ void APReload::config(toml::v3::ex::parse_result& data)
 
 	// DATA_TEST patch thanks to Debug mod: samyuu, nastys, vixen256, korenkonder, skyth
 	WRITE_MEMORY(0x140441153, uint8_t, 0xE9, 0x1E, 0x00, 0x00, 0x00, 0x00);
+	
+	if (!hGameWindow)
+		hGameWindow = GetActiveWindow();
 }
 
 void APReload::scan()
 {
+	if (GetForegroundWindow() != hGameWindow)
+		return;
+
 	static bool pressed = false;
 
 	bool wasPressed = pressed;

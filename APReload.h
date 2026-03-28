@@ -1,5 +1,6 @@
 #pragma once
 #include <toml++/toml.h>
+#include "framework.h"
 
 class APReload
 {
@@ -14,6 +15,8 @@ class APReload
 		int reloadKeyCode = 0x76; // key code of reloadVal
 
 	private:
+		HWND hGameWindow;
+
 		void ChangeGameState(int32_t state);
 		void ChangeGameSubState(int32_t state, int32_t substate);
 };
