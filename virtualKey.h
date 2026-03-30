@@ -2,15 +2,12 @@
 #define VIRTUALKEY_H
 
 #include "core_types.h"
-#include <fstream>
-#include <iostream>
-#include <string>
+#include "pch.h"
 #include <unordered_map>
-#include <windows.h>
 
 
 // Function to convert key name to virtual key code
-u8 GetVirtualKeyCode(const std::string& keyName) {
+inline u8 GetVirtualKeyCode(const std::string& keyName) {
     static const std::unordered_map<std::string, u8> keyMap = {
         {"BACKSPACE", VK_BACK}, {"TAB", VK_TAB}, {"CLEAR", VK_CLEAR},
         {"ENTER", VK_RETURN}, {"SHIFT", VK_SHIFT}, {"CTRL", VK_CONTROL},
@@ -47,13 +44,13 @@ u8 GetVirtualKeyCode(const std::string& keyName) {
         return it->second;
     }
     else {
-        std::cerr << "Unknown key: " << keyName << std::endl;
+        APLogger::print("Unknown key: %s\n", keyName.c_str());
         return 0; // Return a default value or handle the error
     }
 }
 
 // Function to read the key code from the config file
-u8 GetReloadKeyCode(const std::string& key) {
+inline u8 GetReloadKeyCode(const std::string& key) {
 
     try {
         if (key.empty()) {
@@ -63,7 +60,7 @@ u8 GetReloadKeyCode(const std::string& key) {
         return GetVirtualKeyCode(key); // Return the reload value
     }
     catch (const std::exception& e) {
-        std::cerr << "Error retrieving virtual key code: " << e.what() << std::endl;
+        APLogger::print("Error retrieving virtual key code: %s\n", e.what());
         return VK_F7; // Default value if an exception occurs
     }
 }

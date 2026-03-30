@@ -8,6 +8,16 @@
 #define PCH_H
 
 // add headers that you want to pre-compile here
+#include "APLogger.h"
 #include "framework.h"
+#include "Helpers.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <nlohmann/json.hpp>
+#include <SigScan.h>
+#include <string>
+#include <thread>
+#include <toml++/toml.h>
 
 #endif //PCH_H

@@ -1,9 +1,7 @@
 #include "APLogger.h"
-#include <windows.h>
-#include <iostream>
-#include <fstream>
-#include <stdarg.h>
+#include "pch.h"
 #include <ctime>
+#include <stdarg.h>
 
 namespace APLogger
 {
