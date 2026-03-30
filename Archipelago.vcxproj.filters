@@ -27,9 +27,6 @@
     <ClInclude Include="Dependencies\nlohmann\json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="framework.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Dependencies\Helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>

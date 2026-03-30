@@ -97,7 +97,6 @@
     <ClInclude Include="Dependencies\nlohmann\json.hpp" />
     <ClInclude Include="Dependencies\SigScan.h" />
     <ClInclude Include="Diva.h" />
-    <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="virtualKey.h" />
   </ItemGroup>
