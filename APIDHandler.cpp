@@ -131,6 +131,9 @@ namespace APIDHandler
 
 		newID = abs(newID);
 
+		if (144 == newID || 700 == newID || 701 == newID)
+			return;
+
 		if (!contains(newID))
 			toggleIDs.push_back(newID);
 	}
