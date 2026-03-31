@@ -12,15 +12,16 @@ namespace APReload
 
     void config(toml::v3::ex::parse_result& data)
     {
-        reloadVal = data["reload_key"].value_or("F7");
+        reloadVal = data["reload_key"].value_or<std::string>("F7");
         reloadKeyCode = GetReloadKeyCode(reloadVal);
 
         APLogger::print("reload_key: %s (0x%x)\n",
-            reloadVal.c_str(), static_cast<int>(reloadKeyCode));
+                         reloadVal, static_cast<int>(reloadKeyCode));
 
         reloadDelay = std::clamp(data["reload_delay"].value_or(10), 1, 10) * 100;
         APLogger::print("reload_delay: %ims\n", reloadDelay);
 
+        // DATA_TEST patch thanks to Debug mod: samyuu, nastys, vixen256, korenkonder, skyth
         WRITE_MEMORY(0x140441153, uint8_t, 0xE9, 0x1E, 0x00, 0x00, 0x00, 0x00);
 
         if (!hGameWindow)
@@ -29,7 +30,7 @@ namespace APReload
 
     void scan()
     {
-        if (GetForegroundWindow() != hGameWindow)
+        if (!hGameWindow || GetForegroundWindow() != hGameWindow)
             return;
 
         static bool pressed = false;

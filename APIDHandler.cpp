@@ -10,7 +10,7 @@ namespace APIDHandler
 	// Internal
 	bool exists = false;
 	bool freeplay = false;
-	bool reload_needed = false;
+	bool reload_needed = true;
 	bool reloading = false;
 	std::vector<int> toggleIDs = { };
 
