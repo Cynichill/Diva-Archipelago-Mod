@@ -37,7 +37,7 @@ namespace APIDHandler
 
 	bool check(std::string& line)
 	{
-		if (toggleIDs.size() == 0 || reload_needed || !exists || line.find("pv_") != 0)
+		if (reload_needed || !exists || line.find("pv_") != 0)
 			return true;
 
 		size_t diff_pos = line.find(".difficulty.");
@@ -78,6 +78,8 @@ namespace APIDHandler
 		reset();
 		lock();
 
+		APLogger::print("IDHandler > %s exists: %i\n", (LocalPath / SongListFile).string().c_str(), exists);
+
 		std::string buf;
 		std::ifstream file(LocalPath / SongListFile);
 
@@ -97,26 +99,32 @@ namespace APIDHandler
 					toggled << buf << " ";
 				}
 				catch (std::invalid_argument const& ex) {
-					APLogger::print("IDH > %s\n", ex.what());
+					APLogger::print("IDHandler > %s\n", ex.what());
 				}
 				catch (std::out_of_range const& ex) {
-					APLogger::print("IDH > %s\n", ex.what());
+					APLogger::print("IDHandler > %s\n", ex.what());
 				}
 			}
 
-			APLogger::print("IDH < Toggle IDs (FP: %d) %s\n", freeplay, toggled.str().c_str());
+			APLogger::print("IDHandler < Toggle IDs (FP: %d) %s\n", freeplay, toggled.str().c_str());
 		}
 		else {
 			toggleIDs.clear();
 
-			APLogger::print("IDH < No list, clear\n");
+			if (file.fail()) {
+				APLogger::print("IDHandler > Failed to open %s (0x%x)\n", SongListFile.string().c_str(), file.failbit);
+			}
+
+			APLogger::print("IDHandler > No list, clear\n");
 		}
+
+		file.close();
 	}
 
 	void add(int newID)
 	{
 		if (reload_needed) {
-			APLogger::print("IDH < Attempted to add %d but a reload is needed\n", newID);
+			APLogger::print("IDHandler < Attempted to add %d but a reload is needed\n", newID);
 			return;
 		}
 
