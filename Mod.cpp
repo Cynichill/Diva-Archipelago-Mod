@@ -148,6 +148,9 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527E49E0, int state, int substate
                 original_ChangeGameSubState(0, 1);
                 return;
             }
+            else {
+                APLogger::print("Skipped needed reload (no IDs)\n");
+            }
         }
 
         processConfig();
