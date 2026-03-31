@@ -78,7 +78,8 @@ namespace APIDHandler
 		reset();
 		lock();
 
-		APLogger::print("IDHandler > %s exists: %i\n", (LocalPath / SongListFile).string().c_str(), exists);
+		APLogger::print("IDHandler > Looking in %s\n", LocalPath.string().c_str());
+		APLogger::print("IDHandler > %s exists: %i\n", SongListFile.string().c_str(), exists);
 
 		std::string buf;
 		std::ifstream file(LocalPath / SongListFile);
