@@ -49,20 +49,29 @@ void writeToFile(const nlohmann::json& results) {
     }
 }
 
-HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, uint64_t PvPlayData, long long a2)
+HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long long a2)
 {
-    auto pvName = (std::string*)((char*)PvPlayData + 0x2CEF8);
+    auto pvName = (std::string*)(PvPlayData + 0x2CEF8);
 
     // This might be somewhere in PvPlayData without having to call out
     auto PvGameData = (char*)reinterpret_cast<uint64_t(__fastcall*)(void)>(0x14027DD90)();
     int diff[3];
     memcpy(diff, PvGameData, 3 * sizeof(int));
 
+    // A grade of 1 only happens on Easy?
+    auto playerHP = (int*)(PvPlayData + 0x2D234);
+    auto playerPercent = (int*)(PvPlayData + 0x2D304);
+    auto clearPercent = (int*)(PvPlayData + 0x2D308);
+    int playerGrade = *(int*)(PvPlayData + 0x2D190);
+
+    if (*playerPercent < *clearPercent && *playerHP > 0)
+        playerGrade = 1; // "Cheap"
+
     nlohmann::json results = {
-        { "pvId", *(int*)((char*)PvPlayData + 0x10) },
+        { "pvId", *(int*)(PvPlayData + 0x10) },
         { "pvName", pvName->c_str() },
         { "pvDifficulty", diff[1] + diff[2] },
-        { "scoreGrade", *(int*)((char*)PvPlayData + 0x2D190) },
+        { "scoreGrade", playerGrade },
         { "deathLinked", APDeathLink::deathLinked },
     };
 
