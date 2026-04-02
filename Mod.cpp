@@ -65,7 +65,7 @@ HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long l
     auto playerPercent = (int*)(PvPlayData + 0x2D304);
     auto clearPercent = (int*)(PvPlayData + 0x2D308);
 
-    if (playerGrade > 0 && *playerPercent < *clearPercent)
+    if (playerGrade == 2 && *playerPercent < *clearPercent)
         playerGrade = 1; // "Cheap"
 
     nlohmann::json results = {
