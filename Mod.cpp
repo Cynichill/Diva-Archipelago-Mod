@@ -58,14 +58,17 @@ HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long l
     int diff[3];
     memcpy(diff, PvGameData, 3 * sizeof(int));
 
-    // A grade of 1 only happens on Easy?
-    auto playerHP = (int*)(PvPlayData + 0x2D234);
-    auto playerPercent = (int*)(PvPlayData + 0x2D304);
-    auto clearPercent = (int*)(PvPlayData + 0x2D308);
     int playerGrade = *(int*)(PvPlayData + 0x2D190);
 
-    if (*playerPercent < *clearPercent && *playerHP > 0)
-        playerGrade = 1; // "Cheap"
+    if (playerGrade == 2) {
+        // A grade of 1 happens only at playerPercent < 40% (good luck surviving above Easy)
+        // Instead of AP patching the comparison, recheck it here.
+        auto playerPercent = (int*)(PvPlayData + 0x2D304);
+        auto clearPercent = (int*)(PvPlayData + 0x2D308);
+
+        if (*playerPercent < *clearPercent)
+            playerGrade = 1; // "Cheap"
+    }
 
     nlohmann::json results = {
         { "pvId", *(int*)(PvPlayData + 0x10) },
