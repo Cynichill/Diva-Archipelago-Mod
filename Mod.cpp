@@ -83,25 +83,21 @@ HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long l
     original_PvResultsFinalize(PvPlayData, a2);
 }
 
-HOOK(void, __fastcall, _GameplayLoopTrigger, 0x140244BA0, long long a1) {
-    // AOB: 48 89 5C 24 10 48 89 74 24 18 57 48 83 EC 20 48 8B f9 33 DB E8 E7 91 03 00
-    // TODO: Called rapidly during gameplay. A more precise function and name is preferred.
+HOOK(void, __fastcall, _PvLoop, 0x140244BA0, char* PvPlayData) {
+    original_PvLoop(PvPlayData);
 
     APDeathLink::run();
     APTraps::run();
-
-    original_GameplayLoopTrigger(a1);
 }
 
-HOOK(void**, __fastcall, _GameplayEnd, 0x14023F9A0) {
-    // AOB: 48 83 EC 28 BA 08 00 00 00 65 48 8B 04 25 58 00 00 00 48 8B 08 8B 04 0A 39 05 42 0C A2 0C
-    // Called right as the gameplay is ending/fading out. Early enough to scrub modifier use. Happens alongside FAILURE too.
-    // The intent is to not let traps prevent keeping scores.
+HOOK(void, __fastcall, _PvCalculateGrade, 0x1402462E0, char* PvPlayData) {
+    // Too early for AP's UX but a better hook than before.
+    // Primarily to catch the FAILURE on 0 HP (for AP's UX).
 
     APDeathLink::check_fail();
     APTraps::reset();
 
-    return original_GameplayEnd();
+    original_PvCalculateGrade(PvPlayData);
 }
 
 HOOK(bool, __fastcall, _ModifierSudden, 0x14024b720, long long a1) {
@@ -240,8 +236,8 @@ extern "C"
     void __declspec(dllexport) Init()
     {
         INSTALL_HOOK(_PvResultsFinalize);
-        INSTALL_HOOK(_GameplayLoopTrigger);
-        INSTALL_HOOK(_GameplayEnd);
+        INSTALL_HOOK(_PvLoop);
+        INSTALL_HOOK(_PvCalculateGrade);
         INSTALL_HOOK(_ModifierSudden);
         INSTALL_HOOK(_ModifierHidden);
         INSTALL_HOOK(_SafetyDuration);
