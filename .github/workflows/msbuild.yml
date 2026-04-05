@@ -48,6 +48,9 @@ jobs:
 
     - shell: cmd
       run: move .\Dependencies\APCpp\out\Release\APCpp.dll .\dist\ArchipelagoMod\
+      
+    - shell: cmd
+      run: move .\LICENSE.TXT .\dist\ArchipelagoMod\
 
     - name: Artifact
       uses: actions/upload-artifact@v6
