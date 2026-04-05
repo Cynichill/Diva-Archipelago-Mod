@@ -1,6 +1,5 @@
 #include "APLogger.h"
 #include "pch.h"
-#include <ctime>
 #include <stdarg.h>
 
 namespace APLogger
@@ -36,5 +35,14 @@ namespace APLogger
         }*/
 
         va_end(args);
+    }
+
+    void ImGuiTab()
+    {
+        if (ImGui::BeginTabItem("Mod Log")) {
+
+
+            ImGui::EndTabItem();
+        }
     }
 }

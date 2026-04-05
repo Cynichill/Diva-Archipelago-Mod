@@ -1,23 +1,23 @@
+#include "APClient.h"
 #include "APIDHandler.h"
+#include "APReload.h"
 #include <sstream>
 
 namespace APIDHandler
 {
-	// Com
-	const std::filesystem::path LocalPath = std::filesystem::current_path();
-	const std::filesystem::path SongListFile = "song_list.txt";
-
 	// Internal
 	bool exists = false;
 	bool freeplay = false;
+	bool autoremove = true;
 	bool reload_needed = true;
 	bool reloading = false;
-	std::vector<int> toggleIDs = { };
 
-	void cacheExists()
-	{
-		exists = std::filesystem::exists(LocalPath / SongListFile);
-	}
+	auto &CheckedLocations = APClient::CheckedLocations;
+	auto &seedIDs = APClient::seedIDs;
+	auto &recvIDs = APClient::recvIDs;
+	auto &missingIDs = APClient::missingIDs;
+	int availableLocs = 0; // Calculated on reload
+	auto &item_ap_id_to_name = APClient::item_ap_id_to_name;
 
 	bool checkNC()
 	{
@@ -37,7 +37,7 @@ namespace APIDHandler
 
 	bool check(std::string& line)
 	{
-		if (reload_needed || !exists || line.find("pv_") != 0)
+		if (reload_needed /*|| AP_GetConnectionStatus() != AP_ConnectionStatus::Authenticated*/ || missingIDs.size() == 0 || line.find("pv_") != 0)
 			return true;
 
 		size_t diff_pos = line.find(".difficulty.");
@@ -57,102 +57,140 @@ namespace APIDHandler
 		if (144 == pvID || 700 == pvID || 701 == pvID)
 			return true;
 
-		bool c = contains(pvID);
+		auto begin = freeplay ? missingIDs.begin() : recvIDs.begin();
+		auto end = freeplay ? missingIDs.end() : recvIDs.end();
+		auto contains = std::find(begin, end, pvID) != end;
 
-		return freeplay ? !c : c;
+		if (!freeplay && contains && autoremove)
+		{
+			for (const auto& songID : recvIDs) {
+				auto loc1checked = std::find(CheckedLocations.begin(), CheckedLocations.end(), pvID * 10) != CheckedLocations.end();
+				auto loc2checked = std::find(CheckedLocations.begin(), CheckedLocations.end(), (pvID * 10) + 1) != CheckedLocations.end();
+				if (loc1checked && loc2checked)
+					return false;
+			}
+		}
+
+		return freeplay ? !contains : contains;
 	}
 
 	void reset()
 	{
 		//APLogger::print("IDHandler reset\n");
 		freeplay = false;
-		toggleIDs.clear();
 		unlock();
-	}
-
-	void update()
-	{
-		if (reloading || checkNC())
-			return;
-
-		reset();
-		lock();
-
-		APLogger::print("IDHandler > Looking in %s\n", LocalPath.string().c_str());
-		APLogger::print("IDHandler > %s exists: %i\n", SongListFile.string().c_str(), exists);
-
-		std::string buf;
-		std::ifstream file(LocalPath / SongListFile);
-
-		if (file.is_open()) {
-			std::stringstream toggled;
-
-			while (std::getline(file, buf)) {
-				try {
-					auto pvID = std::stoi(buf);
-
-					if (pvID == 0) {
-						freeplay = true;
-						continue;
-					}
-
-					add(pvID);
-					toggled << buf << " ";
-				}
-				catch (std::invalid_argument const& ex) {
-					APLogger::print("IDHandler > %s\n", ex.what());
-				}
-				catch (std::out_of_range const& ex) {
-					APLogger::print("IDHandler > %s\n", ex.what());
-				}
-			}
-
-			APLogger::print("IDHandler < Toggle IDs (FP: %d) %s\n", freeplay, toggled.str().c_str());
-		}
-		else {
-			toggleIDs.clear();
-
-			if (file.fail()) {
-				APLogger::print("IDHandler > Failed to open %s (0x%x)\n", SongListFile.string().c_str(), file.failbit);
-			}
-
-			APLogger::print("IDHandler > No list, clear\n");
-		}
-
-		file.close();
-	}
-
-	void add(int newID)
-	{
-		if (reload_needed) {
-			APLogger::print("IDHandler < Attempted to add %d but a reload is needed\n", newID);
-			return;
-		}
-
-		newID = abs(newID);
-
-		if (144 == newID || 700 == newID || 701 == newID)
-			return;
-
-		if (!contains(newID))
-			toggleIDs.push_back(newID);
-	}
-
-	bool contains(int songID)
-	{
-		// Potentially very slow as the song list grows.
-		return std::find(toggleIDs.begin(), toggleIDs.end(), songID) != toggleIDs.end();
 	}
 
 	void lock()
 	{
-		cacheExists();
 		reloading = true;
 	}
 
 	void unlock()
 	{
-		cacheExists();
 		reloading = false;
+	}
+
+	void ImGuiTab()
+	{
+		if (ImGui::BeginTabItem("Tracker")) {
+			ImGui::Text("Songs: %d/%d |", recvIDs.size(), seedIDs.size() - 1);
+
+			ImGui::SameLine();
+			int totalLocs = (seedIDs.size() - 1) * 2;
+			ImGui::Text("Locs: %d/%d |", CheckedLocations.size(), totalLocs);
+
+			ImGui::SameLine();
+			ImGui::Text("In logic: %d |", availableLocs);
+
+			ImGui::SameLine();
+			ImGui::Text("Go mode: ?");
+
+			if (ImGui::Checkbox("Freeplay", &freeplay))
+				APReload::run();
+			ImGui::SameLine();
+			HelpMarker("The entire song list will be available except for songs that have not been received yet.");
+
+			if (ImGui::Checkbox("Remove songs with no checks from song list", &autoremove))
+				APReload::run();
+			ImGui::SameLine();
+			HelpMarker("When not in Freeplay, the song list will only show songs that have checks.");
+
+			if (ImGui::BeginChild("tableContainer", ImVec2(0, 300))) {
+				if (ImGui::BeginTable("tableDatapackage", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
+				{
+					ImGui::TableSetupColumn("Checks");
+					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+					ImGui::TableHeadersRow();
+
+					int _availableLocs = 0;
+					for (const auto& songID : recvIDs) {
+						auto loc1checked = std::find(CheckedLocations.begin(), CheckedLocations.end(), songID * 10) != CheckedLocations.end();
+						auto loc2checked = std::find(CheckedLocations.begin(), CheckedLocations.end(), (songID * 10) + 1) != CheckedLocations.end();
+
+						int available = (int)!loc1checked + (int)!loc2checked;
+
+						if (autoremove && available == 0)
+							continue;
+
+						_availableLocs += available;
+
+						ImGui::PushID(songID);
+
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+
+						std::string label = (available > 0) ? std::to_string(available) : " ";
+						if (songID == APClient::victoryID / 10)
+						{
+							ImGui::Text(" GOAL! ");
+						}
+						else {
+							ImGui::Text("   %s   ", label.c_str());
+						}
+
+						if (APClient::devMode)
+						{
+							if (ImGui::BeginPopupContextItem("##xx"))
+							{
+								if (ImGui::MenuItem("This one?##xx"))
+									APClient::LocationSend(songID);
+
+								ImGui::EndPopup();
+							}
+						}
+
+						ImGui::TableSetColumnIndex(1);
+						auto it = item_ap_id_to_name.find(songID * 10);
+						if (it != item_ap_id_to_name.end())
+						{
+							ImGui::Text("%s", it->second.c_str());
+						}
+						else {
+							ImGui::Text("ID#%d (not in/load a datapackage)", songID);
+						}
+
+						ImGui::PopID();
+					}
+
+					if (_availableLocs == 0)
+					{
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("   ?   ");
+						ImGui::TableSetColumnIndex(1);
+						ImGui::Text("Waiting for songs...");
+					}
+
+					availableLocs = _availableLocs;
+
+					ImGui::EndTable();
+				}
+
+				ImGui::EndChild();
+			}
+
+			ImGui::EndTabItem();
+		}
 	}
 }

@@ -1,23 +1,68 @@
+#include "APClient.h"
 #include "APDeathLink.h"
+#include "APGUI.h"
 #include "APIDHandler.h"
 #include "APReload.h"
 #include "APTraps.h"
 #include "Diva.h"
 #include "pch.h"
+#include <Archipelago.h>
+#include <d3d11.h>
 #include <detours.h>
+#include <imgui_impl_dx11.h>
+#include <imgui_impl_win32.h>
 
 namespace fs = std::filesystem;
+
+HOOK(bool, __fastcall, _InputEverythingElse, 0x1402AB070, long long a1, int btn)
+{
+    return ImGui::GetIO().WantCaptureKeyboard ? false : original_InputEverythingElse(a1, btn);
+}
+
+HOOK(bool, __fastcall, _InputAcceptBack, 0x1402AAF80, long long a1, int btn)
+{
+    return ImGui::GetIO().WantCaptureKeyboard ? false : original_InputAcceptBack(a1, btn);
+}
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK HookedWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+        return true;
+
+    if (ImGui::GetIO().WantCaptureMouse)
+    {
+        switch (msg)
+        {
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+        case WM_MOUSEMOVE:
+        case WM_MOUSEWHEEL:
+            return 0;
+        }
+    }
+
+    return CallWindowProc(APGUI::g_OriginalWndProc, hWnd, msg, wParam, lParam);
+}
 
 // Archipelago Mod variables
 bool skip_mainmenu = false;
 
 const fs::path LocalPath = fs::current_path();
 const fs::path ConfigTOML = "config.toml";
-const fs::path OutputFileName = "results.json";
 
 void processConfig() {
-    // Move to a class and do not do this on init time
+    // The days of reloading the config for changes is over. Do it in the Client!
+    static bool once = false;
 
+    if (once)
+        return;
+
+    once = true;
+
+    // Move to a class and do not do this on init time
     try {
         std::ifstream file(LocalPath / ConfigTOML); // CWD is the mod folder within Init
         if (!file.is_open()) {
@@ -28,24 +73,13 @@ void processConfig() {
         auto data = toml::parse(file);
 
         skip_mainmenu = data["skip_mainmenu"].value_or(true);
+        APClient::config(data);
         APDeathLink::config(data);
         APTraps::config(data);
         APReload::config(data);
     }
     catch (const std::exception& e) {
         APLogger::print("Error parsing config file: %s\n", e.what());
-    }
-}
-
-void writeToFile(const nlohmann::json& results) {
-    // Write the JSON to a file
-    std::ofstream outputFile(LocalPath / OutputFileName);
-    if (outputFile.is_open()) {
-        outputFile << results.dump(4); // Pretty-print JSON with an indent of 4 spaces
-        outputFile.close();
-    }
-    else {
-        APLogger::print("Failed to write out rseults.json\n");
     }
 }
 
@@ -68,17 +102,13 @@ HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long l
     if (playerGrade == 2 && *playerPercent < *clearPercent)
         playerGrade = 1; // "Cheap"
 
-    nlohmann::json results = {
-        { "pvId", *(int*)(PvPlayData + 0x10) },
-        { "pvName", pvName->c_str() },
-        { "pvDifficulty", diff[1] + diff[2] },
-        { "scoreGrade", playerGrade },
-        { "deathLinked", APDeathLink::deathLinked },
-    };
-
-    APLogger::print("Writing out results.json\n%s\n", results.dump().c_str());
-    std::thread fileWriteThread(writeToFile, results);
-    fileWriteThread.detach();
+    if (playerGrade >= APClient::clearGrade)
+    {
+        APClient::LocationSend(*(int*)(PvPlayData + 0x10));
+    }
+    else {
+        APClient::SendDeath();
+    }
 
     original_PvResultsFinalize(PvPlayData, a2);
 }
@@ -86,7 +116,7 @@ HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long l
 HOOK(void, __fastcall, _PvLoop, 0x140244BA0, char* PvPlayData) {
     original_PvLoop(PvPlayData);
 
-    APDeathLink::run();
+    APDeathLink::run(false);
     APTraps::run();
 }
 
@@ -112,7 +142,7 @@ HOOK(float, __fastcall, _SafetyDuration, 0x14024a5f0, long long a1) {
     auto time = original_SafetyDuration(a1);
 
     APDeathLink::safetyExpired = (time <= 0.0f);
-    if (APDeathLink::safetyExpired && APDeathLink::HPdenominator > 1)
+    if (APDeathLink::safetyExpired && APDeathLink::HPnumerator < APDeathLink::HPdenominator)
         return 0.39f;
 
     return time;
@@ -139,7 +169,6 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527E49E0, int state, int substate
     }
     else if (state == 0 || state == 3) {
         skipped = false;
-        APIDHandler::update();
     }
     else if (state == 9 && substate == 47 || state == 6 && substate == 47) {
         bool reload_was_needed = APIDHandler::reload_needed;
@@ -147,9 +176,7 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527E49E0, int state, int substate
         APIDHandler::unlock();
 
         if (reload_was_needed) {
-            APIDHandler::update();
-
-            if (APIDHandler::toggleIDs.size() > 0) {
+            if (APClient::recvIDs.size() > 0) {
                 APLogger::print("Forcing needed reload (have IDs)\n");
                 original_ChangeGameSubState(0, 1);
                 return;
@@ -195,42 +222,17 @@ HOOK(void, __fastcall, _load_null, 0x1405948E0, long long* a1, unsigned long lon
 
 extern "C"
 {
-    void __declspec(dllexport) OnFrame(/*IDXGISwapChain* swapChain*/)
+    void __declspec(dllexport) OnFrame(IDXGISwapChain* swapChain)
     {
-        APReload::scan();
-    }
+        APClient::CheckMessages();
 
-    void __declspec(dllexport) PreInit()
-    {
-        // toml++ does not persist comments and most formatting which is intended for players.
-        // Save an option at the cost of a dropped file to inform new players about reloading and the config.
-        fs::path reload_file = LocalPath / ".reload_warning";
+        if (APGUI::g_ImGuiInitialized && !ImGui::GetIO().WantCaptureKeyboard)
+            APReload::scan();
 
-        if (!fs::exists(reload_file)) {
-            try {
-                // This is a wasteful read, but it "should" only ever happen one time ever
-                std::ifstream file(LocalPath / ConfigTOML);
-                auto data = toml::parse(file);
-
-                std::wstring msg = L"Press the reload key on the song list to get new songs.\n"
-                    "Songs can be cleared on any available difficulty for the same checks.\n"
-                    "Configure the reload key and more in the mod's config.toml.\n\n"
-                    "Current reload key: " + data["reload_key"].value_or(L"F7");
-
-                int msgboxID = MessageBox(
-                    NULL,
-                    msg.c_str(),
-                    L"Archipelago Mod",
-                    MB_OK
-                );
-            }
-            catch (const std::exception& e) {
-                APLogger::print("(PreInit) Error parsing config file: %s\n", e.what());
-            }
-
-            std::ofstream reload_out(reload_file);
-            reload_out.close();
-        }
+        APGUI::init(swapChain);
+        if (!APGUI::g_OriginalWndProc)
+            APGUI::g_OriginalWndProc = (WNDPROC)SetWindowLongPtr(APGUI::g_hWnd, GWLP_WNDPROC, (LONG_PTR)HookedWndProc);
+        APGUI::onFrame();
     }
 
     void __declspec(dllexport) Init()
@@ -246,5 +248,8 @@ extern "C"
         INSTALL_HOOK(_ReadDBLine);
         INSTALL_HOOK(_load_null);
         INSTALL_HOOK(_cust_null);
+
+        INSTALL_HOOK(_InputAcceptBack);
+        INSTALL_HOOK(_InputEverythingElse);
     }
 }

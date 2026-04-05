@@ -8,7 +8,7 @@ namespace APReload
     HWND hGameWindow;
     std::string reloadVal;
     int reloadKeyCode;
-    int reloadDelay;
+    int reloadDelay = 10;
 
     void config(toml::v3::ex::parse_result& data)
     {
@@ -18,7 +18,7 @@ namespace APReload
         APLogger::print("reload_key: %s (0x%x)\n",
                          reloadVal, static_cast<int>(reloadKeyCode));
 
-        reloadDelay = std::clamp(data["reload_delay"].value_or(10), 1, 10) * 100;
+        reloadDelay = std::clamp(data["reload_delay"].value_or(10), 1, 10);
         APLogger::print("reload_delay: %ims\n", reloadDelay);
 
         // DATA_TEST patch thanks to Debug mod: samyuu, nastys, vixen256, korenkonder, skyth
@@ -47,7 +47,7 @@ namespace APReload
         int* state = (int*)0x14CC61078;
         int* substate = (int*)0x14CC61094;
 
-        if (*state == 2 && *substate == 7 || *state == 0 || *state == 3 || *state == 7) {
+        if (*state == 2 && *substate == 7 || *state == 0 /*|| *state == 3*/ || *state == 7) {
             // Init, test, and Cust. In game including FTUI, MV, practice, and results.
             // state 7: reproducible infinite load/crash when reloading on Cust screen with 4 or more charas.
             //          only covers main menu -> cust, not song list -> cust
@@ -65,7 +65,7 @@ namespace APReload
 
     void sleepStartup()
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(reloadDelay));
+        std::this_thread::sleep_for(std::chrono::milliseconds(reloadDelay * 100));
         ChangeGameSubState(0, 1);
     }
 

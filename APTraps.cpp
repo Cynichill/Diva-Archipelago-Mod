@@ -1,5 +1,4 @@
 #include "APTraps.h"
-#include "Diva.h"
 
 namespace APTraps
 {
@@ -8,13 +7,6 @@ namespace APTraps
 	float trapDuration = 15.0f;
 	float iconInterval = 60.0f;
 	bool suhidden = false;
-
-	// Com
-
-	const fs::path LocalPath = fs::current_path();
-	const fs::path TrapSuddenInFile = "sudden";
-	const fs::path TrapHiddenInFile = "hidden";
-	const fs::path TrapIconInFile = "icontrap";
 
 	const uint64_t DivaGameControlConfig = 0x00000001401D6520;
 	//const uint64_t DivaGameModifier = 0x00000001412EF450;
@@ -47,16 +39,12 @@ namespace APTraps
 
 		suhidden = data["suhidden"].value_or(false);
 		APLogger::print("suhidden: %d\n", suhidden);
-
-		std::random_device rd;
-		mt.seed(rd());
-
-		reset();
 	}
 
 	int reset()
 	{
-		APLogger::print("Traps: reset\n");
+		std::random_device rd;
+		mt.seed(rd());
 
 		resetIcon();
 		timestampSudden = 0.0f;
@@ -66,8 +54,6 @@ namespace APTraps
 		isHidden = false;
 		isSudden = false;
 		lastRun = 0.0f;
-
-		//fs::remove(LocalPath / TrapIconInFile);
 
 		return 0;
 	}
@@ -85,14 +71,59 @@ namespace APTraps
 		savedIcon = 39;
 	}
 
-	bool exists(const fs::path& in)
+	float getGameTime()
 	{
-		return fs::exists(LocalPath / in);
+		return *(float*)DivaGameTimer;
+	}
+
+	void touchSudden()
+	{
+		float now = getGameTime();
+		float expires = (trapDuration > 0.0f) ? now + trapDuration : 0.0f;
+
+		APLogger::print("[%6.2f] Trap < Sudden (expires: %.2f)\n", now, expires);
+		timestampSudden = now;
+		isSudden = true;
+
+		if (!suhidden && isHidden) {
+			APLogger::print("[%6.2f] Trap < Hidden -> Sudden (expires: %.2f)\n", now, expires);
+			timestampHidden = 0.0f;
+			isHidden = false;
+		}
+	}
+
+	void touchHidden()
+	{
+		float now = getGameTime();
+		float expires = (trapDuration > 0.0f) ? now + trapDuration : 0.0f;
+
+		APLogger::print("[%6.2f] Trap < Hidden (expires: %.2f)\n", now, expires);
+		timestampHidden = now;
+		isHidden = true;
+
+		if (!suhidden && isSudden) {
+			APLogger::print("[%6.2f] Trap < Sudden -> Hidden (expires: %.2f)\n", now, expires);
+			timestampSudden = 0.0f;
+			isSudden = false;
+		}
+	}
+
+	void touchIcon()
+	{
+		float now = getGameTime();
+		float expires = (trapDuration > 0.0f) ? now + trapDuration : 0.0f;
+
+		APLogger::print("[%6.2f] Trap < Icon (expires: %.2f)\n", now, expires);
+		timestampIconStart = now;
+		rollIcon();
+
+		if (timestampIconStart == now)
+			return;
 	}
 
 	void run()
 	{
-		float now = *(float*)DivaGameTimer;
+		float now = getGameTime();
 
 		if (now == 0.0f && lastRun > 0.0f) {
 			reset();
@@ -103,21 +134,8 @@ namespace APTraps
 			return;
 
 		lastRun = now;
-		float expires = (trapDuration > 0.0f) ? now + trapDuration : 0.0f;
 
-		if (APTraps::exists(TrapSuddenInFile)) {
-			APLogger::print("[%6.2f] Trap < Sudden (expires: %.2f)\n", now, expires);
-			fs::remove(LocalPath / TrapSuddenInFile);
-			timestampSudden = now;
-			isSudden = true;
-
-			if (!suhidden && isHidden) {
-				APLogger::print("[%6.2f] Trap < Hidden -> Sudden (expires: %.2f)\n", now, expires);
-				timestampHidden = 0.0f;
-				isHidden = false;
-			}
-		}
-		else if (isSudden) {
+		if (isSudden) {
 			auto deltaSudden = now - timestampSudden;
 			if (trapDuration > 0.0f && deltaSudden >= trapDuration) {
 				APLogger::print("[%6.2f] Trap > Sudden expired\n", now);
@@ -126,35 +144,13 @@ namespace APTraps
 			}
 		}
 
-		if (APTraps::exists(TrapHiddenInFile)) {
-			APLogger::print("[%6.2f] Trap < Hidden (expires: %.2f)\n", now, expires);
-			fs::remove(LocalPath / TrapHiddenInFile);
-			timestampHidden = now;
-			isHidden = true;
-
-			if (!suhidden && isSudden) {
-				APLogger::print("[%6.2f] Trap < Sudden -> Hidden (expires: %.2f)\n", now, expires);
-				timestampSudden = 0.0f;
-				isSudden = false;
-			}
-		}
-		else if (isHidden) {
+		if (isHidden) {
 			auto deltaHidden = now - timestampHidden;
 			if (trapDuration > 0.0f && deltaHidden >= trapDuration) {
 				APLogger::print("[%6.2f] Trap > Hidden expired\n", now);
 				timestampHidden = 0.0f;
 				isHidden = false;
 			}
-		}
-
-		if (APTraps::exists(TrapIconInFile)) {
-			APLogger::print("[%6.2f] Trap < Icon (expires: %.2f)\n", now, expires);
-			fs::remove(LocalPath / TrapIconInFile);
-			timestampIconStart = now;
-			rollIcon();
-
-			if (timestampIconStart == now)
-				return;
 		}
 
 		if (savedIcon <= 12) {
@@ -209,5 +205,69 @@ namespace APTraps
 		}
 
 		WRITE_MEMORY(getIconAddress(), uint8_t, (uint8_t)nextIcon);
+	}
+
+	void ImGuiTab()
+	{
+		if (ImGui::BeginTabItem("Traps")) {
+			auto PvPlayData = 0x1412C2330;
+			char buf[32];
+			float songLength = *(float*)(PvPlayData + 0x2D338);
+			sprintf(buf, "%.03f / %.03f", getGameTime(), songLength);
+			ImGui::ProgressBar(getGameTime() / songLength, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f), buf);
+
+			ImGui::SliderFloat("Trap Duration", &trapDuration, 0.0f, 300.0f, "%.1f seconds");
+			ImGui::SameLine();
+			HelpMarker("Seconds until individual traps expire.\n0 to not expire for current attempt.");
+
+			ImGui::SliderFloat("Icon Reroll", &iconInterval, 0.0f, 60.0f, "%.1f seconds");
+			ImGui::SameLine();
+			HelpMarker("Seconds between icon rerolls while Icon trap is active.\n0 to only reroll once.");
+
+			ImGui::Checkbox("Allow Sudden and Hidden to overlap", &suhidden);
+
+			if (ImGui::Button("Sudden"))
+				touchSudden();
+			ImGui::SameLine();
+			if (ImGui::Button("Hidden"))
+				touchHidden();
+			ImGui::SameLine();
+			if (ImGui::Button("Icon"))
+				touchIcon();
+
+			if (ImGui::BeginTable("tableTraps", 2))
+			{
+				if (isSudden)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::Text("Sudden");
+					ImGui::TableSetColumnIndex(1);
+					ImGui::Text("%.02f", trapDuration + timestampSudden - getGameTime());
+				}
+
+				if (isHidden)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::Text("Hidden");
+					ImGui::TableSetColumnIndex(1);
+					ImGui::Text("%.02f", trapDuration + timestampHidden - getGameTime());
+				}
+
+				if (savedIcon <= 12)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::Text("Icon");
+					ImGui::TableSetColumnIndex(1);
+					ImGui::Text("%.02f", trapDuration + timestampIconStart - getGameTime());
+				}
+
+				ImGui::EndTable();
+			}
+
+			ImGui::EndTabItem();
+		}
 	}
 }

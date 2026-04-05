@@ -8,10 +8,14 @@
 #define PCH_H
 
 // add headers that you want to pre-compile here
+
+// Do not sort without testing
+
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 #include <windows.h>
 #include "APLogger.h"
 #include "Helpers.h"
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -20,5 +24,19 @@
 #include <string>
 #include <thread>
 #include <toml++/toml.h>
+#include <imgui.h>
+
+// TODO: Relocate
+inline void HelpMarker(const char* desc)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::BeginItemTooltip())
+    {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
 
 #endif //PCH_H
