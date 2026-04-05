@@ -1,6 +1,6 @@
 ### Building (local)
 
-Archipelago Mod and APCpp build targets **need to be the same.** Currently, **Debug** (`/MDd`) is the default.
+Archipelago Mod and APCpp build targets **need to be the same.** If you experience crashes, this is most likely why.
 
 1. Clone recursively with `git clone --recurse-submodules`
    - [APCpp](https://github.com/N00byKing/APCpp) is pinned as a submodule, and has pinned submodules of its own.
