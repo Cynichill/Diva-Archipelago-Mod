@@ -1,3 +1,4 @@
 [submodule "Dependencies/APCpp"]
 	path = Dependencies/APCpp
 	url = https://github.com/N00byKing/APCpp.git
+    ignore = dirty
