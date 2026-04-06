@@ -16,7 +16,7 @@ namespace APReload
         reloadKeyCode = GetReloadKeyCode(reloadVal);
 
         APLogger::print("reload_key: %s (0x%x)\n",
-                         reloadVal, static_cast<int>(reloadKeyCode));
+                         reloadVal.c_str(), static_cast<int>(reloadKeyCode));
 
         reloadDelay = std::clamp(data["reload_delay"].value_or(10), 1, 10);
         APLogger::print("reload_delay: %ims\n", reloadDelay);

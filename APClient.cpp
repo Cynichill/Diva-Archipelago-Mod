@@ -37,6 +37,7 @@ namespace APClient
 
     std::string DataRequestRaw; // Raw should always be a (JSON) string.
     AP_GetServerDataRequest request;
+    bool requested = false;
 
     nlohmann::json_abi_v3_12_0::json slotData;
     std::vector<int> seedIDs = {}; // Song IDs that are part of the seed
@@ -131,24 +132,30 @@ namespace APClient
 
     AP_RequestStatus ServerDataRequest_Raw(std::string key)
     {
-        if (request.status == AP_RequestStatus::Done || request.status == AP_RequestStatus::Error)
-            return (AP_RequestStatus)request.status;
+        if (!requested)
+        {
+            requested = true;
 
-        request.key = key;
-        request.value = &DataRequestRaw;
-        request.type = AP_DataType::Raw;
-        request.status = AP_RequestStatus::Pending;
+            APLogger::print("ServerDataRequest_Raw: %s\n", key.c_str());
+            request.key = key;
+            request.value = &DataRequestRaw;
+            request.type = AP_DataType::Raw;
+            request.status = AP_RequestStatus::Pending;
 
-        AP_GetServerData(&request);
+            AP_GetServerData(&request);
+        }
 
-        return AP_RequestStatus::Pending;
+        if (requested && request.status == AP_RequestStatus::Done || request.status == AP_RequestStatus::Error)
+            requested = false;
+
+        return request.status;
     }
 
     void GetSlotData()
     {
         if (slotData.is_null() && request.status == AP_RequestStatus::Pending)
         {
-            APLogger::print("GetSlotData\n");
+            APLogger::print("GetSlotData pending\n");
             ServerDataRequest_Raw("_read_slot_data_" + std::to_string(AP_GetPlayerID()));
             return;
         }
@@ -179,6 +186,8 @@ namespace APClient
         APReload::run();
         APTraps::reset();
         UpdateMissing();
+
+        APLogger::print("GetSlotData complete\n");
     }
 
     void ItemClear()

@@ -104,7 +104,7 @@ namespace APIDHandler
 			ImGui::Text("In logic: %d |", availableLocs);
 
 			ImGui::SameLine();
-			ImGui::Text("Go mode: ?");
+			ImGui::Text("Leeks: %d/%d", APClient::leekHave, APClient::leekNeed);
 
 			if (ImGui::Checkbox("Freeplay", &freeplay))
 				APReload::run();
