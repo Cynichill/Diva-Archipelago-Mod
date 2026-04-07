@@ -1,6 +1,7 @@
 #include "APClient.h"
 #include "APDeathLink.h"
 #include "APGUI.h"
+#include "APHints.h"
 #include "APIDHandler.h"
 #include "APReload.h"
 #include "APTraps.h"
@@ -86,11 +87,13 @@ namespace APGUI
         if (showImGuiDemo)
             ImGui::ShowDemoWindow();
 
-        ImGui::Begin("Archipelago Mod###APClient", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
+        ImGui::Begin("Archipelago Mod###APClient", NULL,
+                    ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
 
         if (ImGui::BeginTabBar("APTabs")) {
             APClient::ImGuiTab();
             APIDHandler::ImGuiTab();
+            APHints::ImGuiTab();
             APDeathLink::ImGuiTab();
             APTraps::ImGuiTab();
 
@@ -136,12 +139,15 @@ namespace APGUI
             {
                 ImGui::SetWindowFocus("Archipelago Mod - First Run");
 
-                std::string warn = "After connecting, press the reload key while on the song list to get new songs.\n"
-                    "Songs can be cleared on any available difficulty for the same checks.\n\n"
-                    "Defaults for some options can be configured in the mod's config.toml\n\n"
-                    "Current reload key: " + (std::string)data["reload_key"].value_or("F7");
+                std::string warn1 = "After connecting, press the reload key while on the song list to get new songs.\n"
+                    "Songs can be cleared on any available difficulty for the same checks.\n\n";
+                ImGui::Text("%s", warn1.c_str());
 
-                ImGui::Text("%s", warn.c_str());
+                ImGui::Text("Defaults for some options can be configured in the mod's");
+                ImGui::SameLine();
+                ImGui::TextLinkOpenURL("config.toml", ConfigTOML.string().c_str());
+
+                ImGui::Text("\nCurrent reload key: %s", (std::string)data["reload_key"].value_or("F7"));
 
                 ImGui::Separator();
                 if (ImGui::Button("I don't remember installing this mod"))
@@ -150,6 +156,7 @@ namespace APGUI
                     std::ofstream reload_out(reload_file);
                     reload_out.close();
                     ImGui::CloseCurrentPopup();
+                    ImGui::EndPopup();
                     return false;
                 }
                 ImGui::EndPopup();
@@ -163,6 +170,11 @@ namespace APGUI
     void ImGuiTab()
     {
         if (ImGui::BeginTabItem("Advanced")) {
+            CenterText("Open config.toml");
+            ImGui::TextLinkOpenURL("Open config.toml", ConfigTOML.string().c_str());
+
+            ImGui::Separator();
+
             if (ImGui::Button("Reload"))
                 APReload::run();
 

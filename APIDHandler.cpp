@@ -1,7 +1,7 @@
 #include "APClient.h"
+#include "APHints.h"
 #include "APIDHandler.h"
 #include "APReload.h"
-#include <sstream>
 
 namespace APIDHandler
 {
@@ -16,8 +16,10 @@ namespace APIDHandler
 	auto &seedIDs = APClient::seedIDs;
 	auto &recvIDs = APClient::recvIDs;
 	auto &missingIDs = APClient::missingIDs;
-	int availableLocs = 0; // Calculated on reload
 	auto &item_ap_id_to_name = APClient::item_ap_id_to_name;
+	int availableLocs = 0; // Calculated on reload
+
+	auto &HintedIDs = APHints::HintedIDs;
 
 	bool checkNC()
 	{
@@ -98,7 +100,8 @@ namespace APIDHandler
 
 			ImGui::SameLine();
 			int totalLocs = (seedIDs.size() - 1) * 2;
-			ImGui::Text("Locs: %d/%d |", CheckedLocations.size(), totalLocs);
+			// APCpp's check callback runs multiple times around goaling?
+			ImGui::Text("Locs: %d/%d |", min(CheckedLocations.size(), totalLocs), totalLocs);
 
 			ImGui::SameLine();
 			ImGui::Text("In logic: %d |", availableLocs);
@@ -116,8 +119,12 @@ namespace APIDHandler
 			ImGui::SameLine();
 			HelpMarker("When not in Freeplay, the song list will only show songs that have checks.");
 
-			if (ImGui::BeginChild("tableContainer", ImVec2(0, 300))) {
-				if (ImGui::BeginTable("tableDatapackage", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit))
+			if (ImGui::BeginChild("tableTrackerContainer", ImVec2(0, 300))) {
+				if (ImGui::BeginTable("tableTracker", 2,
+					ImGuiTableFlags_BordersInner | ImGuiTableFlags_Hideable | ImGuiTableFlags_HighlightHoveredColumn |
+					ImGuiTableFlags_Reorderable | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg |
+					ImGuiTableFlags_ScrollX | ImGuiTableFlags_SizingFixedFit
+				))
 				{
 					ImGui::TableSetupColumn("Checks");
 					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
@@ -141,33 +148,39 @@ namespace APIDHandler
 						ImGui::TableSetColumnIndex(0);
 
 						std::string label = (available > 0) ? std::to_string(available) : " ";
-						if (songID == APClient::victoryID / 10)
+						std::string label2 = (songID == APClient::victoryID / 10) ? "GOAL" : label;
+
+						CenterText(label2);
+						ImGui::Text("%s", label2.c_str());
+
+						ImGui::TableSetColumnIndex(1);
+						std::string name = item_ap_id_to_name[songID * 10];
+
+						if (name.length() > 0)
 						{
-							ImGui::Text(" GOAL! ");
+							bool isHinted = std::find(HintedIDs.begin(), HintedIDs.end(), songID) != HintedIDs.end();
+
+							if (isHinted)
+								ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+
+							ImGui::Text("%s", name.c_str());
+
+							if (isHinted)
+								ImGui::PopStyleColor();
 						}
 						else {
-							ImGui::Text("   %s   ", label.c_str());
+							ImGui::Text("ID#%d (not in/load a datapackage)", songID);
 						}
 
 						if (APClient::devMode)
 						{
 							if (ImGui::BeginPopupContextItem("##xx"))
 							{
-								if (ImGui::MenuItem("This one?##xx"))
+								if (ImGui::MenuItem("Cheat##xx"))
 									APClient::LocationSend(songID);
 
 								ImGui::EndPopup();
 							}
-						}
-
-						ImGui::TableSetColumnIndex(1);
-						auto it = item_ap_id_to_name.find(songID * 10);
-						if (it != item_ap_id_to_name.end())
-						{
-							ImGui::Text("%s", it->second.c_str());
-						}
-						else {
-							ImGui::Text("ID#%d (not in/load a datapackage)", songID);
 						}
 
 						ImGui::PopID();
@@ -177,7 +190,8 @@ namespace APIDHandler
 					{
 						ImGui::TableNextRow();
 						ImGui::TableSetColumnIndex(0);
-						ImGui::Text("   ?   ");
+						CenterText("?");
+						ImGui::Text("?");
 						ImGui::TableSetColumnIndex(1);
 						ImGui::Text("Waiting for songs...");
 					}

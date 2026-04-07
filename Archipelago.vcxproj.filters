@@ -57,6 +57,9 @@
     <ClInclude Include="APClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="APHints.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -108,6 +111,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="APClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APHints.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

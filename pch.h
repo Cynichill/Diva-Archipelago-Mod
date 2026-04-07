@@ -13,6 +13,7 @@
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 #include <windows.h>
+#include <Archipelago.h>
 #include "APLogger.h"
 #include "Helpers.h"
 #include <ctime>
@@ -37,6 +38,13 @@ inline void HelpMarker(const char* desc)
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
     }
+}
+
+inline void CenterText(std::string text)
+{
+    float margin = ImGui::GetContentRegionAvail().x / 2;
+    float width = ImGui::CalcTextSize(text.c_str()).x / 2;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + margin - width);
 }
 
 #endif //PCH_H

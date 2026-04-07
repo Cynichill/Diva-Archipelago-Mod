@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClInclude Include="APClient.h" />
     <ClInclude Include="APGUI.h" />
+    <ClInclude Include="APHints.h" />
     <ClInclude Include="APIDHandler.h" />
     <ClInclude Include="APLogger.h" />
     <ClInclude Include="APReload.h" />
@@ -177,6 +178,7 @@
   <ItemGroup>
     <ClCompile Include="APClient.cpp" />
     <ClCompile Include="APGUI.cpp" />
+    <ClCompile Include="APHints.cpp" />
     <ClCompile Include="APIDHandler.cpp" />
     <ClCompile Include="APLogger.cpp" />
     <ClCompile Include="APReload.cpp" />

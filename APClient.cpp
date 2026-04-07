@@ -1,6 +1,7 @@
 #include "APClient.h"
 #include "APDeathLink.h"
 #include "APGUI.h"
+#include "APHints.h"
 #include "APIDHandler.h"
 #include "APReload.h"
 #include "APTraps.h"
@@ -31,13 +32,16 @@ namespace APClient
     // Datapackage
 
     nlohmann::json_abi_v3_12_0::json datapackageJSON;
+    std::unordered_map<std::string, uint32_t> item_name_to_ap_id;
     std::unordered_map<uint32_t, std::string> item_ap_id_to_name;
+    std::unordered_map<std::string, uint32_t> location_name_to_id;
+    std::unordered_map<uint32_t, std::string> location_id_to_name;
 
     // Item and location tracking
 
     std::string DataRequestRaw; // Raw should always be a (JSON) string.
     AP_GetServerDataRequest request;
-    bool requested = false;
+    bool requested = false; // state tracking of request since it doesn't provide a null state
 
     nlohmann::json_abi_v3_12_0::json slotData;
     std::vector<int> seedIDs = {}; // Song IDs that are part of the seed
@@ -69,6 +73,11 @@ namespace APClient
         strncpy(slotPassword, config_pass.c_str(), config_pass.size() + 1);
     }
 
+    char* getSlotName()
+    {
+        return slotName;
+    }
+
     void connect()
     {
         AP_Shutdown();
@@ -79,22 +88,13 @@ namespace APClient
 
             // Requires `death_link` in slot data, not `deathLink`, etc.
             AP_SetDeathLinkSupported(true);
-            AP_SetDeathLinkRecvCallback(RecvDeath);
+            AP_SetDeathLinkRecvCallback(RecvDeath); // Switch to Bounce callback handle
 
             AP_SetItemClearCallback(ItemClear);
             AP_SetItemRecvCallback(ItemRecv);
             AP_SetLocationCheckedCallback(LocationChecked);
 
-            // int slot data
-            // autoRemove bool / Handle internally
-            // deathLink -> death_link type? / Needs a rename for APCpp
-            // deathLink_Amnesty -> death_link_amnesty int / Needs a rename and/or handle internally
-
-            // raw slot data (mix of strings and lists)
-            // finalSongIDs list[int] / To know all relevant locations
-            // modData dict[str, list[str,int]] / Possibly not needed (for the mod) since dynamic datapackage? Universal Tracker still needs it
-            // modRemap
-            // victoryLocation str / Possibly not needed in slot data anymore?
+            // deathLink -> death_link type? / Needs a rename for APCpp, use Bounce callback, always enabled in slot data
 
             AP_Start();
         }
@@ -105,6 +105,7 @@ namespace APClient
         datapackageLoaded = false;
 
         slotData = nullptr;
+        requested = false;
         request.status = AP_RequestStatus::Pending;
         DataRequestRaw.clear();
 
@@ -126,37 +127,39 @@ namespace APClient
         progHPTotal = 1;
 
         APIDHandler::reset();
+        APHints::reset();
     }
 
     // Server messages
 
-    AP_RequestStatus ServerDataRequest_Raw(std::string key)
+    AP_RequestStatus ServerDataRequest_Raw(std::string key, AP_GetServerDataRequest& rawRequest, bool& rawRequested, std::string& output)
     {
-        if (!requested)
+        if (!rawRequested)
         {
-            requested = true;
+            rawRequested = true;
 
             APLogger::print("ServerDataRequest_Raw: %s\n", key.c_str());
-            request.key = key;
-            request.value = &DataRequestRaw;
-            request.type = AP_DataType::Raw;
-            request.status = AP_RequestStatus::Pending;
+            rawRequest.key = key;
+            rawRequest.value = &output;
+            rawRequest.type = AP_DataType::Raw;
+            rawRequest.status = AP_RequestStatus::Pending;
 
-            AP_GetServerData(&request);
+            AP_GetServerData(&rawRequest);
         }
 
-        if (requested && request.status == AP_RequestStatus::Done || request.status == AP_RequestStatus::Error)
-            requested = false;
+        if (rawRequested && rawRequest.status == AP_RequestStatus::Done || rawRequest.status == AP_RequestStatus::Error)
+            rawRequested = false;
 
-        return request.status;
+        return rawRequest.status;
     }
 
     void GetSlotData()
     {
         if (slotData.is_null() && request.status == AP_RequestStatus::Pending)
         {
-            APLogger::print("GetSlotData pending\n");
-            ServerDataRequest_Raw("_read_slot_data_" + std::to_string(AP_GetPlayerID()));
+            APLogger::print(__FUNCTION__" pending\n");
+            auto name = "_read_slot_data_" + std::to_string(AP_GetPlayerID());
+            ServerDataRequest_Raw(name, request, requested, DataRequestRaw);
             return;
         }
 
@@ -183,11 +186,13 @@ namespace APClient
 
         // TODO: Remaps
 
+        DataRequestRaw.clear();
+        requested = false;
         APReload::run();
         APTraps::reset();
         UpdateMissing();
 
-        APLogger::print("GetSlotData complete\n");
+        APLogger::print(__FUNCTION__" complete\n");
     }
 
     void ItemClear()
@@ -201,6 +206,7 @@ namespace APClient
         switch (itemID) {
             case 1:
                 leekHave += 1;
+                UpdateMissing();
                 break;
             case 2:
                 break; // Filler
@@ -218,8 +224,10 @@ namespace APClient
                 APTraps::touchIcon();
                 break;
             default:
-                if (itemID >= 10)
+                if (itemID >= 10) {
                     PushRecvID(itemID / 10);
+                    APHints::updateByItemName(item_ap_id_to_name[itemID]);
+                }
         }
     }
 
@@ -260,8 +268,12 @@ namespace APClient
         }
         else {
             // Song locations are in pairs
-            std::set<int64_t> locs{ pvID * 10, (pvID * 10) + 1 };
+            uint32_t APID = pvID * 10;
+
+            std::set<int64_t> locs{ APID, APID + 1 };
             AP_SendItem(locs);
+
+            APHints::updateSentLocations(std::array<uint32_t, 2>{ APID, APID + 1});
         }
     }
 
@@ -286,6 +298,12 @@ namespace APClient
             APLogger::print("%s\n", msg->text.c_str());
 
             LogAppend(msg->text);
+
+            if (msg->type == AP_MessageType::Hint)
+            {
+                AP_HintMessage* h_msg = static_cast<AP_HintMessage*>(msg);
+                APHints::handleHintMessage(*h_msg);
+            }
 
             AP_ClearLatestMessage();
         }
@@ -343,8 +361,13 @@ namespace APClient
         // TODO: try catch?
         datapackageJSON = nlohmann::json::parse(datapackage);
 
+        item_name_to_ap_id = datapackageJSON["item_name_to_id"].get<std::unordered_map<std::string, uint32_t>>();
         for (auto& el : datapackageJSON["item_name_to_id"].items())
             item_ap_id_to_name[(uint32_t)el.value()] = el.key();
+
+        location_name_to_id = datapackageJSON["location_name_to_id"].get<std::unordered_map<std::string, uint32_t>>();
+        for (auto& el : datapackageJSON["location_name_to_id"].items())
+            location_id_to_name[(uint32_t)el.value()] = el.key();
 
         datapackageLoaded = true;
         return true;

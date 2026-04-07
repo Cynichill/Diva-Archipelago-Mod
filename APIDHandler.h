@@ -15,5 +15,5 @@ namespace APIDHandler
 	bool check(std::string& line);
 	void reset();
 
-	extern void ImGuiTab();
+	void ImGuiTab();
 }

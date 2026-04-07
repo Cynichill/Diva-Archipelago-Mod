@@ -4,6 +4,8 @@
 
 namespace APDeathLink
 {
+    bool devMode = APClient::devMode;
+
     // Config options
     int percent = 100; // Percentage of max HP to lose on receive. "If at or below this, die."
     float safety = 10.0f; // Seconds after receiving a DL to avoid chain reaction DLs.
@@ -240,7 +242,7 @@ namespace APDeathLink
             ImGui::SameLine();
             HelpMarker("Seconds after receiving where dying does not send one out.");
 
-            if (APClient::devMode)
+            if (devMode)
             {
                 if (ImGui::Button("Die"))
                 {
