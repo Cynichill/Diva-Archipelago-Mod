@@ -9,6 +9,7 @@ slot_server = "archipelago.gg:38281"
 slot_password = ""
 
 # Defaults for these options which can then be adjusted in the in-game client
+autohide          = true    # true/false, default false. automatically hide songs with no new checks
 deathlink_percent = 100     # 0-100, default 100 percent of max HP to lose on receive. <100 for non-lethal
 deathlink_safety  = 10.0    # 0-30, default 10.0 seconds after receiving a DL where dying does not send one out
 trap_duration     = 15.0    # 0-300, default 15.0 seconds until traps expire. 0 to not expire for current attempt

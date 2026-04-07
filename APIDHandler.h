@@ -9,6 +9,8 @@ namespace APIDHandler
 	// If true, do not act on toggleIDs.
 	extern bool reload_needed;
 
+	void config(toml::v3::ex::parse_result& data);
+
 	bool checkNC();
 	void lock();
 	void unlock();
