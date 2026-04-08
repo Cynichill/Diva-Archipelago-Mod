@@ -4,7 +4,7 @@
 namespace APHints
 {
     // Currently missing most of the networking to do hints properly
-    // The potential expensive operation are !hint refreshes due to server notices instead of JSON
+    // The potential expensive operations are !hint refreshes due to server notices instead of JSON
     // Hopefully in the future use _read_hints_{team}_{slot}
     //  https://github.com/ArchipelagoMW/Archipelago/blob/main/docs/network%20protocol.md#get
     //  https://github.com/ArchipelagoMW/Archipelago/blob/main/docs/network%20protocol.md#Hint
@@ -16,10 +16,9 @@ namespace APHints
     bool hintOwnLocationsOnly = false;
 
     // For updating known hints without further !hint chats (and saving on PrintJSONs)
-    std::string rawHints;
-    nlohmann::json_abi_v3_12_0::json jsonHints;
-    AP_GetServerDataRequest requestHints;
-    bool requestedHints = false;
+    std::string hintsRaw_S; // Request response, JSON in a string
+    AP_GetServerDataRequest hintsRequest;
+    bool hintsRequested = false; // actually state track if the request is known
 
     // AP_HintMessage passes players as stringified names instead of player ID. Good and bad.
     std::vector<AP_HintMessage> Hints;
@@ -41,8 +40,7 @@ namespace APHints
     void reset()
     {
         init = false;
-        requestedHints = false;
-        jsonHints = nullptr;
+        hintsRequested = false;
         Hints.clear();
         HintedIDs.clear();
     }
@@ -75,34 +73,52 @@ namespace APHints
 
     void refreshHints()
     {
-        if (!requestedHints) {
+        if (!hintsRequested) {
             auto name = "_read_hints_0_" + std::to_string(AP_GetPlayerID());
-            APClient::ServerDataRequest_Raw(name, requestHints, requestedHints, rawHints);
+            APClient::ServerDataRequest_Raw(name, hintsRequest, hintsRequested, hintsRaw_S);
             return;
         }
 
-        if (!jsonHints.is_null() || !&rawHints)
+        if (hintsRequest.status != AP_RequestStatus::Error)
+        {
+            hintsRequested = false;
+            APLogger::print(__FUNCTION__": error\n");
             return;
+        }
 
-        APLogger::print(__FUNCTION__": hints request finished\n");
+        if (hintsRequest.status == AP_RequestStatus::Done && hintsRaw_S.empty())
+        {
+            hintsRequested = false;
+            APLogger::print(__FUNCTION__": request returned empty, abort\n");
+            return;
+        }
 
-        nlohmann::json tempHints = nlohmann::json::parse(rawHints);
+        nlohmann::json tempHints;
 
-        for (const auto& hint : tempHints) {
-            if (hint["status"] != 40 || hint["item"] < 10 || hint["receiving_player"] != AP_GetPlayerID())
-                continue;
+        try {
+            nlohmann::json tempHints = nlohmann::json::parse(hintsRaw_S);
 
-            auto itemName = item_ap_id_to_name[hint["item"]];
+            for (const auto& hint : tempHints) {
+                if (hint["status"] != 40 || hint["item"] < 10 || hint["receiving_player"] != AP_GetPlayerID())
+                    continue;
 
-            for (AP_HintMessage& hint : Hints) {
-                if (hint.item.compare(itemName) == 0)
-                    hint.checked = true;
+                auto itemName = item_ap_id_to_name[hint["item"]];
+
+                for (AP_HintMessage& hint : Hints) {
+                    if (hint.item.compare(itemName) == 0)
+                        hint.checked = true;
+                }
             }
         }
+        catch (const nlohmann::json::parse_error& e) {
+            APLogger::print(__FUNCTION__": JSON parse error: (%d) %s\n", e.byte, e.what());
+        }
+        catch (const std::exception& e) {
+            APLogger::print(__FUNCTION__": Exception during JSON parse: %s\n", e.what());
+        }
 
-        requestedHints = false;
-        jsonHints = nullptr;
-        rawHints.clear();
+        hintsRequested = false;
+        hintsRaw_S.clear();
     }
 
     void updateSentLocations(const std::array<uint32_t, 2> locationIDs)
@@ -140,7 +156,7 @@ namespace APHints
                 init = true;
             }
 
-            if (requestedHints)
+            if (hintsRequested)
                 refreshHints();
 
             ImGui::Checkbox("Hide checked", &hintHideChecked);
