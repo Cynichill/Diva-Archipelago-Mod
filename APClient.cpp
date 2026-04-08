@@ -87,7 +87,7 @@ namespace APClient
 
             // Requires `death_link` in slot data, not `deathLink`, etc.
             AP_SetDeathLinkSupported(true);
-            AP_RegisterBouncedCallback(bounced);
+            //AP_RegisterBouncedCallback(bounced);
             AP_SetDeathLinkRecvCallback(RecvDeath); // Switch to Bounce callback handle
 
             AP_SetItemClearCallback(ItemClear);
