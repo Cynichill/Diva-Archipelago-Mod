@@ -232,7 +232,7 @@ namespace APDeathLink
                 HelpMarker("Temporarily increase available chunk count.\nResets when the next one is received.");
 
                 if (devMode)
-                    ImGui::SliderInt("Denominator", &HPdenominator, 1, 255);
+                    ImGui::SliderInt("Denominator", &HPdenominator, 1, 20);
 
                 ImGui::Separator();
             }
