@@ -156,8 +156,8 @@ namespace APHints
                 init = true;
             }
 
-            if (hintsRequested)
-                refreshHints();
+            /*if (hintsRequested)
+                refreshHints();*/
 
             ImGui::Checkbox("Hide checked", &hintHideChecked);
             ImGui::SameLine();
@@ -169,7 +169,7 @@ namespace APHints
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail - buttonWidth);
 
             if (ImGui::Button("Manual Refresh"))
-                refreshHints();
+                AP_Say("!hint");
 
             if (ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
@@ -177,7 +177,7 @@ namespace APHints
                 ImGui::EndTooltip();
             }
 
-            ImGui::Checkbox("Only show my checks", &hintOwnLocationsOnly);
+            ImGui::Checkbox("Show only my checks", &hintOwnLocationsOnly);
 
             ImGui::SameLine();
             std::string hintLabel = std::to_string(Hints.size()) + " Hints";

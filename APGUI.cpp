@@ -200,9 +200,8 @@ namespace APGUI
             }
 
             if (devMode) {
-                if (ImGui::Button("Console"))
-                    if (!GetConsoleWindow())
-                        AllocConsole();
+                if (!GetConsoleWindow() && ImGui::Button("Console"))
+                    AllocConsole();
 
                 if (ImGui::Button("Sample Random IDs")) {
                     APClient::seedIDs.clear();
