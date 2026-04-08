@@ -161,19 +161,21 @@ namespace APHints
 
             ImGui::Checkbox("Hide checked", &hintHideChecked);
             ImGui::SameLine();
-            HelpMarker("Non-song items may be out of date until manually refreshed.\n");
+            HelpMarker("Non-song items may be out of date until manually refreshed.");
             ImGui::SameLine();
 
             float avail = ImGui::GetContentRegionAvail().x;
             float buttonWidth = ImGui::CalcTextSize("Manual Refresh").x + ImGui::GetStyle().FramePadding.x * 2;
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail - buttonWidth);
 
+            ImGui::BeginDisabled(true);
             if (ImGui::Button("Manual Refresh"))
                 AP_Say("!hint");
+            ImGui::EndDisabled();
 
             if (ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
-                ImGui::Text("Refresh checked status for non-song items.\n");
+                ImGui::Text("Refresh checked status for non-song items.\nThis sends a !hint command in chat.");
                 ImGui::EndTooltip();
             }
 
