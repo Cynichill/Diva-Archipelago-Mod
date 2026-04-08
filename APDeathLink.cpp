@@ -275,15 +275,15 @@ namespace APDeathLink
             HelpMarker("When you die on your own or fail to reach Grade Needed (not both), everyone with Death Link enabled dies.");
 
             if (death_link) {
-
                 if (ImGui::SliderInt("Death Link Amnesty", &death_link_amnesty, 0, 20))
                     death_link_amnesty_count = death_link_amnesty;
                 ImGui::SameLine();
                 HelpMarker("Amount of additional own deaths needed before sending one Death Link. 0 would be every death, 1 every other, etc.");
 
                 if (death_link_amnesty > 0) {
-                    ImGui::ProgressBar(static_cast<float>(death_link_amnesty_count) / static_cast<float>(death_link_amnesty));
-                    //("%d / %d deaths", death_link_amnesty_count, death_link_amnesty);
+                    char overlay[64];
+                    sprintf(overlay, "%d / %d deaths", death_link_amnesty - death_link_amnesty_count, death_link_amnesty);
+                    ImGui::ProgressBar(static_cast<float>(death_link_amnesty - death_link_amnesty_count) / static_cast<float>(death_link_amnesty), ImVec2(0,0), overlay);
                 }
 
                 ImGui::SliderInt("Death Link Percent", &death_link_percent, 0, 100, "%d%%");
