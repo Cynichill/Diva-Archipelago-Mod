@@ -13,6 +13,6 @@ namespace APGUI
 
     void init(IDXGISwapChain* swapChain);
     void onFrame();
-    bool warning();
+    void warning();
     void ImGuiTab();
 }

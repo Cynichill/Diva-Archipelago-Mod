@@ -1,4 +1,3 @@
-#pragma warning( disable : 4244 )
 #include "APClient.h"
 #include "APDeathLink.h"
 
@@ -78,11 +77,11 @@ namespace APDeathLink
         }
 
         // Get portion of HP
-        int available = (255.0f / (float)HPdenominator) * HPnumerator;
+        int available = (255 * HPnumerator) / HPdenominator;
         available = std::clamp((int)available, 1, 255);
 
         HPfloor = 255 - available;
-        HPpercent = ((float)HPfloor / 255.0f) * 100.0f - 1;
+        HPpercent = (HPfloor * 100) / 255 - 1;
 
         if (changed)
             APLogger::print("[%6.2f] DeathLinkHP < %i / %i = %i%% (%i HP)\n",
@@ -90,11 +89,11 @@ namespace APDeathLink
 
         if (!HPengaged) {
             // Roll 6% behind current HP. One day find the HP bar % address.
-            int hp_percent = ((float)*(uint8_t*)DivaGameHP / 255.0f) * 100.0f;
+            int hp_percent = (*(uint8_t*)DivaGameHP * 100) / 255;
 
             if (HPprepercent < hp_percent - 6) {
                 HPprepercent += 1;
-                HPprefloor = 255.0f * ((float)HPprepercent / 100.0f);
+                HPprefloor = (255 * HPprepercent) / 100;
                 WRITE_MEMORY(DivaSafetyWidthPercent, int, static_cast<uint8_t>(HPprepercent));
             }
         }

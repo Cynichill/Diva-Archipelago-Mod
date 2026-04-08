@@ -107,8 +107,8 @@ namespace APGUI
         if (!firstFrame)
         {
             ImVec2 display_size = ImGui::GetIO().DisplaySize;
-            ImVec2 window_pos = ImVec2(display_size.x - ImGui::GetWindowWidth() - (display_size.x * 0.01),
-                                       display_size.y - ImGui::GetWindowHeight() - (display_size.y * 0.01));
+            ImVec2 window_pos = ImVec2(display_size.x - ImGui::GetWindowWidth() - (display_size.x * static_cast<float>(0.01)),
+                                       display_size.y - ImGui::GetWindowHeight() - (display_size.y * static_cast<float>(0.01)));
 
             ImGui::SetWindowPos(window_pos, ImGuiCond_FirstUseEver);
         }
@@ -124,10 +124,10 @@ namespace APGUI
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     }
 
-    bool warning()
+    void warning()
     {
         if (!showWarning || fs::exists(reload_file))
-            return false;
+            return;
 
         try {
             // This is a wasteful read, but it "should" only ever happen one time ever
@@ -157,7 +157,6 @@ namespace APGUI
                     reload_out.close();
                     ImGui::CloseCurrentPopup();
                     ImGui::EndPopup();
-                    return false;
                 }
                 ImGui::EndPopup();
             }

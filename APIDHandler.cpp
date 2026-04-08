@@ -105,9 +105,9 @@ namespace APIDHandler
 			ImGui::Text("Songs: %d/%d |", recvIDs.size(), seedIDs.size() - 1);
 
 			ImGui::SameLine();
-			int totalLocs = (seedIDs.size() - 1) * 2;
+			int64_t totalLocs = (seedIDs.size() - 1) * 2;
 			// APCpp's check callback runs multiple times around goaling?
-			ImGui::Text("Locs: %d/%d |", min(CheckedLocations.size(), totalLocs), totalLocs);
+			ImGui::Text("Locs: %d/%d |", min(static_cast<int64_t>(CheckedLocations.size()), totalLocs), totalLocs);
 
 			ImGui::SameLine();
 			ImGui::Text("In logic: %d |", availableLocs);
@@ -148,7 +148,7 @@ namespace APIDHandler
 
 						_availableLocs += available;
 
-						ImGui::PushID(songID);
+						ImGui::PushID(static_cast<int>(songID));
 
 						ImGui::TableNextRow();
 						ImGui::TableSetColumnIndex(0);

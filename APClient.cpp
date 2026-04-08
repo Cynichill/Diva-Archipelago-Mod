@@ -32,10 +32,10 @@ namespace APClient
     // Datapackage
 
     nlohmann::json_abi_v3_12_0::json datapackageJSON;
-    std::unordered_map<std::string, uint32_t> item_name_to_ap_id;
-    std::unordered_map<uint32_t, std::string> item_ap_id_to_name;
-    std::unordered_map<std::string, uint32_t> location_name_to_id;
-    std::unordered_map<uint32_t, std::string> location_id_to_name;
+    std::unordered_map<std::string, int64_t> item_name_to_ap_id;
+    std::unordered_map<int64_t, std::string> item_ap_id_to_name;
+    std::unordered_map<std::string, int64_t> location_name_to_id;
+    std::unordered_map<int64_t, std::string> location_id_to_name;
 
     // Item and location tracking
 
@@ -44,17 +44,16 @@ namespace APClient
     bool requested = false; // state tracking of request since it doesn't provide a null state
 
     nlohmann::json_abi_v3_12_0::json slotData;
-    std::vector<int> seedIDs = {}; // Song IDs that are part of the seed
-    std::vector<int> recvIDs = {}; // Song IDs received as items
-    std::vector<int> missingIDs = {}; // Song IDs not yet received
-    std::vector<int> CheckedLocations = {}; // Love is War [1] = 10, 11.
+    std::vector<int64_t> seedIDs = {}; // Song IDs that are part of the seed
+    std::vector<int64_t> recvIDs = {}; // Song IDs received as items
+    std::vector<int64_t> missingIDs = {}; // Song IDs not yet received
+    std::vector<int64_t> CheckedLocations = {}; // Love is War [1] = 10, 11.
 
     // TODO: Relocate?
     int clearGrade = 2;
     char diffs[5][10] = {"Cheap", "Standard", "Great", "Excellent", "Perfect"};
 
-    int victoryID = 0; // The AP Item/Loc ID. (confusion ensues)
-
+    int64_t victoryID = 0; // The AP Item/Loc ID. (confusion ensues)
     int leekHave = 0;
     int leekNeed = 0;
 
@@ -88,6 +87,7 @@ namespace APClient
 
             // Requires `death_link` in slot data, not `deathLink`, etc.
             AP_SetDeathLinkSupported(true);
+            AP_RegisterBouncedCallback(bounced);
             AP_SetDeathLinkRecvCallback(RecvDeath); // Switch to Bounce callback handle
 
             AP_SetItemClearCallback(ItemClear);
@@ -173,7 +173,7 @@ namespace APClient
         auto final = slotData["finalSongIDs"];
         if (final.is_array())
         {
-            seedIDs = final.get<std::vector<int>>();
+            seedIDs = final.get<std::vector<int64_t>>();
             std::sort(seedIDs.begin(), seedIDs.end());
         }
 
@@ -231,7 +231,7 @@ namespace APClient
         }
     }
 
-    void PushRecvID(int songID)
+    void PushRecvID(int64_t songID)
     {
         if (std::find(recvIDs.begin(), recvIDs.end(), songID) != recvIDs.end())
             return;
@@ -268,12 +268,12 @@ namespace APClient
         }
         else {
             // Song locations are in pairs
-            uint32_t APID = pvID * 10;
+            int64_t APID = pvID * 10;
 
             std::set<int64_t> locs{ APID, APID + 1 };
             AP_SendItem(locs);
 
-            APHints::updateSentLocations(std::array<uint32_t, 2>{ APID, APID + 1});
+            APHints::updateSentLocations(std::array<int64_t, 2>{ APID, APID + 1});
         }
     }
 
@@ -361,13 +361,13 @@ namespace APClient
         // TODO: try catch?
         datapackageJSON = nlohmann::json::parse(datapackage);
 
-        item_name_to_ap_id = datapackageJSON["item_name_to_id"].get<std::unordered_map<std::string, uint32_t>>();
+        item_name_to_ap_id = datapackageJSON["item_name_to_id"].get<std::unordered_map<std::string, int64_t>>();
         for (auto& el : datapackageJSON["item_name_to_id"].items())
-            item_ap_id_to_name[(uint32_t)el.value()] = el.key();
+            item_ap_id_to_name[(int64_t)el.value()] = el.key();
 
-        location_name_to_id = datapackageJSON["location_name_to_id"].get<std::unordered_map<std::string, uint32_t>>();
+        location_name_to_id = datapackageJSON["location_name_to_id"].get<std::unordered_map<std::string, int64_t>>();
         for (auto& el : datapackageJSON["location_name_to_id"].items())
-            location_id_to_name[(uint32_t)el.value()] = el.key();
+            location_id_to_name[(int64_t)el.value()] = el.key();
 
         datapackageLoaded = true;
         return true;

@@ -22,7 +22,7 @@ namespace APHints
 
     // AP_HintMessage passes players as stringified names instead of player ID. Good and bad.
     std::vector<AP_HintMessage> Hints;
-    std::vector<int> HintedIDs;
+    std::vector<int64_t> HintedIDs;
 
     auto& recvIDs = APClient::recvIDs;
     auto& item_name_to_ap_id = APClient::item_name_to_ap_id;
@@ -121,7 +121,7 @@ namespace APHints
         hintsRaw_S.clear();
     }
 
-    void updateSentLocations(const std::array<uint32_t, 2> locationIDs)
+    void updateSentLocations(const std::array<int64_t, 2> locationIDs)
     {
         // Simply no better way...
         for (const auto &locationID : locationIDs) {
