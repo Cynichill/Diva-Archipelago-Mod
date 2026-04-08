@@ -3,7 +3,7 @@
 
 namespace APDeathLink
 {
-    bool devMode = APClient::devMode;
+    bool &devMode = APClient::devMode;
 
     // Config options
     int percent = 100; // Percentage of max HP to lose on receive. "If at or below this, die."
@@ -208,30 +208,34 @@ namespace APDeathLink
     void ImGuiTab()
     {
         if (ImGui::BeginTabItem("Death Link")) {
-            float progress = (float)min(HPdenominator, (HPdenominator - HPnumerator)) / (float)HPdenominator;
-            char buf[8];
-            sprintf(buf, "%d / %d", HPnumerator, HPdenominator);
+            if (devMode || HPdenominator > 1) {
+                float progress = (float)min(HPdenominator, (HPdenominator - HPnumerator)) / (float)HPdenominator;
+                char buf[8];
+                sprintf(buf, "%d / %d", HPnumerator, HPdenominator);
 
-            ImGui::ProgressBar(progress, ImVec2(0.0f, 0.0f), buf);
-            ImGui::SameLine();
-            ImGui::Text("Progressive HP");
+                ImGui::ProgressBar(progress, ImVec2(0.0f, 0.0f), buf);
+                ImGui::SameLine();
+                ImGui::Text("Progressive HP");
 
-            if (ImGui::Button("Reset")) {
-                HPtemp = 0;
+                if (ImGui::Button("Reset##progReset"))
+                    HPtemp = 0;
+
+                ImGui::SameLine();
+                if (ImGui::Button("+1##progTemp+1"))
+                    HPtemp += 1;
+
+
+                ImGui::SameLine();
+                ImGui::Text("Temporary HP: %d+%d", HPreceived, HPtemp);
+
+                ImGui::SameLine();
+                HelpMarker("Temporarily increase available chunk count.\nResets when the next one is received.");
+
+                if (devMode)
+                    ImGui::SliderInt("Denominator", &HPdenominator, 1, 255);
+
+                ImGui::Separator();
             }
-
-            ImGui::SameLine();
-            if (ImGui::Button("+1")) {
-                HPtemp += 1;
-            }
-
-            ImGui::SameLine();
-            ImGui::Text("Temporary HP: %d+%d", HPreceived, HPtemp);
-
-            ImGui::SameLine();
-            HelpMarker("Temporarily increase available chunk count.\nResets when the next one is received.");
-
-            ImGui::Separator();
 
             ImGui::SliderInt("Death Link Percent", &percent, 0, 100, "%d%%");
             ImGui::SameLine();

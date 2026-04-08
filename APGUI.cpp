@@ -194,8 +194,7 @@ namespace APGUI
                 if (ImGui::MenuItem("Are you sure?##xx"))
                 {
                     devMode = !devMode;
-                    if (!GetConsoleWindow())
-                        AllocConsole();
+
                 }
 
                 ImGui::EndPopup();
@@ -203,6 +202,10 @@ namespace APGUI
 
             if (devMode)
             {
+                if (ImGui::Button("Console"))
+                    if (!GetConsoleWindow())
+                        AllocConsole();
+
                 if (ImGui::Button("Sample Random IDs"))
                 {
                     APClient::seedIDs.clear();
