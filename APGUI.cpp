@@ -189,25 +189,19 @@ namespace APGUI
 
             if (ImGui::Checkbox("AP Developer Mode", &devMode))
                 devMode = false;
-            if (ImGui::BeginPopupContextItem("##xx"))
-            {
+            if (ImGui::BeginPopupContextItem("##xx")){
                 if (ImGui::MenuItem("Are you sure?##xx"))
-                {
                     devMode = !devMode;
-
-                }
 
                 ImGui::EndPopup();
             }
 
-            if (devMode)
-            {
+            if (devMode) {
                 if (ImGui::Button("Console"))
                     if (!GetConsoleWindow())
                         AllocConsole();
 
-                if (ImGui::Button("Sample Random IDs"))
-                {
+                if (ImGui::Button("Sample Random IDs")) {
                     APClient::seedIDs.clear();
                     APClient::seedIDs.push_back(0); // Prevent seedIDs == recvIDs
                     APClient::recvIDs.clear();

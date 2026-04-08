@@ -226,13 +226,13 @@ extern "C"
     {
         APClient::CheckMessages();
 
-        if (APGUI::g_ImGuiInitialized && !ImGui::GetIO().WantCaptureKeyboard)
-            APReload::scan();
-
         APGUI::init(swapChain);
         if (!APGUI::g_OriginalWndProc)
             APGUI::g_OriginalWndProc = (WNDPROC)SetWindowLongPtr(APGUI::g_hWnd, GWLP_WNDPROC, (LONG_PTR)HookedWndProc);
         APGUI::onFrame();
+
+        if (APGUI::g_ImGuiInitialized && !ImGui::GetIO().WantCaptureKeyboard)
+            APReload::scan();
     }
 
     void __declspec(dllexport) Init()
