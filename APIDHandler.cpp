@@ -8,7 +8,7 @@ namespace APIDHandler
 	// Internal
 	bool exists = false;
 	bool freeplay = false;
-	bool autohide = true;
+	bool auto_hide_songs = true;
 	bool reload_needed = true;
 	bool reloading = false;
 
@@ -23,8 +23,8 @@ namespace APIDHandler
 
 	void config(toml::v3::ex::parse_result& data)
 	{
-		autohide = data["autohide"].value_or(true);
-		APLogger::print("autohide: %d\n", autohide);
+		auto_hide_songs = data["auto_hide_songs"].value_or(true);
+		APLogger::print("auto_hide_songs: %d\n", auto_hide_songs);
 	}
 
 	bool checkNC()
@@ -69,7 +69,7 @@ namespace APIDHandler
 		auto end = freeplay ? missingIDs.end() : recvIDs.end();
 		auto contains = std::find(begin, end, pvID) != end;
 
-		if (!freeplay && contains && autohide)
+		if (!freeplay && contains && auto_hide_songs)
 		{
 			for (const auto& songID : recvIDs) {
 				auto loc1checked = std::find(CheckedLocations.begin(), CheckedLocations.end(), pvID * 10) != CheckedLocations.end();
@@ -120,7 +120,7 @@ namespace APIDHandler
 			ImGui::SameLine();
 			HelpMarker("The entire song list will be available except for songs that have not been received yet.");
 
-			if (ImGui::Checkbox("Hide songs with no checks from song list", &autohide))
+			if (ImGui::Checkbox("Hide songs with no checks from song list", &auto_hide_songs))
 				APReload::run();
 			ImGui::SameLine();
 			HelpMarker("When not in Freeplay, the song list will only show songs that have checks.");
@@ -143,7 +143,7 @@ namespace APIDHandler
 
 						int available = (int)!loc1checked + (int)!loc2checked;
 
-						if (autohide && available == 0)
+						if (auto_hide_songs && available == 0)
 							continue;
 
 						_availableLocs += available;

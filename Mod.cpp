@@ -72,7 +72,7 @@ void processConfig() {
 
         auto data = toml::parse(file);
 
-        skip_mainmenu = data["skip_mainmenu"].value_or(true);
+        skip_mainmenu = data["skip_mainmenu"].value_or(false);
         APClient::config(data);
         APDeathLink::config(data);
         APTraps::config(data);
@@ -107,7 +107,8 @@ HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long l
         APClient::LocationSend(*(int*)(PvPlayData + 0x10));
     }
     else {
-        APClient::SendDeath();
+        APDeathLink::runAmnesty();
+        APDeathLink::deathLinked = true;
     }
 
     original_PvResultsFinalize(PvPlayData, a2);

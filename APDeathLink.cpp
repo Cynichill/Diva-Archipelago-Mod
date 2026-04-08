@@ -6,17 +6,20 @@ namespace APDeathLink
     bool &devMode = APClient::devMode;
 
     // Config options
-    int percent = 100; // Percentage of max HP to lose on receive. "If at or below this, die."
-    float safety = 10.0f; // Seconds after receiving a DL to avoid chain reaction DLs.
+    bool death_link = false; // In-game state, not APCpp. Connection should always have the DeathLink tag from APCpp.
+    int death_link_amnesty = 0; // Pair with death_link_amnesty_count
+    int death_link_percent = 100; // Percentage of max HP to lose on receive. "If at or below this, die."
+    float death_link_safety = 10.0f; // Seconds after receiving a DL to avoid chain reaction DLs.
 
     const uint64_t DivaGameHP = 0x00000001412EF564;
     const uint64_t DivaGameTimer = 0x00000001412EE340;
     const uint64_t DivaSafetyWidthPercent = 0x00000001412EF644;
 
     // Internal
-    bool deathLinked = false; // Who wants to know?
+    int death_link_amnesty_count = 0;
+    bool deathLinked = false; // Set after calling a kill so future kills are ignored (until reset)
 
-    float lastDeathLink = 0.0f; // Compared against APDeathLink::safety
+    float lastDeathLink = 0.0f; // Compared against APDeathLink::death_link_safety
     float lastCheckedHP = 0.0f; // HP: For delta time against APDeathLink::DivaGameTimer
 
     int HPreceived = 1; // Current HP chunks received
@@ -29,19 +32,28 @@ namespace APDeathLink
     int HPpercent = 0; // 0-100, percentage of safety bar
     bool HPengaged = false; // True when HPfloor is met
     bool safetyExpired = false; // Easy 60, Norm 40, Hard+ 30s
-    std::string buf;
 
     void config(toml::v3::ex::parse_result& data)
     {
-        int config_percent = data["deathlink_percent"].value_or(percent);
-        percent = std::clamp(config_percent, 0, 100);
+        death_link = data["death_link"].value_or(false);
 
-        APLogger::print("deathlink_percent set to %d (config: %d)\n", percent, config_percent);
+        APLogger::print("death_link set to %d (config: %d)\n", death_link);
 
-        float config_safety = data["deathlink_safety"].value_or(safety);
-        safety = std::clamp(config_safety, 0.0f, 30.0f);
+        int config_death_link_amnesty = data["death_link_amnesty"].value_or(0);
+        death_link_amnesty = std::clamp(config_death_link_amnesty, 0, 20);
+        death_link_amnesty_count = death_link_amnesty;
 
-        APLogger::print("deathlink_safety set to %.02f (config: %.02f)\n", safety, config_safety);
+        APLogger::print("death_link_amnesty set to %d (config: %d)\n", death_link_amnesty, config_death_link_amnesty);
+
+        int config_percent = data["death_link_percent"].value_or(death_link_percent);
+        death_link_percent = std::clamp(config_percent, 0, 100);
+
+        APLogger::print("death_link_percent set to %d (config: %d)\n", death_link_percent, config_percent);
+
+        float config_safety = data["death_link_safety"].value_or(death_link_safety);
+        death_link_safety = std::clamp(config_safety, 0.0f, 30.0f);
+
+        APLogger::print("death_link_safety set to %.02f (config: %.02f)\n", death_link_safety, config_safety);
 
         reset();
     }
@@ -56,6 +68,23 @@ namespace APDeathLink
 
         prog_hp_reset();
     }
+
+    void runAmnesty()
+    {
+        if (deathLinked) return; // Death already handled.
+
+        // TODO: Slot aliases?
+        static std::string msg = "The Disappearance of " + static_cast<std::string>(APClient::getSlotName());
+
+        if (death_link_amnesty == 0 || death_link_amnesty_count == 0) {
+            death_link_amnesty_count = death_link_amnesty;
+            AP_DeathLinkSend(msg);
+            return;
+        }
+
+        death_link_amnesty_count -= 1;
+    }
+
 
     void prog_hp_update()
     {
@@ -135,13 +164,14 @@ namespace APDeathLink
 
         auto deltaLast = now - lastDeathLink;
 
-        if (deltaLast < safety) {
+        if (deltaLast < death_link_safety) {
             deathLinked = true;
             APLogger::print("[%6.2f] DeathLink > Fail: Died in safety window (%.02f + %.02f < %.02f)\n",
-                now, lastDeathLink, deltaLast, lastDeathLink + safety);
+                now, lastDeathLink, deltaLast, lastDeathLink + death_link_safety);
             return;
         }
 
+        runAmnesty();
         deathLinked = true;
     }
 
@@ -186,11 +216,14 @@ namespace APDeathLink
 
         lastDeathLink = now;
 
-        int hit = (255 - HPfloor) * percent / 100;
-        if (percent == 50)
+        int hit = (255 - HPfloor) * death_link_percent / 100;
+        if (death_link_percent == 50)
             hit += 1;
 
         int toHP = std::clamp(currentHP - hit, 0, 255);
+        if (death_link_percent == 100)
+            toHP = 0; // for prog HP and other exceptions. 100% is DEAD.
+
         deathLinked = (toHP > 0) ? false : true;
 
         APLogger::print("[%6.2f] DeathLink < death_link_in (%i - %i = %i / DL: %i)\n",
@@ -237,34 +270,51 @@ namespace APDeathLink
                 ImGui::Separator();
             }
 
-            ImGui::SliderInt("Death Link Percent", &percent, 0, 100, "%d%%");
+            ImGui::Checkbox("Death Link", &death_link);
             ImGui::SameLine();
-            HelpMarker("Percent of max HP to lose on receive.\n<100 for non-lethal");
+            HelpMarker("When you die on your own or fail to reach Grade Needed (not both), everyone with Death Link enabled dies.");
 
-            ImGui::SliderFloat("Death Link Safety", &safety, 0.0f, 30.0f, "%.1f seconds");
-            ImGui::SameLine();
-            HelpMarker("Seconds after receiving where dying does not send one out.");
+            if (death_link) {
 
-            if (devMode)
-            {
-                if (ImGui::Button("Die"))
-                {
-                    deathLinked = true;
-                    setHP(0);
+                if (ImGui::SliderInt("Death Link Amnesty", &death_link_amnesty, 0, 20))
+                    death_link_amnesty_count = death_link_amnesty;
+                ImGui::SameLine();
+                HelpMarker("Amount of additional own deaths needed before sending one Death Link. 0 would be every death, 1 every other, etc.");
+
+                if (death_link_amnesty > 0) {
+                    ImGui::ProgressBar(static_cast<float>(death_link_amnesty_count) / static_cast<float>(death_link_amnesty));
+                    //("%d / %d deaths", death_link_amnesty_count, death_link_amnesty);
                 }
 
+                ImGui::SliderInt("Death Link Percent", &death_link_percent, 0, 100, "%d%%");
                 ImGui::SameLine();
-                if (ImGui::Button("+ No Fail/Protected"))
-                {
-                    deathLinked = true;
-                    WRITE_MEMORY(0x1412C2330 + 0x2D31D, bool, 0);
-                    setHP(0);
-                }
+                HelpMarker("Percent of max HP to lose on receive.\n<100 for non-lethal, but makes Life Bonuses harder which may affect score by up to 2%.");
 
+                ImGui::SliderFloat("Death Link Safety", &death_link_safety, 0.0f, 30.0f, "%.1f seconds");
                 ImGui::SameLine();
-                ImGui::Text("Deathlinked: %d", deathLinked);
-                ImGui::SameLine();
-                HelpMarker("If 1/true, the cause of the death prevented a Death Link from being sent.\nFor example, dying in one hit or inside the safety window.");
+                HelpMarker("Seconds after receiving where dying does not send one out.");
+
+                if (devMode)
+                {
+                    if (ImGui::Button("Die"))
+                    {
+                        deathLinked = true;
+                        setHP(0);
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("+ No Fail/Protected"))
+                    {
+                        deathLinked = true;
+                        WRITE_MEMORY(0x1412C2330 + 0x2D31D, bool, 0);
+                        setHP(0);
+                    }
+
+                    ImGui::SameLine();
+                    ImGui::Text("Deathlinked: %d", deathLinked);
+                    ImGui::SameLine();
+                    HelpMarker("If 1/true, the cause of the death prevented a Death Link from being sent.\nFor example, dying in one hit or inside the safety window.");
+                }
             }
 
             ImGui::EndTabItem();

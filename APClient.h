@@ -6,7 +6,7 @@ namespace APClient
     extern bool devMode;
 
     // AP supports item and location IDs up to int64_t (0 and negatives reserved)
-    // The AP impl for Diva packs in songs IDs to (songID * 10) and locations to (songID*10), (songID*10)+1
+    // The AP impl for Diva packs in songs IDs to (songID*10) and locations to (songID*10), (songID*10)+1
     // This may change in the future to *100. Project Diva currently seems limited to int32, so int64 it is.
     extern std::vector<int64_t> CheckedLocations;
     extern std::vector<int64_t> seedIDs; // From slot data, the Song IDs (not item IDs) in the seed
@@ -44,8 +44,6 @@ namespace APClient
     void CheckMessages();
 
     void RecvDeath(std::string, std::string);
-    void SendDeath();
-
 
     bool LoadDatapackage();
     void ImGuiTab();

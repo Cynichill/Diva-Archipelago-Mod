@@ -10,10 +10,11 @@ namespace APGUI
 {
     // Configurables
 
-    bool autohide = true; // Hide Client during gameplay
+    bool auto_hide_client = true; // Hide Client during gameplay
+    int& reloadDelay = APReload::reloadDelay;
+
     bool showImGuiDemo = false;
     bool &devMode = APClient::devMode;
-    int &reloadDelay = APReload::reloadDelay;
 
     bool g_ImGuiInitialized = false;
     bool firstFrame = true;
@@ -71,9 +72,9 @@ namespace APGUI
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        // autohide, in game, not paused, not on results
+        // auto hide client when in game, not paused, not on results
         auto PvPlayData = 0x1412C2330;
-        if (autohide && *(bool*)PvPlayData && !*(bool*)(PvPlayData + 0x1) && !*(bool*)(PvPlayData + 0x2D17D)) {
+        if (auto_hide_client && *(bool*)PvPlayData && !*(bool*)(PvPlayData + 0x1) && !*(bool*)(PvPlayData + 0x2D17D)) {
             ImGui::GetIO().WantCaptureKeyboard = false;
             ImGui::GetIO().WantCaptureMouse = false;
             ImGui::SetNextFrameWantCaptureKeyboard(false);
@@ -114,6 +115,7 @@ namespace APGUI
         }
         else {
             firstFrame = false;
+            ImGui::SetWindowFocus(0);
         }
 
         warning();
@@ -169,12 +171,13 @@ namespace APGUI
     void ImGuiTab()
     {
         if (ImGui::BeginTabItem("Advanced")) {
-            CenterText("Open config.toml");
+            /*if (ImGui::Button("Reload config.toml"))
+            ImGui::SameLine();*/
             ImGui::TextLinkOpenURL("Open config.toml", ConfigTOML.string().c_str());
 
             ImGui::Separator();
 
-            if (ImGui::Button("Reload"))
+            if (ImGui::Button("Reload game"))
                 APReload::run();
 
             ImGui::SameLine();
@@ -183,7 +186,7 @@ namespace APGUI
 
             ImGui::Separator();
 
-            ImGui::Checkbox("Hide Client during gameplay", &autohide);
+            ImGui::Checkbox("Hide Client during gameplay", &auto_hide_client);
             ImGui::SliderInt("Reload delay", &reloadDelay, 1, 10);
             ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
 

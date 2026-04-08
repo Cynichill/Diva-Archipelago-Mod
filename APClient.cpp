@@ -85,16 +85,13 @@ namespace APClient
         {
             AP_Init(slotServer, GameName, slotName, slotPassword);
 
-            // Requires `death_link` in slot data, not `deathLink`, etc.
             AP_SetDeathLinkSupported(true);
-            //AP_RegisterBouncedCallback(bounced);
-            AP_SetDeathLinkRecvCallback(RecvDeath); // Switch to Bounce callback handle
+            AP_SetDeathLinkRecvCallback(RecvDeath);
+            //AP_RegisterBouncedCallback(bounced); // Alt function to handle own bounces (death link own slot)
 
             AP_SetItemClearCallback(ItemClear);
             AP_SetItemRecvCallback(ItemRecv);
             AP_SetLocationCheckedCallback(LocationChecked);
-
-            // deathLink -> death_link type? / Needs a rename for APCpp, use Bounce callback, always enabled in slot data
 
             AP_Start();
         }
@@ -312,17 +309,6 @@ namespace APClient
     void RecvDeath(std::string src, std::string cause)
     {
         APDeathLink::run(true);
-    }
-
-    void SendDeath()
-    {
-        if (APDeathLink::deathLinked)
-            return;
-
-        // TODO: Slot aliases?
-        std::string msg = "The Disappearance of " + (std::string)slotName;
-
-        AP_DeathLinkSend(msg);
     }
 
     bool LoadDatapackage()

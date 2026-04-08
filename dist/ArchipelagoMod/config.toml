@@ -9,13 +9,15 @@ slot_server = "archipelago.gg:38281"
 slot_password = ""
 
 # Defaults for these options which can then be adjusted in the in-game client
-autohide          = true    # true/false, default false. automatically hide songs with no new checks
-deathlink_percent = 100     # 0-100, default 100 percent of max HP to lose on receive. <100 for non-lethal
-deathlink_safety  = 10.0    # 0-30, default 10.0 seconds after receiving a DL where dying does not send one out
-trap_duration     = 15.0    # 0-300, default 15.0 seconds until traps expire. 0 to not expire for current attempt
-icon_reroll       = 60.0    # 0-60, default 60.0 seconds between icon rerolls while Icon trap is active. 0 to reroll once
-suhidden          = false   # true/false, default false. true to let sudden and hidden modifiers overlap otherwise replace each other
-skip_mainmenu     = false   # true/false, default false. skip the main menu after title screen. combine with IntroPatch to skip to song select
+auto_hide_songs      = true    # true/false, default true. automatically hide songs with no new checks
+death_link           = false   # true/false, default false. when you die, so do other death linkers. the opposite is also true.
+death_link_amnesty   = 0       # 0-20, default 0. amount of own deaths to send 1. 0 would be every, 1 every other, etc.
+death_link_percent   = 100     # 0-100, default 100 percent of max HP to lose on receive. <100 for non-lethal
+death_link_safety    = 10.0    # 0-30, default 10.0 seconds after receiving a DL where dying does not send one out
+trap_duration        = 15.0    # 0-300, default 15.0 seconds until traps expire. 0 to not expire for current attempt
+icon_reroll          = 60.0    # 0-60, default 60.0 seconds between icon rerolls while Icon trap is active. 0 to reroll once
+suhidden             = false   # true/false, default false. true to let sudden and hidden modifiers overlap otherwise replace each other
+skip_mainmenu        = false   # true/false, default false. skip the main menu after title screen. combine with IntroPatch to skip to song select
 
 # Mod information
 name = "Archipelago"
