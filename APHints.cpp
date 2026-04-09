@@ -168,10 +168,10 @@ namespace APHints
             float buttonWidth = ImGui::CalcTextSize("Manual Refresh").x + ImGui::GetStyle().FramePadding.x * 2;
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail - buttonWidth);
 
-            ImGui::BeginDisabled(true);
+            //ImGui::BeginDisabled(true);
             if (ImGui::Button("Manual Refresh"))
                 AP_Say("!hint");
-            ImGui::EndDisabled();
+            //ImGui::EndDisabled();
 
             if (ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
