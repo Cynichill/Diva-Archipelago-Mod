@@ -71,6 +71,8 @@ namespace APDeathLink
 
     void runAmnesty()
     {
+        if (!death_link) return;
+
         if (deathLinked) return; // Death already handled.
 
         // TODO: Slot aliases?
