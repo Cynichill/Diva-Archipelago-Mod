@@ -326,7 +326,7 @@ namespace APClient
 
             APLogger::print("Datapackage checksum: %s\n", it->second.c_str());
 
-            if (DatapackageChecksum.compare(it->second))
+            if (DatapackageChecksum.compare(it->second) != 0)
             {
                 APLogger::print("New datapackage checksum\n");
                 item_ap_id_to_name.clear();
