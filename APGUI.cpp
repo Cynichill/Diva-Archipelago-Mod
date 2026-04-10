@@ -192,11 +192,11 @@ namespace APGUI
             ImGui::Separator();
 
             ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
-            ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f);
+            ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f, "%.02f");
             ImGui::SameLine();
             HelpMarker("Linux/Wine/Proton users should properly configure their Wine prefix's DPI for a long-term solution.");
 
-            if (ImGui::DragFloat("Global Alpha", &ImGui::GetStyle().Alpha, 0.005f, 0.50f, 1.0f, "%.2f"))
+            if (ImGui::DragFloat("Global Alpha", &ImGui::GetStyle().Alpha, 0.01f, 0.50f, 1.0f, "%.2f"))
                 ImGui::GetStyle().Alpha = max(ImGui::GetStyle().Alpha, 0.5f); // unlike the demo, actually prevent a 0
 
             ImGui::Separator();

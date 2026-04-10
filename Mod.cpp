@@ -92,7 +92,7 @@ HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long l
     int diff[3];
     memcpy(diff, PvGameData, 3 * sizeof(int));
 
-    int playerGrade = *(int*)(PvPlayData + 0x2D190);
+    int &playerGrade = *(int*)(PvPlayData + 0x2D190);
 
     // A grade of 1 happens only at playerPercent < 40% (good luck surviving above Easy)
     // Instead of AP patching the comparison, recheck it here.
@@ -107,6 +107,7 @@ HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long l
         APClient::LocationSend(*(int*)(PvPlayData + 0x10));
     }
     else {
+        //playerGrade = 0; // Potentially use the UI to communicate clearGrade?
         APDeathLink::runAmnesty();
         APDeathLink::deathLinked = true;
     }
