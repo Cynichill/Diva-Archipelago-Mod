@@ -194,7 +194,7 @@ namespace APGUI
             ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
             ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f, "%.02f");
             ImGui::SameLine();
-            HelpMarker("Linux/Wine/Proton users should properly configure their Wine prefix's DPI for a long-term solution.");
+            HelpMarker("1.25 recommended for 1440p\n1.75 recommended for 4K");
 
             if (ImGui::DragFloat("Global Alpha", &ImGui::GetStyle().Alpha, 0.01f, 0.50f, 1.0f, "%.2f"))
                 ImGui::GetStyle().Alpha = max(ImGui::GetStyle().Alpha, 0.5f); // unlike the demo, actually prevent a 0
@@ -211,8 +211,10 @@ namespace APGUI
             }
 
             if (devMode) {
-                if (!GetConsoleWindow() && ImGui::Button("Console"))
+                if (!GetConsoleWindow() && ImGui::Button("Console")) {
                     AllocConsole();
+                    APLogger::print("DO NOT CLOSE THIS WINDOW OR THE GAME WILL CLOSE\n");
+                }
 
                 if (ImGui::Button("Sample Random IDs")) {
                     APClient::seedIDs.clear();
