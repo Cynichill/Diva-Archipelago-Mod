@@ -76,7 +76,7 @@ namespace APDeathLink
         if (deathLinked) return; // Death already handled.
 
         // TODO: Slot aliases?
-        static std::string msg = "The Disappearance of " + static_cast<std::string>(APClient::getSlotName());
+        static std::string msg = "The Disappearance of " + std::string(APClient::getSlotName());
 
         if (death_link_amnesty == 0 || death_link_amnesty_count == 0) {
             death_link_amnesty_count = death_link_amnesty;
