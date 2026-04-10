@@ -188,7 +188,15 @@ namespace APGUI
 
             ImGui::Checkbox("Hide Client during gameplay", &auto_hide_client);
             ImGui::SliderInt("Reload delay", &reloadDelay, 1, 10);
+
+            ImGui::Separator();
+
             ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
+            ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f);
+            if (ImGui::DragFloat("Global Alpha", &ImGui::GetStyle().Alpha, 0.005f, 0.50f, 1.0f, "%.2f"))
+                ImGui::GetStyle().Alpha = max(ImGui::GetStyle().Alpha, 0.5f); // unlike the demo, actually prevent a 0
+
+            ImGui::Separator();
 
             if (ImGui::Checkbox("AP Developer Mode", &devMode))
                 devMode = false;
