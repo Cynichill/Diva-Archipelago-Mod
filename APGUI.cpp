@@ -3,6 +3,7 @@
 #include "APGUI.h"
 #include "APHints.h"
 #include "APIDHandler.h"
+#include "APLogger.h"
 #include "APReload.h"
 #include "APTraps.h"
 
@@ -211,10 +212,11 @@ namespace APGUI
             }
 
             if (devMode) {
-                if (!GetConsoleWindow() && ImGui::Button("Console")) {
+                // Easy crashes with other mods that already freopen'd to stdout
+                /*if (!GetConsoleWindow() && ImGui::Button("Console")) {
                     AllocConsole();
                     APLogger::print("DO NOT CLOSE THIS WINDOW OR THE GAME WILL CLOSE\n");
-                }
+                }*/
 
                 if (ImGui::Button("Sample Random IDs")) {
                     APClient::seedIDs.clear();
@@ -240,6 +242,13 @@ namespace APGUI
 
                 ImGui::SameLine();
                 ImGui::Text("%d/%d recv/seed", APClient::recvIDs.size(), APClient::seedIDs.size());
+
+                ImGui::Checkbox("Log to file", &APLogger::logToFile);
+                if (&APLogger::logToFile) {
+                    ImGui::SameLine();
+                    ImGui::TextLinkOpenURL("Open log file", APLogger::LogPath.string().c_str());
+                }
+
             }
 
             ImGui::EndTabItem();

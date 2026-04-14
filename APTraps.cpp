@@ -43,6 +43,8 @@ namespace APTraps
 
 	int reset()
 	{
+		APLogger::print("Traps: reset\n");
+
 		std::random_device rd;
 		mt.seed(rd());
 

@@ -1,40 +1,44 @@
 #include "APLogger.h"
-#include "pch.h"
 #include <stdarg.h>
 
 namespace APLogger
 {
+    bool logToFile = false;
+
+    std::ofstream APLog;
+    const std::filesystem::path LogPath = std::filesystem::current_path() / "log.txt";
+
     void print(const char* const fmt, ...)
     {
-        if (GetConsoleWindow() == NULL || !freopen("CONOUT$", "w", stdout)) {
+        if (!logToFile || !GetConsoleWindow() || !freopen("CONOUT$", "w", stdout))
             return;
-        }
 
-        va_list args;
-        va_start(args, fmt);
+        char line[512];
 
         time_t t = time(NULL);
         struct tm tm;
         localtime_s(&tm, &t);
 
-        char buf[64];
-        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+        char ts[64];
+        strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm);
+        int offset = snprintf(line, sizeof(line), "[Archipelago] [%s] ", ts);
 
-        printf("[Archipelago] [%s] ", buf);
-        vprintf(fmt, args);
-        fflush(stdout);
-
-        /*else {
-            FILE* log = fopen("AP.txt", "a");
-
-            if (log != NULL) {
-                fprintf(log, "[Archipelago] [%s] ", buf);
-                vfprintf(log, fmt, args);
-                fclose(log);
-            }
-        }*/
-
+        va_list args;
+        va_start(args, fmt);
+        vsnprintf(line + offset, sizeof(line) - offset, fmt, args);
         va_end(args);
+
+        if (GetConsoleWindow())
+            printf("%s", line);
+
+        if (logToFile) {
+            APLog.open(LogPath, std::ofstream::out | std::ofstream::app);
+
+            if (APLog.is_open()) {
+                APLog.write(line, strlen(line));
+                APLog.close();
+            }
+        }
     }
 
     void ImGuiTab()
