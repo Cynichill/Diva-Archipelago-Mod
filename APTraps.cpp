@@ -9,8 +9,9 @@ namespace APTraps
 	bool suhidden = false;
 
 	const uint64_t DivaGameControlConfig = 0x00000001401D6520;
-	//const uint64_t DivaGameModifier = 0x1412C2330 + 0x2D120;
-	const uint64_t DivaGameTimer = 0x1412C2330 + 0x2D33C;
+	const uint64_t PvPlayData = 0x1412C2330;
+	//const uint64_t DivaGameModifier = PvPlayData + 0x2D120;
+	const uint64_t DivaGameTimer = PvPlayData + 0x2D33C;
 
 	// Internal
 
@@ -212,7 +213,6 @@ namespace APTraps
 	void ImGuiTab()
 	{
 		if (ImGui::BeginTabItem("Traps")) {
-			auto PvPlayData = 0x1412C2330;
 			char buf[32];
 			float songLength = *(float*)(PvPlayData + 0x2D338);
 			sprintf(buf, "%.03f / %.03f", getGameTime(), songLength);
