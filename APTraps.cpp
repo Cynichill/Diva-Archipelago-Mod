@@ -9,8 +9,8 @@ namespace APTraps
 	bool suhidden = false;
 
 	const uint64_t DivaGameControlConfig = 0x00000001401D6520;
-	//const uint64_t DivaGameModifier = 0x00000001412EF450;
-	const uint64_t DivaGameTimer = 0x00000001412EE340;
+	//const uint64_t DivaGameModifier = 0x1412C2330 + 0x2D120;
+	const uint64_t DivaGameTimer = 0x1412C2330 + 0x2D33C;
 
 	// Internal
 

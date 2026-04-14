@@ -11,9 +11,9 @@ namespace APDeathLink
     int death_link_percent = 100; // Percentage of max HP to lose on receive. "If at or below this, die."
     float death_link_safety = 10.0f; // Seconds after receiving a DL to avoid chain reaction DLs.
 
-    const uint64_t DivaGameHP = 0x00000001412EF564;
-    const uint64_t DivaGameTimer = 0x00000001412EE340;
-    const uint64_t DivaSafetyWidthPercent = 0x00000001412EF644;
+    const uint64_t DivaGameHP = 0x1412C2330 + 0x2D234;
+    const uint64_t DivaGameTimer = 0x1412C2330 + 0x2C010;
+    const uint64_t DivaSafetyWidthPercent = 0x1412C2330 + 0x2D314;
 
     // Internal
     int death_link_amnesty_count = 0;
