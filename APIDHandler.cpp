@@ -154,37 +154,29 @@ namespace APIDHandler
 						ImGui::TableSetColumnIndex(0);
 
 						std::string label = (available > 0) ? std::to_string(available) : " ";
-						std::string label2 = (songID == APClient::victoryID / 10) ? "GOAL" : label;
+						label = (songID == APClient::victoryID / 10) ? "GOAL" : label;
 
-						CenterText(label2);
-						ImGui::Text("%s", label2.c_str());
+						CenterText(label);
+						ImGui::Text("%s", label.c_str());
 
 						ImGui::TableSetColumnIndex(1);
 						std::string name = item_ap_id_to_name[songID * 10];
+						if (name.empty())
+							name = "ID " + std::to_string(songID) + " (not in datapackage)";
 
 						auto PvPlayData = 0x1412C2330;
-						if (*(bool*)PvPlayData) {
-							int currentID = *(int*)(PvPlayData + 0x10);
+						if (*(bool*)PvPlayData && songID == static_cast<int64_t>(*(int*)(PvPlayData + 0x10)))
+							name = "NP: " + name;
 
-							if (currentID == songID)
-								name = "NP: " + name;
-						}
+						bool isHinted = std::find(HintedIDs.begin(), HintedIDs.end(), songID) != HintedIDs.end();
 
-						if (name.length() > 0)
-						{
-							bool isHinted = std::find(HintedIDs.begin(), HintedIDs.end(), songID) != HintedIDs.end();
+						if (isHinted)
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
 
-							if (isHinted)
-								ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+						ImGui::Text("%s", name.c_str());
 
-							ImGui::Text("%s", name.c_str());
-
-							if (isHinted)
-								ImGui::PopStyleColor();
-						}
-						else {
-							ImGui::Text("ID#%d (not in/load a datapackage)", songID);
-						}
+						if (isHinted)
+							ImGui::PopStyleColor();
 
 						if (APClient::devMode)
 						{
