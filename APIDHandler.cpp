@@ -162,6 +162,14 @@ namespace APIDHandler
 						ImGui::TableSetColumnIndex(1);
 						std::string name = item_ap_id_to_name[songID * 10];
 
+						auto PvPlayData = 0x1412C2330;
+						if (*(bool*)PvPlayData) {
+							int currentID = *(int*)(PvPlayData + 0x10);
+
+							if (currentID == songID)
+								name = "NP: " + name;
+						}
+
 						if (name.length() > 0)
 						{
 							bool isHinted = std::find(HintedIDs.begin(), HintedIDs.end(), songID) != HintedIDs.end();
