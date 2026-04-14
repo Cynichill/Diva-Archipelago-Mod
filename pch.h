@@ -13,9 +13,6 @@
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 #include <windows.h>
-#include <Archipelago.h>
-#include "APLogger.h"
-#include "Helpers.h"
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -26,6 +23,9 @@
 #include <thread>
 #include <toml++/toml.h>
 #include <imgui.h>
+#include <Archipelago.h>
+#include "APLogger.h"
+#include "Helpers.h"
 
 // TODO: Relocate
 inline void HelpMarker(const char* desc)
