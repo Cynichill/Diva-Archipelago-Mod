@@ -73,6 +73,7 @@ void processConfig() {
         auto data = toml::parse(file);
 
         skip_mainmenu = data["skip_mainmenu"].value_or(false);
+        APLogger::config(data);
         APClient::config(data);
         APDeathLink::config(data);
         APTraps::config(data);

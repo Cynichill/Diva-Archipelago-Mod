@@ -8,6 +8,11 @@ namespace APLogger
     std::ofstream APLog;
     const std::filesystem::path LogPath = std::filesystem::current_path() / "log.txt";
 
+    void config(toml::v3::ex::parse_result& data)
+    {
+        logToFile = data["logging"].value_or(false);
+    }
+
     void print(const char* const fmt, ...)
     {
         if (!logToFile || !GetConsoleWindow() || !freopen("CONOUT$", "w", stdout))

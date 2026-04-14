@@ -2,6 +2,7 @@
 enabled = true
 reload_key = "F7" # Recommended to use from the song list.
 reload_delay = 10 # 1-10, default 10 to wait for reload. lower is faster but may break. best with DivaModLoader PR #36
+logging = false
 
 # Prefilled connection info
 slot_name = "Player1"
