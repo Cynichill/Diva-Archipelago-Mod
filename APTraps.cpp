@@ -1,7 +1,10 @@
+#include "APClient.h"
 #include "APTraps.h"
 
 namespace APTraps
 {
+	bool &devMode = APClient::devMode;
+
 	// Config
 
 	float trapDuration = 15.0f;
@@ -228,45 +231,47 @@ namespace APTraps
 
 			ImGui::Checkbox("Allow Sudden and Hidden to overlap", &suhidden);
 
-			if (ImGui::Button("Sudden"))
-				touchSudden();
-			ImGui::SameLine();
-			if (ImGui::Button("Hidden"))
-				touchHidden();
-			ImGui::SameLine();
-			if (ImGui::Button("Icon"))
-				touchIcon();
+			if (devMode) {
+				if (ImGui::Button("Sudden"))
+					touchSudden();
+				ImGui::SameLine();
+				if (ImGui::Button("Hidden"))
+					touchHidden();
+				ImGui::SameLine();
+				if (ImGui::Button("Icon"))
+					touchIcon();
 
-			if (ImGui::BeginTable("tableTraps", 2))
-			{
-				if (isSudden)
+				if (ImGui::BeginTable("tableTraps", 2))
 				{
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
-					ImGui::Text("Sudden");
-					ImGui::TableSetColumnIndex(1);
-					ImGui::Text("%.02f", trapDuration + timestampSudden - getGameTime());
-				}
+					if (isSudden)
+					{
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("Sudden");
+						ImGui::TableSetColumnIndex(1);
+						ImGui::Text("%.02f", trapDuration + timestampSudden - getGameTime());
+					}
 
-				if (isHidden)
-				{
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
-					ImGui::Text("Hidden");
-					ImGui::TableSetColumnIndex(1);
-					ImGui::Text("%.02f", trapDuration + timestampHidden - getGameTime());
-				}
+					if (isHidden)
+					{
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("Hidden");
+						ImGui::TableSetColumnIndex(1);
+						ImGui::Text("%.02f", trapDuration + timestampHidden - getGameTime());
+					}
 
-				if (savedIcon <= 12)
-				{
-					ImGui::TableNextRow();
-					ImGui::TableSetColumnIndex(0);
-					ImGui::Text("Icon");
-					ImGui::TableSetColumnIndex(1);
-					ImGui::Text("%.02f", trapDuration + timestampIconStart - getGameTime());
-				}
+					if (savedIcon <= 12)
+					{
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(0);
+						ImGui::Text("Icon");
+						ImGui::TableSetColumnIndex(1);
+						ImGui::Text("%.02f", trapDuration + timestampIconStart - getGameTime());
+					}
 
-				ImGui::EndTable();
+					ImGui::EndTable();
+				}
 			}
 
 			ImGui::EndTabItem();
