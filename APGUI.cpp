@@ -182,6 +182,10 @@ namespace APGUI
                 APReload::run();
 
             ImGui::SameLine();
+            if (ImGui::Button("Main Menu"))
+                APReload::ChangeGameState(1);
+
+            ImGui::SameLine();
             std::string reloadKey = "Reload key: " + APReload::reloadVal;
             ImGui::Text("%s", reloadKey.c_str());
 
