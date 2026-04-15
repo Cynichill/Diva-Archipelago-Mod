@@ -182,7 +182,7 @@ namespace APGUI
                 APReload::run();
 
             ImGui::SameLine();
-            if (ImGui::Button("Main Menu"))
+            if (ImGui::Button("Force"))
                 APReload::ChangeGameState(1);
 
             ImGui::SameLine();
