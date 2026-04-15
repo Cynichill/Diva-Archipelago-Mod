@@ -218,6 +218,15 @@ namespace APGUI
                     APLogger::print("DO NOT CLOSE THIS WINDOW OR THE GAME WILL CLOSE\n");
                 }*/
 
+                if (ImGui::Button("Reset")) {
+                    APClient::seedIDs.clear();
+                    APClient::recvIDs.clear();
+                    APClient::missingIDs.clear();
+
+                    APReload::run();
+                }
+
+                ImGui::SameLine();
                 if (ImGui::Button("Sample Random IDs")) {
                     APClient::seedIDs.clear();
                     APClient::seedIDs.push_back(0); // Prevent seedIDs == recvIDs
