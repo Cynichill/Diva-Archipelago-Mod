@@ -375,7 +375,10 @@ namespace APClient
                 if (AP_IsInit())
                     ImGui::EndDisabled();
 
-                if (AP_GetConnectionStatus() == AP_ConnectionStatus::Disconnected)
+                bool disconnected = AP_GetConnectionStatus() == AP_ConnectionStatus::Disconnected;
+                bool refused = AP_GetConnectionStatus() == AP_ConnectionStatus::ConnectionRefused;
+
+                if (disconnected || refused)
                     if (!AP_IsInit()) {
                         if (ImGui::Button("Connect"))
                             connect();
@@ -384,12 +387,8 @@ namespace APClient
                         if (ImGui::Button("Cancel"))
                             AP_Shutdown();
                         ImGui::SameLine();
-                        ImGui::Text("Connecting...");
+                        ImGui::Text(refused ? "Wrong Name/Server/Password" : "Connecting...");
                     }
-
-                ImGui::SameLine();
-                if (AP_GetConnectionStatus() == AP_ConnectionStatus::ConnectionRefused)
-                    ImGui::Text("Wrong Name/Server/Password");
             }
             else
             {
