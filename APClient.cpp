@@ -365,19 +365,31 @@ namespace APClient
         if (ImGui::BeginTabItem("Client")) {
             if (AP_GetConnectionStatus() != AP_ConnectionStatus::Authenticated)
             {
+                if (AP_IsInit())
+                    ImGui::BeginDisabled();
+
                 ImGui::InputText("Slot Name", slotName, sizeof(slotName));
                 ImGui::InputText("Server", slotServer, sizeof(slotServer));
                 ImGui::InputText("Password", slotPassword, sizeof(slotPassword), ImGuiInputTextFlags_Password);
 
-                if (ImGui::Button("Connect"))
-                    connect();
+                if (AP_IsInit())
+                    ImGui::EndDisabled();
+
+                if (AP_GetConnectionStatus() == AP_ConnectionStatus::Disconnected)
+                    if (!AP_IsInit()) {
+                        if (ImGui::Button("Connect"))
+                            connect();
+                    }
+                    else {
+                        if (ImGui::Button("Cancel"))
+                            AP_Shutdown();
+                        ImGui::SameLine();
+                        ImGui::Text("Connecting...");
+                    }
 
                 ImGui::SameLine();
                 if (AP_GetConnectionStatus() == AP_ConnectionStatus::ConnectionRefused)
                     ImGui::Text("Wrong Name/Server/Password");
-
-                if (AP_GetConnectionStatus() == AP_ConnectionStatus::Connected)
-                    ImGui::Text("Connected");
             }
             else
             {
