@@ -92,7 +92,7 @@ namespace APGUI
         ImGui::Begin("Archipelago Mod###APClient", NULL,
                     ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
 
-        if (ImGui::BeginTabBar("APTabs")) {
+        if (ImGui::BeginTabBar("APTabs" /*, ImGuiTabBarFlags_Reorderable*/)) {
             APClient::ImGuiTab();
 
             if (devMode || AP_GetConnectionStatus() == AP_ConnectionStatus::Authenticated) {
