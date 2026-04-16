@@ -115,15 +115,24 @@ namespace APIDHandler
 			ImGui::SameLine();
 			ImGui::Text("Leeks: %d/%d", APClient::leekHave, APClient::leekNeed);
 
+			ImGui::BeginTable("tableTrackerOptions", 2, ImGuiTableFlags_SizingStretchSame);
+
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+
 			if (ImGui::Checkbox("Freeplay", &freeplay))
 				APReload::run();
 			ImGui::SameLine();
 			HelpMarker("The entire song list will be available except for songs that have not been received yet.");
 
+			ImGui::TableSetColumnIndex(1);
+
 			if (ImGui::Checkbox("Hide checked", &auto_hide_songs))
 				APReload::run();
 			ImGui::SameLine();
 			HelpMarker("When not in Freeplay, the song list will only show songs that have checks.");
+
+			ImGui::EndTable();
 
 			if (ImGui::BeginChild("tableTrackerContainer", ImVec2(0, 300))) {
 				if (ImGui::BeginTable("tableTracker", 2,
