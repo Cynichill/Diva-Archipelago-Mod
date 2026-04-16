@@ -120,7 +120,7 @@ namespace APIDHandler
 			ImGui::SameLine();
 			HelpMarker("The entire song list will be available except for songs that have not been received yet.");
 
-			if (ImGui::Checkbox("Hide songs with no checks from song list", &auto_hide_songs))
+			if (ImGui::Checkbox("Hide songs with no checks", &auto_hide_songs))
 				APReload::run();
 			ImGui::SameLine();
 			HelpMarker("When not in Freeplay, the song list will only show songs that have checks.");

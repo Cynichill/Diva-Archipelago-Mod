@@ -20,6 +20,7 @@ namespace APClient
 
     char say[256] = ""; // Client -> Server
     std::string APLog = ""; // Various memory management concerns.
+    bool APLogCopyMode = false;
 
     // TODO: ID remaps
     AP_RoomInfo RoomInfo;
@@ -393,9 +394,43 @@ namespace APClient
                 if (ImGui::Button("Reload"))
                     APReload::run();
 
-                // TODO: Switch to TextWrapped, smart auto scroll to bottom
-                ImGui::InputTextMultiline("##APlog", (char *)APLog.c_str(), sizeof(APLog), ImVec2(ImGui::GetContentRegionAvail().x, 0), ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap);
-                ImGui::SetScrollHereY(1.0f);
+                ImGui::Separator();
+
+                ImGui::BeginChild("APLog", ImVec2(0, 250));
+
+                if (APLogCopyMode) {
+                    ImGui::InputTextMultiline("##APLogMulti", (char*)APLog.c_str(), sizeof(APLog), ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y), ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap);
+
+                    // TODO: dedupe
+                    if (ImGui::BeginPopupContextItem("##xx")) {
+                        ImGui::Checkbox("Copy mode (no autoscroll)", &APLogCopyMode);
+                        ImGui::EndPopup();
+                    }
+                }
+                else {
+                    ImGui::PushTextWrapPos(0.0f);
+
+                    std::istringstream stream(APLog);
+                    std::string line;
+
+                    while (std::getline(stream, line)) {
+                        ImGui::TextUnformatted(line.c_str());
+                    }
+
+                    ImGui::PopTextWrapPos();
+
+                    if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f)
+                        ImGui::SetScrollHereY(1.0f);
+                }
+
+                ImGui::EndChild();
+
+                if (ImGui::BeginPopupContextItem("##xx")) {
+                    ImGui::Checkbox("Copy mode (no autoscroll)", &APLogCopyMode);
+                    ImGui::EndPopup();
+                }
+
+                ImGui::Separator();
 
                 static bool refocus = false;
                 if (refocus) {
@@ -405,10 +440,11 @@ namespace APClient
 
                 if (ImGui::InputText("##APsay", say, sizeof(say), ImGuiInputTextFlags_EnterReturnsTrue))
                 {
-                    AP_Say(std::string(say));
-                    say[0] = '\0';
-
                     refocus = true;
+                    if (strlen(say) > 0) {
+                        AP_Say(std::string(say));
+                        say[0] = '\0';
+                    }
                 }
 
                 ImGui::SameLine();
