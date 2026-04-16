@@ -24,9 +24,11 @@ namespace APHints
     extern std::vector<int64_t> HintedIDs;
 
     void reset();
+    void drop();
+    bool isPlayer(const std::string &playerName);
     void handleHintMessage(const AP_HintMessage&);
-    void updateSentLocations(const std::array<int64_t, 2> locationIDs);
-    void updateByItemName(const std::string itemName);
+    void updateSentLocations(const std::array<int64_t, 2> &locationIDs);
+    void updateByItemName(const std::string &itemName);
 
     void ImGuiTab();
 }

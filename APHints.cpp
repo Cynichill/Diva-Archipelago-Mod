@@ -41,13 +41,34 @@ namespace APHints
     {
         init = false;
         hintsRequested = false;
+        drop();
+    }
+
+    void drop()
+    {
         Hints.clear();
         HintedIDs.clear();
     }
 
+    bool isPlayer(const std::string &playerName)
+    {
+        // The current API-less hint support crumbles when aliases are used.
+        // "PlayerName" vs "Aliased (PlayerName)"
+        // Until APCpp is forked to support this better, do it live.
+
+        if (playerName.compare(APClient::getSlotName()) == 0)
+            return true;
+
+        std::string aliasSuffix = " (" + std::string(APClient::getSlotName()) + ")";
+        if (playerName.rfind(aliasSuffix) != std::string::npos)
+            return true;
+
+        return false;
+    }
+
     void handleHintMessage(const AP_HintMessage& recvHint)
     {
-        if (recvHint.sendPlayer != APClient::getSlotName() && recvHint.recvPlayer != APClient::getSlotName())
+        if (!isPlayer(recvHint.sendPlayer) && !isPlayer(recvHint.recvPlayer))
             return;
 
         for (AP_HintMessage &hint : Hints)
@@ -59,7 +80,7 @@ namespace APHints
             }
         }
 
-        if (recvHint.sendPlayer.compare(APClient::getSlotName()) == 0)
+        if (isPlayer(recvHint.sendPlayer))
         {
             // TODO: ID Remaps
             auto itemID = location_name_to_id[recvHint.location] / 10;
@@ -121,25 +142,25 @@ namespace APHints
         hintsRaw_S.clear();
     }
 
-    void updateSentLocations(const std::array<int64_t, 2> locationIDs)
+    void updateSentLocations(const std::array<int64_t, 2> &locationIDs)
     {
         // Simply no better way...
         for (const auto &locationID : locationIDs) {
             auto location = location_id_to_name[locationID];
             for (auto &hint : Hints) {
-                if (hint.sendPlayer.compare(APClient::getSlotName()) == 0 && location.compare(hint.location) == 0)
+                if (isPlayer(hint.sendPlayer) && location.compare(hint.location) == 0)
                     hint.checked = true;
             }
         }
     }
 
-    void updateByItemName(const std::string itemName)
+    void updateByItemName(const std::string &itemName)
     {
         if (item_name_to_ap_id[itemName] < 10)
             return; // Without location data, good luck. Dupes make some sense at least.
 
         for (auto& hint : Hints) {
-            if (hint.recvPlayer.compare(APClient::getSlotName()) == 0 && hint.item.compare(itemName) == 0) {
+            if (isPlayer(hint.recvPlayer) && hint.item.compare(itemName) == 0) {
                 APLogger::print(__FUNCTION__" setting checked for %s\n", hint.location.c_str());
                 hint.checked = true;
             }
@@ -169,8 +190,10 @@ namespace APHints
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail - buttonWidth);
 
             //ImGui::BeginDisabled(true);
-            if (ImGui::Button("Manual Refresh"))
+            if (ImGui::Button("Manual Refresh")) {
+                drop();
                 AP_Say("!hint");
+            }
             //ImGui::EndDisabled();
 
             if (ImGui::IsItemHovered()) {
@@ -207,7 +230,7 @@ namespace APHints
                         if (hintHideChecked && hint.checked)
                             continue;
 
-                        bool isMyCheck = hint.sendPlayer.compare(APClient::getSlotName()) == 0;
+                        bool isMyCheck = isPlayer(hint.sendPlayer);
 
                         if (hintOwnLocationsOnly && !isMyCheck)
                             continue;
