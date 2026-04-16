@@ -94,10 +94,13 @@ namespace APGUI
 
         if (ImGui::BeginTabBar("APTabs")) {
             APClient::ImGuiTab();
-            APIDHandler::ImGuiTab();
-            APHints::ImGuiTab();
-            APDeathLink::ImGuiTab();
-            APTraps::ImGuiTab();
+
+            if (devMode || AP_GetConnectionStatus() == AP_ConnectionStatus::Authenticated) {
+                APIDHandler::ImGuiTab();
+                APHints::ImGuiTab();
+                APDeathLink::ImGuiTab();
+                APTraps::ImGuiTab();
+            }
 
             //APLogger::ImGuiTab();
 
