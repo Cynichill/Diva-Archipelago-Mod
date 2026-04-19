@@ -206,8 +206,8 @@ namespace APIDHandler
 					{
 						ImGui::TableNextRow();
 						ImGui::TableSetColumnIndex(0);
-						CenterText("?");
-						ImGui::Text("?");
+						CenterText("BK");
+						ImGui::Text("BK");
 						ImGui::TableSetColumnIndex(1);
 						ImGui::Text("Waiting for songs...");
 					}
