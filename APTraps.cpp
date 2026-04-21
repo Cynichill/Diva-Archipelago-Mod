@@ -10,8 +10,11 @@ namespace APTraps
 	float trapDuration = 15.0f;
 	float iconInterval = 60.0f;
 	bool suhidden = false;
+	bool randomizeGlyphs = false;
 
-	const uint64_t DivaGameControlConfig = 0x00000001401D6520;
+
+	const uint64_t DivaGameControlConfig = 0x1401D6520;
+	const uint64_t PvControllerGlyphBase = 0x141133D30; // Copy of GCC Icon on load (0-12), accessor returns base glyph (0-2).
 	const uint64_t PvPlayData = 0x1412C2330;
 	//const uint64_t DivaGameModifier = PvPlayData + 0x2D120;
 	const uint64_t DivaGameTimer = PvPlayData + 0x2D33C;
@@ -30,6 +33,7 @@ namespace APTraps
 
 	std::mt19937 mt;
 	std::uniform_int_distribution<int> dist(0, 4);
+	std::uniform_int_distribution<int> glyph(0, 2);
 
 	void config(toml::v3::ex::parse_result& data)
 	{
@@ -210,6 +214,11 @@ namespace APTraps
 				nextIcon += 5;
 		}
 
+		if (randomizeGlyphs) {
+			int out = 1 + (4 * glyph(mt));
+			WRITE_MEMORY(PvControllerGlyphBase, uint8_t, (uint8_t)out);
+		}
+
 		WRITE_MEMORY(getIconAddress(), uint8_t, (uint8_t)nextIcon);
 	}
 
@@ -230,8 +239,11 @@ namespace APTraps
 			HelpMarker("Seconds between icon rerolls while Icon trap is active.\n0 to only reroll once.");
 
 			ImGui::Checkbox("Allow Sudden and Hidden to overlap", &suhidden);
+			ImGui::Checkbox("Icon Trap: Random controller glyphs", &randomizeGlyphs);
 
 			if (devMode) {
+				ImGui::Separator();
+
 				if (ImGui::Button("Sudden"))
 					touchSudden();
 				ImGui::SameLine();
@@ -267,7 +279,8 @@ namespace APTraps
 						ImGui::TableSetColumnIndex(0);
 						ImGui::Text("Icon");
 						ImGui::TableSetColumnIndex(1);
-						ImGui::Text("%.02f", trapDuration + timestampIconStart - getGameTime());
+						ImGui::Text("%.02f %i / %i", trapDuration + timestampIconStart - getGameTime(), getCurrentIcon(),
+									*reinterpret_cast<uint8_t*>(PvControllerGlyphBase));
 					}
 
 					ImGui::EndTable();

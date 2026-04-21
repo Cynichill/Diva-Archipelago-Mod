@@ -298,6 +298,8 @@ namespace APDeathLink
 
                 if (devMode)
                 {
+                    ImGui::Separator();
+
                     if (ImGui::Button("100%")) {
                         deathLinked = true;
                         setHP(0);
