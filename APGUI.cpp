@@ -175,7 +175,7 @@ namespace APGUI
     void ImGuiTab()
     {
         if (ImGui::BeginTabItem("Advanced")) {
-            ImGui::Checkbox("Hide Client during gameplay", &auto_hide_client);
+            ImGui::Checkbox("Hide window during gameplay", &auto_hide_client);
 
             /*if (ImGui::Button("Reload config.toml"))
             ImGui::SameLine();*/
