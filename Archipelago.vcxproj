@@ -146,7 +146,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Dependencies;$(ProjectDir)Dependencies\Detours;$(ProjectDir)Dependencies\Detours\include;$(ProjectDir)Dependencies\imgui;$(ProjectDir)Dependencies\APCpp;$(ProjectDir)Dependencies\toml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Dependencies;$(ProjectDir)Dependencies\Detours;$(ProjectDir)Dependencies\Detours\include;$(ProjectDir)Dependencies\APCpp;$(ProjectDir)Dependencies\toml\include;$(ProjectDir)Dependencies\imgui;$(ProjectDir)Dependencies\imgui\backends;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>

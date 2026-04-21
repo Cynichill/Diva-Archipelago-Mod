@@ -9,7 +9,6 @@ on:
 
 env:
   SOLUTION_FILE_PATH: .\ArchipelagoMod.sln
-  BUILD_CONFIGURATION: Release # Debug is required for proper APCpp linking until it's built as Release, also helps stacktraces I guess.
 
 permissions:
   contents: read
@@ -17,6 +16,10 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    
+    strategy:
+      matrix:
+        build_config: ["Release", "Debug"]
 
     steps:
     - uses: actions/checkout@v6
@@ -29,31 +32,31 @@ jobs:
       with:
         path: |
           ./Dependencies/APCpp
-        key: ${{ runner.os }}-APCpp-${{ hashFiles('**/APCpp/CMakeLists.txt', '**/APCpp/*.c', '**/APCpp/*.h') }}
+        key: ${{ runner.os }}-APCpp-${{ matrix.build_config }}-${{ hashFiles('**/APCpp/CMakeLists.txt', '**/APCpp/*.c', '**/APCpp/*.h') }}
 
     - name: Configure APCpp
       working-directory: ./Dependencies/APCpp
-      run: cmake -DCMAKE_BUILD_TYPE=${{env.BUILD_CONFIGURATION}} -S . -B out
+      run: cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_config }} -S . -B out
 
     - name: Build APCpp
       working-directory: ./Dependencies/APCpp
-      run: cmake --build out --config ${{env.BUILD_CONFIGURATION}}
+      run: cmake --build out --config ${{ matrix.build_config }}
       
     # - name: Artifact APCpp
       # uses: actions/upload-artifact@v6
       # with:
-        # name: artifact-apcpp-${{env.BUILD_CONFIGURATION}}
-        # path: .\Dependencies\APCpp\out\${{env.BUILD_CONFIGURATION}}\*
+        # name: artifact-apcpp-${{ matrix.build_config }}
+        # path: .\Dependencies\APCpp\out\${{ matrix.build_config }}\*
 
     - name: Build Archipelago
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+      run: msbuild /m /p:Configuration=${{ matrix.build_config }} ${{env.SOLUTION_FILE_PATH}}
 
     - shell: cmd
-      run: move .\x64\Release\ArchipelagoMod.dll .\dist\ArchipelagoMod\
+      run: move .\x64\${{ matrix.build_config }}\ArchipelagoMod.dll .\dist\ArchipelagoMod\
 
     - shell: cmd
-      run: move .\Dependencies\APCpp\out\Release\APCpp.dll .\dist\ArchipelagoMod\
+      run: move .\Dependencies\APCpp\out\${{ matrix.build_config }}\APCpp.dll .\dist\ArchipelagoMod\
       
     - shell: cmd
       run: move .\LICENSE.TXT .\dist\ArchipelagoMod\
@@ -61,6 +64,6 @@ jobs:
     - name: Artifact
       uses: actions/upload-artifact@v6
       with:
-        name: artifact-ArchipelagoMod-${{env.BUILD_CONFIGURATION}}
+        name: artifact-ArchipelagoMod-${{ matrix.build_config }}
         path: .\dist\*
         compression-level: 9 # not my compute.
