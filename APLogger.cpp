@@ -15,7 +15,7 @@ namespace APLogger
 
     void print(const char* const fmt, ...)
     {
-        if (!logToFile && !GetConsoleWindow() || !freopen("CONOUT$", "w", stdout))
+        if (!logToFile && !GetConsoleWindow())
             return;
 
         char line[512];

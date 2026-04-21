@@ -240,6 +240,9 @@ extern "C"
 
     void __declspec(dllexport) Init()
     {
+        // May cause an APCpp crash? Not required.
+        //freopen("CONOUT$", "w", stdout);
+
         INSTALL_HOOK(_PvResultsFinalize);
         INSTALL_HOOK(_PvLoop);
         INSTALL_HOOK(_PvCalculateGrade);
