@@ -175,6 +175,8 @@ namespace APGUI
     void ImGuiTab()
     {
         if (ImGui::BeginTabItem("Advanced")) {
+            ImGui::Checkbox("Hide Client during gameplay", &auto_hide_client);
+
             /*if (ImGui::Button("Reload config.toml"))
             ImGui::SameLine();*/
             ImGui::TextLinkOpenURL("Open config.toml", ConfigTOML.string().c_str());
@@ -189,12 +191,7 @@ namespace APGUI
                 APReload::ChangeGameState(1);
 
             ImGui::SameLine();
-            std::string reloadKey = "Reload key: " + APReload::reloadVal;
-            ImGui::Text("%s", reloadKey.c_str());
-
-            ImGui::Separator();
-
-            ImGui::Checkbox("Hide Client during gameplay", &auto_hide_client);
+            ImGui::Text("Reload key: %s", APReload::reloadVal.c_str());
             ImGui::SliderInt("Reload delay", &reloadDelay, 1, 10);
 
             ImGui::Separator();
