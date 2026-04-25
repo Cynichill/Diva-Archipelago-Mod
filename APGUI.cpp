@@ -102,8 +102,6 @@ namespace APGUI
                 APTraps::ImGuiTab();
             }
 
-            //APLogger::ImGuiTab();
-
             APGUI::ImGuiTab();
 
             ImGui::EndTabBar();
@@ -256,11 +254,7 @@ namespace APGUI
                 ImGui::SameLine();
                 ImGui::Text("%d/%d recv/seed", APClient::recvIDs.size(), APClient::seedIDs.size());
 
-                ImGui::Checkbox("Log to file", &APLogger::logToFile);
-                if (&APLogger::logToFile) {
-                    ImGui::SameLine();
-                    ImGui::TextLinkOpenURL("Open log file", APLogger::LogPath.string().c_str());
-                }
+                APLogger::ImGuiTab();
 
             }
 

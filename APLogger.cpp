@@ -1,9 +1,11 @@
+#include "APClient.h"
 #include "APLogger.h"
 #include <stdarg.h>
 
 namespace APLogger
 {
     bool logToFile = false;
+    std::string APLogLocal;
 
     std::ofstream APLog;
     const std::filesystem::path LogPath = std::filesystem::current_path() / "log.txt";
@@ -15,9 +17,6 @@ namespace APLogger
 
     void print(const char* const fmt, ...)
     {
-        if (!logToFile && !GetConsoleWindow())
-            return;
-
         char line[512];
 
         time_t t = time(NULL);
@@ -26,15 +25,17 @@ namespace APLogger
 
         char ts[64];
         strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm);
-        int offset = snprintf(line, sizeof(line), "[Archipelago] [%s] ", ts);
+        int offset = snprintf(line, sizeof(line), "[%s] ", ts);
 
         va_list args;
         va_start(args, fmt);
         vsnprintf(line + offset, sizeof(line) - offset, fmt, args);
         va_end(args);
 
+        APLogLocal += std::string(line);
+
         if (GetConsoleWindow())
-            printf("%s", line);
+            printf("[Archipelago] %s", line);
 
         if (logToFile) {
             APLog.open(LogPath, std::ofstream::out | std::ofstream::app);
@@ -46,12 +47,22 @@ namespace APLogger
         }
     }
 
+    // Previously considered for a tab, made a collapsable header instead
     void ImGuiTab()
     {
-        if (ImGui::BeginTabItem("Mod Log")) {
+        /*if (!APClient::devMode)
+            return;*/
 
+        if (!ImGui::CollapsingHeader("Logging")) {
+            // TODO: Check write perms?
+            ImGui::Checkbox("Log to file", &APLogger::logToFile);
+            if (&APLogger::logToFile) {
+                ImGui::SameLine();
+                ImGui::TextLinkOpenURL("Open log file", APLogger::LogPath.string().c_str());
+            }
 
-            ImGui::EndTabItem();
+            ImGui::InputTextMultiline("##APLoggerMulti", (char*)APLogLocal.c_str(), sizeof(APLogLocal),
+                                      ImVec2(ImGui::GetContentRegionAvail().x, 150), ImGuiInputTextFlags_ReadOnly);
         }
     }
 }
