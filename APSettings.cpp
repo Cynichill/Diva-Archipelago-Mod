@@ -45,6 +45,10 @@ namespace APSettings
 
     void collect()
     {
+        std::ofstream settingsFile(SettingsTOML);
+        if (!settingsFile)
+            return;
+
         toml::table settings;
 
         APClient::save(settings);
@@ -55,12 +59,9 @@ namespace APSettings
         APReload::save(settings);
         APTraps::save(settings);
 
-        std::ofstream settingsFile(SettingsTOML);
-        if (settingsFile.is_open()) {
-            settingsFile << "# It is recommend to make changes and save settings within the game.\n"
-                            "# Invalid or missing settings here will use their defaults.\n\n";
-            settingsFile << toml::toml_formatter{ settings, toml::format_flags::relaxed_float_precision };
-        }
+        settingsFile << "# It is recommend to make changes and save settings within the game.\n"
+                        "# Invalid or missing settings here will use their defaults.\n\n";
+        settingsFile << toml::toml_formatter{ settings, toml::format_flags::relaxed_float_precision };
     }
 
     void ImGuiTab()

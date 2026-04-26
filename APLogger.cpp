@@ -52,10 +52,8 @@ namespace APLogger
         if (log_to_file) {
             APLog.open(LogPath, std::ofstream::out | std::ofstream::app);
 
-            if (APLog.is_open()) {
+            if (APLog)
                 APLog.write(line, strlen(line));
-                APLog.close();
-            }
         }
     }
 
