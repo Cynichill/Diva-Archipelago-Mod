@@ -64,6 +64,9 @@ namespace APClient
 
     void config(const toml::table& settings)
     {
+        if (AP_GetConnectionStatus() != AP_ConnectionStatus::Disconnected)
+            return;
+
         toml::table section;
         if (settings.contains("client") && settings["client"].is_table())
             section = *settings["client"].as_table();
