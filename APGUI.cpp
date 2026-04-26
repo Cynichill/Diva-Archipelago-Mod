@@ -140,10 +140,10 @@ namespace APGUI
 
     void save(toml::table &settings)
     {
-        toml::table gui;
-        gui.insert("auto_hide_client", auto_hide_client);
+        toml::table config;
+        config.insert("auto_hide_client", auto_hide_client);
 
-        settings.insert("gui", gui);
+        settings.insert("gui", config);
     }
 
     void warning()

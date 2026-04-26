@@ -12,7 +12,11 @@ namespace APLogger
 
     void config(const toml::table& settings)
     {
-        log_to_file = settings["logging"].value_or(false);
+        toml::table section;
+        if (settings.contains("logger") && settings["logger"].is_table())
+            section = *settings["logger"].as_table();
+
+        log_to_file = section["log_to_file"].value_or(false);
     }
 
     void save(toml::table& settings)

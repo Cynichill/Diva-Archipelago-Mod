@@ -8,7 +8,7 @@ namespace APIDHandler
 	// Internal
 	bool exists = false;
 	bool freeplay = false;
-	bool auto_hide_songs = true;
+	bool hide_checked = true;
 	bool reload_needed = true;
 	bool reloading = false;
 
@@ -21,10 +21,22 @@ namespace APIDHandler
 
 	auto &HintedIDs = APHints::HintedIDs;
 
-	void config(toml::v3::ex::parse_result& data)
+	void config(const toml::table& settings)
 	{
-		auto_hide_songs = data["auto_hide_songs"].value_or(true);
-		APLogger::print("auto_hide_songs: %d\n", auto_hide_songs);
+		toml::table section;
+		if (settings.contains("tracker") && settings["tracker"].is_table())
+			section = *settings["tracker"].as_table();
+
+		hide_checked = section["hide_checked"].value_or(true);
+		APLogger::print("hide_checked: %d\n", hide_checked);
+	}
+
+	void save(toml::table& settings)
+	{
+		toml::table config;
+		config.insert("hide_checked", hide_checked);
+
+		settings.insert("tracker", config);
 	}
 
 	bool checkNC()
@@ -69,7 +81,7 @@ namespace APIDHandler
 		auto end = freeplay ? missingIDs.end() : recvIDs.end();
 		auto contains = std::find(begin, end, pvID) != end;
 
-		if (!freeplay && contains && auto_hide_songs)
+		if (!freeplay && contains && hide_checked)
 		{
 			for (const auto& songID : recvIDs) {
 				auto loc1checked = std::find(CheckedLocations.begin(), CheckedLocations.end(), pvID * 10) != CheckedLocations.end();
@@ -127,7 +139,7 @@ namespace APIDHandler
 
 				ImGui::TableSetColumnIndex(1);
 
-				if (ImGui::Checkbox("Hide checked", &auto_hide_songs))
+				if (ImGui::Checkbox("Hide checked", &hide_checked))
 					APReload::run();
 				ImGui::SameLine();
 				HelpMarker("When not in Freeplay, the song list will only show songs that have checks.");
@@ -153,7 +165,7 @@ namespace APIDHandler
 
 						int available = (int)!loc1checked + (int)!loc2checked;
 
-						if (auto_hide_songs && available == 0)
+						if (hide_checked && available == 0)
 							continue;
 
 						_availableLocs += available;

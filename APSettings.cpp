@@ -1,6 +1,7 @@
 #include "APClient.h"
 #include "APDeathLink.h"
 #include "APGUI.h"
+#include "APIDHandler.h"
 #include "APReload.h"
 #include "APSettings.h"
 #include "APTraps.h"
@@ -36,6 +37,7 @@ namespace APSettings
         APClient::config(settings);
         APDeathLink::config(settings);
         APGUI::config(settings);
+        APIDHandler::config(settings);
         APLogger::config(settings);
         APReload::config(settings);
         APTraps::config(settings);
@@ -48,6 +50,7 @@ namespace APSettings
         APClient::save(settings);
         APDeathLink::save(settings);
         APGUI::save(settings);
+        APIDHandler::save(settings);
         APLogger::save(settings);
         APReload::save(settings);
         APTraps::save(settings);
