@@ -9,7 +9,7 @@ namespace APTraps
 
 	float trapDuration = 15.0f;
 	float iconInterval = 60.0f;
-	bool suhidden = false;
+	bool trapOverlap = false;
 	bool randomizeGlyphs = false;
 
 
@@ -37,28 +37,28 @@ namespace APTraps
 
 	void config(const toml::table& settings)
 	{
-		float config_duration = settings["trap_duration"].value_or(trapDuration);
+		float config_duration = settings["duration"].value_or(trapDuration);
 		trapDuration = std::clamp(config_duration, 0.0f, 300.0f);
-		APLogger::print("trap_duration: %.02f (config: %.02f)\n", trapDuration, config_duration);
+		APLogger::print("trap duration: %.02f (config: %.02f)\n", trapDuration, config_duration);
 
 		float config_iconinterval = settings["icon_reroll"].value_or(iconInterval);
 		iconInterval = std::clamp(config_iconinterval, 0.0f, 60.0f);
-		APLogger::print("icon_reroll: %.02f (config: %.02f)\n", iconInterval, config_iconinterval);
+		APLogger::print("trap icon_reroll: %.02f (config: %.02f)\n", iconInterval, config_iconinterval);
 
-		suhidden = settings["suhidden"].value_or(false);
-		APLogger::print("suhidden: %d\n", suhidden);
+		trapOverlap = settings["overlap"].value_or(false);
+		APLogger::print("trap overlap: %d\n", trapOverlap);
 
-		randomizeGlyphs = settings["trap_icon_glyphs"].value_or(false);
-		APLogger::print("random glyphs: %d\n", randomizeGlyphs);
+		randomizeGlyphs = settings["icon_glyphs"].value_or(false);
+		APLogger::print("trap icon_glyphs: %d\n", randomizeGlyphs);
 	}
 
 	void save(toml::table& settings)
 	{
 		toml::table config;
-		config.insert("trap_duration", trapDuration);
-		config.insert("trap_icon_interval", iconInterval);
-		config.insert("trap_icon_glyphs", randomizeGlyphs);
-		config.insert("trap_overlap", suhidden);
+		config.insert("duration", trapDuration);
+		config.insert("icon_interval", iconInterval);
+		config.insert("icon_glyphs", randomizeGlyphs);
+		config.insert("overlap", trapOverlap);
 
 		settings.insert("traps", config);
 	}
@@ -109,7 +109,7 @@ namespace APTraps
 		timestampSudden = now;
 		isSudden = true;
 
-		if (!suhidden && isHidden) {
+		if (!trapOverlap && isHidden) {
 			APLogger::print("[%6.2f] Trap < Hidden -> Sudden (expires: %.2f)\n", now, expires);
 			timestampHidden = 0.0f;
 			isHidden = false;
@@ -125,7 +125,7 @@ namespace APTraps
 		timestampHidden = now;
 		isHidden = true;
 
-		if (!suhidden && isSudden) {
+		if (!trapOverlap && isSudden) {
 			APLogger::print("[%6.2f] Trap < Sudden -> Hidden (expires: %.2f)\n", now, expires);
 			timestampSudden = 0.0f;
 			isSudden = false;
@@ -252,7 +252,7 @@ namespace APTraps
 			ImGui::SameLine();
 			HelpMarker("Seconds between icon rerolls while Icon trap is active.\n0 to only reroll once.");
 
-			ImGui::Checkbox("Allow Sudden and Hidden to overlap", &suhidden);
+			ImGui::Checkbox("Allow Sudden and Hidden to overlap", &trapOverlap);
 			ImGui::Checkbox("Icon Trap: Random controller glyphs", &randomizeGlyphs);
 
 			if (devMode) {

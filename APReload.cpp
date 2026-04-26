@@ -17,17 +17,17 @@ namespace APReload
         if (settings.contains("reload") && settings["reload"].is_table())
             section = *settings["reload"].as_table();
 
-        reloadVal = section["reload_key"].value_or<std::string>("F7");
+        reloadVal = section["key"].value_or<std::string>("F7");
         reloadVal = reloadVal.empty() ? "F7" : reloadVal;
         reloadKeyCode = GetReloadKeyCode(reloadVal);
 
-        APLogger::print("reload_key: %s (0x%x)\n", reloadVal.c_str(), static_cast<int>(reloadKeyCode));
+        APLogger::print("reload key: %s (0x%x)\n", reloadVal.c_str(), static_cast<int>(reloadKeyCode));
 
-        reloadDelay = std::clamp(section["reload_delay"].value_or(10), 1, 10);
-        APLogger::print("reload_delay: %ims\n", reloadDelay);
+        reloadDelay = std::clamp(section["delay"].value_or(10), 1, 10);
+        APLogger::print("reload delay: %ims\n", reloadDelay * 100);
 
-        skipMainMenu = section["reload_skip_main_menu"].value_or(false);
-        APLogger::print("reload_skip_main_menu: %i\n", skipMainMenu);
+        skipMainMenu = section["skip_main_menu"].value_or(false);
+        APLogger::print("reload skip_main_menu: %i\n", skipMainMenu);
 
         // DATA_TEST patch thanks to Debug mod: samyuu, nastys, vixen256, korenkonder, skyth
         WRITE_MEMORY(0x140441153, uint8_t, 0xE9, 0x1E, 0x00, 0x00, 0x00, 0x00);
@@ -39,9 +39,9 @@ namespace APReload
     void save(toml::table& settings)
     {
         toml::table config;
-        config.insert("reload_key", reloadVal);
-        config.insert("reload_delay", reloadDelay);
-        config.insert("reload_skip_main_menu", skipMainMenu);
+        config.insert("key", reloadVal);
+        config.insert("delay", reloadDelay);
+        config.insert("skip_main_menu", skipMainMenu);
 
         settings.insert("reload", config);
     }

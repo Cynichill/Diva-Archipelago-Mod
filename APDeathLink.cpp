@@ -40,21 +40,21 @@ namespace APDeathLink
         if (settings.contains("death_link") && settings["death_link"].is_table())
             section = *settings["death_link"].as_table();
 
-        death_link = settings["death_link_enabled"].value_or(false);
-        APLogger::print("death_link_enabled set to %d (config: %d)\n", death_link);
+        death_link = settings["enabled"].value_or(false);
+        APLogger::print("death_link enabled set to %d (config: %d)\n", death_link);
 
-        int config_death_link_amnesty = settings["death_link_amnesty"].value_or(0);
+        int config_death_link_amnesty = settings["amnesty"].value_or(0);
         death_link_amnesty = std::clamp(config_death_link_amnesty, 0, 20);
         death_link_amnesty_count = death_link_amnesty;
-        APLogger::print("death_link_amnesty set to %d (config: %d)\n", death_link_amnesty, config_death_link_amnesty);
+        APLogger::print("death_link amnesty set to %d (config: %d)\n", death_link_amnesty, config_death_link_amnesty);
 
-        int config_percent = settings["death_link_percent"].value_or(death_link_percent);
+        int config_percent = settings["percent"].value_or(death_link_percent);
         death_link_percent = std::clamp(config_percent, 0, 100);
-        APLogger::print("death_link_percent set to %d (config: %d)\n", death_link_percent, config_percent);
+        APLogger::print("death_link percent set to %d (config: %d)\n", death_link_percent, config_percent);
 
-        float config_safety = settings["death_link_safety"].value_or(death_link_safety);
+        float config_safety = settings["safety"].value_or(death_link_safety);
         death_link_safety = std::clamp(config_safety, 0.0f, 30.0f);
-        APLogger::print("death_link_safety set to %.02f (config: %.02f)\n", death_link_safety, config_safety);
+        APLogger::print("death_link safety set to %.02f (config: %.02f)\n", death_link_safety, config_safety);
 
         reset();
     }
@@ -62,10 +62,10 @@ namespace APDeathLink
     void save(toml::table& settings)
     {
         toml::table config;
-        config.insert("death_link_enabled", death_link);
-        config.insert("death_link_amnesty", death_link_amnesty);
-        config.insert("death_link_percent", death_link_percent);
-        config.insert("death_link_safety", death_link_safety);
+        config.insert("enabled", death_link);
+        config.insert("amnesty", death_link_amnesty);
+        config.insert("percent", death_link_percent);
+        config.insert("safety", death_link_safety);
 
         settings.insert("death_link", config);
     }
