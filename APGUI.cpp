@@ -37,8 +37,6 @@ namespace APGUI
         if (g_ImGuiInitialized)
             return;
 
-        APSettings::load();
-
         ImGui_ImplWin32_EnableDpiAwareness();
         float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
 
@@ -66,6 +64,8 @@ namespace APGUI
         ImGui_ImplDX11_Init(g_Device, g_Context);
 
         g_ImGuiInitialized = true;
+
+        APSettings::load();
     }
 
     void onFrame()
@@ -136,12 +136,19 @@ namespace APGUI
             section = *settings["gui"].as_table();
 
         auto_hide_client = section["auto_hide_client"].value_or(true);
+
+        float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
+        auto scale = section["font_scale"].value_or(main_scale);
+        scale = std::clamp(scale, 0.75f, 4.0f);
+
+        ImGui::GetStyle().FontScaleDpi = scale;
     }
 
     void save(toml::table &settings)
     {
         toml::table config;
         config.insert("auto_hide_client", auto_hide_client);
+        config.insert("font_scale", ImGui::GetStyle().FontScaleDpi);
 
         settings.insert("gui", config);
     }
