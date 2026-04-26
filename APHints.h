@@ -6,7 +6,7 @@ enum class APHintStatus : int {
     HINT_NO_PRIORITY = 10,
     HINT_AVOID = 20,
     HINT_PRIORITY = 30,
-    HINT_FOUND = 40, // The location has been collected.Status cannot be changed once found.
+    HINT_FOUND = 40, // The location has been collected. Status cannot be changed once found.
 };
 
 struct APHint {

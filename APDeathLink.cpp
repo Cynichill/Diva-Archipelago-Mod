@@ -22,6 +22,7 @@ namespace APDeathLink
     float lastDeathLink = 0.0f; // Compared against APDeathLink::death_link_safety
     float lastCheckedHP = 0.0f; // HP: For delta time against APDeathLink::DivaGameTimer
 
+    // Progressive HP
     int HPreceived = 1; // Current HP chunks received
     int HPtemp = 0; // Temporarily added chunks
     int HPnumerator = 1; // Received and potentially temp extras
@@ -33,29 +34,40 @@ namespace APDeathLink
     bool HPengaged = false; // True when HPfloor is met
     bool safetyExpired = false; // Easy 60, Norm 40, Hard+ 30s
 
-    void config(toml::v3::ex::parse_result& data)
+    void config(const toml::table& settings)
     {
-        death_link = data["death_link"].value_or(false);
+        toml::table section;
+        if (settings.contains("death_link") && settings["death_link"].is_table())
+            section = *settings["death_link"].as_table();
 
-        APLogger::print("death_link set to %d (config: %d)\n", death_link);
+        death_link = settings["death_link_enabled"].value_or(false);
+        APLogger::print("death_link_enabled set to %d (config: %d)\n", death_link);
 
-        int config_death_link_amnesty = data["death_link_amnesty"].value_or(0);
+        int config_death_link_amnesty = settings["death_link_amnesty"].value_or(0);
         death_link_amnesty = std::clamp(config_death_link_amnesty, 0, 20);
         death_link_amnesty_count = death_link_amnesty;
-
         APLogger::print("death_link_amnesty set to %d (config: %d)\n", death_link_amnesty, config_death_link_amnesty);
 
-        int config_percent = data["death_link_percent"].value_or(death_link_percent);
+        int config_percent = settings["death_link_percent"].value_or(death_link_percent);
         death_link_percent = std::clamp(config_percent, 0, 100);
-
         APLogger::print("death_link_percent set to %d (config: %d)\n", death_link_percent, config_percent);
 
-        float config_safety = data["death_link_safety"].value_or(death_link_safety);
+        float config_safety = settings["death_link_safety"].value_or(death_link_safety);
         death_link_safety = std::clamp(config_safety, 0.0f, 30.0f);
-
         APLogger::print("death_link_safety set to %.02f (config: %.02f)\n", death_link_safety, config_safety);
 
         reset();
+    }
+
+    void save(toml::table& settings)
+    {
+        toml::table config;
+        config.insert("death_link_enabled", death_link);
+        config.insert("death_link_amnesty", death_link_amnesty);
+        config.insert("death_link_percent", death_link_percent);
+        config.insert("death_link_safety", death_link_safety);
+
+        settings.insert("death_link", config);
     }
 
     void reset()

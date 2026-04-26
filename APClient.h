@@ -27,7 +27,8 @@ namespace APClient
 
     char* getSlotName();
 
-    void config(toml::v3::ex::parse_result& data);
+    void config(const toml::v3::ex::parse_result& data);
+    void save(toml::table& settings);
     void reset();
 
     AP_RequestStatus ServerDataRequest_Raw(std::string key, AP_GetServerDataRequest& request, bool& requested, std::string& output);

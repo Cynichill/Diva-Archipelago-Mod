@@ -5,6 +5,7 @@
 #include "APIDHandler.h"
 #include "APLogger.h"
 #include "APReload.h"
+#include "APSettings.h"
 #include "APTraps.h"
 
 namespace APGUI
@@ -12,11 +13,9 @@ namespace APGUI
     // Configurables
 
     bool auto_hide_client = true; // Hide Client during gameplay
-    int& reloadDelay = APReload::reloadDelay;
+    bool& devMode = APClient::devMode;
 
     bool showImGuiDemo = false;
-    bool &devMode = APClient::devMode;
-
     bool g_ImGuiInitialized = false;
     bool firstFrame = true;
     bool prevUnfocused = false;
@@ -37,6 +36,8 @@ namespace APGUI
     {
         if (g_ImGuiInitialized)
             return;
+
+        APSettings::load();
 
         ImGui_ImplWin32_EnableDpiAwareness();
         float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
@@ -128,6 +129,23 @@ namespace APGUI
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     }
 
+    void config(const toml::table& settings)
+    {
+        toml::table section;
+        if (settings.contains("gui") && settings["gui"].is_table())
+            section = *settings["gui"].as_table();
+
+        auto_hide_client = section["auto_hide_client"].value_or(true);
+    }
+
+    void save(toml::table &settings)
+    {
+        toml::table gui;
+        gui.insert("auto_hide_client", auto_hide_client);
+
+        settings.insert("gui", gui);
+    }
+
     void warning()
     {
         if (!showWarning || fs::exists(reload_file))
@@ -174,88 +192,74 @@ namespace APGUI
     {
         if (ImGui::BeginTabItem("Advanced")) {
             ImGui::Checkbox("Hide window during gameplay", &auto_hide_client);
-
-            /*if (ImGui::Button("Reload config.toml"))
-            ImGui::SameLine();*/
-            ImGui::TextLinkOpenURL("Open config.toml", ConfigTOML.string().c_str());
+            APSettings::ImGuiTab();
 
             ImGui::Separator();
 
-            if (ImGui::Button("Reload game"))
-                APReload::run();
+            APReload::ImGuiTab();
 
-            ImGui::SameLine();
-            if (ImGui::Button("Force"))
-                APReload::ChangeGameState(1);
+            if (ImGui::CollapsingHeader("Styling")) {
+                ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
+                ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f, "%.02f");
+                ImGui::SameLine();
+                HelpMarker("1.25 recommended for 1440p\n1.75 recommended for 4K");
 
-            ImGui::SameLine();
-            ImGui::Text("Reload key: %s", APReload::reloadVal.c_str());
-            ImGui::SliderInt("Reload delay", &reloadDelay, 1, 10);
-
-            ImGui::Separator();
-
-            ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
-            ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f, "%.02f");
-            ImGui::SameLine();
-            HelpMarker("1.25 recommended for 1440p\n1.75 recommended for 4K");
-
-            if (ImGui::DragFloat("Global Alpha", &ImGui::GetStyle().Alpha, 0.01f, 0.50f, 1.0f, "%.2f"))
-                ImGui::GetStyle().Alpha = max(ImGui::GetStyle().Alpha, 0.5f); // unlike the demo, actually prevent a 0
-
-            ImGui::Separator();
-
-            if (ImGui::Checkbox("AP Developer Mode", &devMode))
-                devMode = false;
-            if (ImGui::BeginPopupContextItem("##xx")){
-                if (ImGui::MenuItem("Are you sure?##xx"))
-                    devMode = !devMode;
-
-                ImGui::EndPopup();
+                if (ImGui::DragFloat("Global Alpha", &ImGui::GetStyle().Alpha, 0.01f, 0.50f, 1.0f, "%.2f"))
+                    ImGui::GetStyle().Alpha = max(ImGui::GetStyle().Alpha, 0.5f); // unlike the demo, actually prevent a 0
             }
 
-            if (devMode) {
-                // Easy crashes with other mods that already freopen'd to stdout
-                /*if (!GetConsoleWindow() && ImGui::Button("Console")) {
-                    AllocConsole();
-                    APLogger::print("DO NOT CLOSE THIS WINDOW OR THE GAME WILL CLOSE\n");
-                }*/
+            if (ImGui::CollapsingHeader("Developer Mode")) {
+                if (ImGui::Checkbox("Enable Developer Mode", &devMode)) devMode = false;
+                if (ImGui::BeginPopupContextItem("##xx")) {
+                    if (ImGui::MenuItem("Are you sure?##xx"))
+                        devMode = !devMode;
 
-                if (ImGui::Button("Reset")) {
-                    APClient::seedIDs.clear();
-                    APClient::recvIDs.clear();
-                    APClient::missingIDs.clear();
-
-                    APReload::run();
+                    ImGui::EndPopup();
                 }
 
-                ImGui::SameLine();
-                if (ImGui::Button("Sample Random IDs")) {
-                    APClient::seedIDs.clear();
-                    APClient::seedIDs.push_back(0); // Prevent seedIDs == recvIDs
-                    APClient::recvIDs.clear();
+                if (devMode) {
+                    // Easy crashes with other mods that already freopen'd to stdout
+                    /*if (!GetConsoleWindow() && ImGui::Button("Console")) {
+                        AllocConsole();
+                        APLogger::print("DO NOT CLOSE THIS WINDOW OR THE GAME WILL CLOSE\n");
+                    }*/
 
-                    // This doesn't need good random. The biggest issue it will have is picking a valid ID.
-                    for (int i = 0; i < 500; ++i)
-                    {
-                        int id = rand() % 10000 + 1;
-                        APClient::seedIDs.push_back(id);
+                    if (ImGui::Button("Reset")) {
+                        APClient::seedIDs.clear();
+                        APClient::recvIDs.clear();
+                        APClient::missingIDs.clear();
 
-                        if (rand() % (rand() % 10 + 1) == 1)
-                            APClient::PushRecvID(id);
+                        APReload::run();
                     }
 
-                    APReload::run();
+                    ImGui::SameLine();
+                    if (ImGui::Button("Sample Random IDs")) {
+                        APClient::seedIDs.clear();
+                        APClient::seedIDs.push_back(0); // Prevent seedIDs == recvIDs
+                        APClient::recvIDs.clear();
+
+                        // This doesn't need good random. The biggest issue it will have is picking a valid ID.
+                        for (int i = 0; i < 500; ++i)
+                        {
+                            int id = rand() % 10000 + 1;
+                            APClient::seedIDs.push_back(id);
+
+                            if (rand() % (rand() % 10 + 1) == 1)
+                                APClient::PushRecvID(id);
+                        }
+
+                        APReload::run();
+                    }
+
+                    ImGui::SameLine();
+                    HelpMarker("Fills the IDHandler with \"random\" IDs up to 10000.\n"
+                        "Try toggling Freeplay from the Tracker tab.");
+
+                    ImGui::SameLine();
+                    ImGui::Text("%d/%d recv/seed", APClient::recvIDs.size(), APClient::seedIDs.size());
+
+                    APLogger::ImGuiTab();
                 }
-
-                ImGui::SameLine();
-                HelpMarker("Fills the IDHandler with \"random\" IDs up to 10000.\n"
-                            "Try toggling Freeplay from the Tracker tab.");
-
-                ImGui::SameLine();
-                ImGui::Text("%d/%d recv/seed", APClient::recvIDs.size(), APClient::seedIDs.size());
-
-                APLogger::ImGuiTab();
-
             }
 
             ImGui::EndTabItem();

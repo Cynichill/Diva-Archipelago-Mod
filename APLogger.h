@@ -3,10 +3,12 @@
 
 namespace APLogger
 {
-	extern bool logToFile;
+	extern bool log_to_file;
 	const extern std::filesystem::path LogPath;
 
-	void config(toml::v3::ex::parse_result& data);
+	void config(const toml::table& settings);
+	void save(toml::table& settings);
+
 	void print(const char* const fmt, ...);
 	void ImGuiTab();
 }

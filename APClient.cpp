@@ -62,15 +62,29 @@ namespace APClient
     int &progHPtemp = APDeathLink::HPtemp;
     int &progHPTotal = APDeathLink::HPdenominator;
 
-    void config(toml::v3::ex::parse_result& data)
+    void config(const toml::table& settings)
     {
-        std::string config_name = data["slot_name"].value_or("Player1");
-        std::string config_server = data["slot_server"].value_or("archipelago.gg:38281");
-        std::string config_pass = data["slot_password"].value_or("");
+        toml::table section;
+        if (settings.contains("client") && settings["client"].is_table())
+            section = *settings["client"].as_table();
+
+        std::string config_name = section["slot_name"].value_or("Player1");
+        std::string config_server = section["slot_server"].value_or("archipelago.gg:38281");
+        std::string config_pass = section["slot_password"].value_or("");
 
         strncpy(slotName, config_name.c_str(), config_name.size() + 1);
         strncpy(slotServer, config_server.c_str(), config_server.size() + 1);
         strncpy(slotPassword, config_pass.c_str(), config_pass.size() + 1);
+    }
+
+    void save(toml::table& settings)
+    {
+        toml::table config;
+        config.insert("slot_name", slotName);
+        config.insert("slot_server", slotServer);
+        config.insert("slot_password", slotPassword);
+
+        settings.insert("client", config);
     }
 
     char* getSlotName()

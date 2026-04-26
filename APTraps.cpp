@@ -14,7 +14,7 @@ namespace APTraps
 
 
 	const uint64_t DivaGameControlConfig = 0x1401D6520;
-	const uint64_t PvControllerGlyphBase = 0x141133D30; // Copy of GCC Icon on load (0-12), accessor returns base glyph (0-2).
+	const uint64_t PvControllerGlyphBase = 0x141133D30; // Copy of GCC Icon on load (0-12), original caller returns base glyph (0-2).
 	const uint64_t PvPlayData = 0x1412C2330;
 	//const uint64_t DivaGameModifier = PvPlayData + 0x2D120;
 	const uint64_t DivaGameTimer = PvPlayData + 0x2D33C;
@@ -35,18 +35,32 @@ namespace APTraps
 	std::uniform_int_distribution<int> dist(0, 4);
 	std::uniform_int_distribution<int> glyph(0, 2);
 
-	void config(toml::v3::ex::parse_result& data)
+	void config(const toml::table& settings)
 	{
-		float config_duration = data["trap_duration"].value_or(trapDuration);
+		float config_duration = settings["trap_duration"].value_or(trapDuration);
 		trapDuration = std::clamp(config_duration, 0.0f, 300.0f);
 		APLogger::print("trap_duration: %.02f (config: %.02f)\n", trapDuration, config_duration);
 
-		float config_iconinterval = data["icon_reroll"].value_or(iconInterval);
+		float config_iconinterval = settings["icon_reroll"].value_or(iconInterval);
 		iconInterval = std::clamp(config_iconinterval, 0.0f, 60.0f);
 		APLogger::print("icon_reroll: %.02f (config: %.02f)\n", iconInterval, config_iconinterval);
 
-		suhidden = data["suhidden"].value_or(false);
+		suhidden = settings["suhidden"].value_or(false);
 		APLogger::print("suhidden: %d\n", suhidden);
+
+		randomizeGlyphs = settings["trap_icon_glyphs"].value_or(false);
+		APLogger::print("random glyphs: %d\n", randomizeGlyphs);
+	}
+
+	void save(toml::table& settings)
+	{
+		toml::table config;
+		config.insert("trap_duration", trapDuration);
+		config.insert("trap_icon_interval", iconInterval);
+		config.insert("trap_icon_glyphs", randomizeGlyphs);
+		config.insert("trap_overlap", suhidden);
+
+		settings.insert("traps", config);
 	}
 
 	int reset()

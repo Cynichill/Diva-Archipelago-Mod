@@ -4,15 +4,23 @@
 
 namespace APLogger
 {
-    bool logToFile = false;
+    bool log_to_file = false;
     std::string APLogLocal;
 
     std::ofstream APLog;
     const std::filesystem::path LogPath = std::filesystem::current_path() / "log.txt";
 
-    void config(toml::v3::ex::parse_result& data)
+    void config(const toml::table& settings)
     {
-        logToFile = data["logging"].value_or(false);
+        log_to_file = settings["logging"].value_or(false);
+    }
+
+    void save(toml::table& settings)
+    {
+        toml::table config;
+        config.insert("log_to_file", log_to_file);
+
+        settings.insert("logger", config);
     }
 
     void print(const char* const fmt, ...)
@@ -37,7 +45,7 @@ namespace APLogger
         if (GetConsoleWindow())
             printf("[Archipelago] %s", line);
 
-        if (logToFile) {
+        if (log_to_file) {
             APLog.open(LogPath, std::ofstream::out | std::ofstream::app);
 
             if (APLog.is_open()) {
@@ -55,8 +63,8 @@ namespace APLogger
 
         if (!ImGui::CollapsingHeader("Logging")) {
             // TODO: Check write perms?
-            ImGui::Checkbox("Log to file", &APLogger::logToFile);
-            if (&APLogger::logToFile) {
+            ImGui::Checkbox("Log to file", &log_to_file);
+            if (log_to_file) {
                 ImGui::SameLine();
                 ImGui::TextLinkOpenURL("Open log file", APLogger::LogPath.string().c_str());
             }

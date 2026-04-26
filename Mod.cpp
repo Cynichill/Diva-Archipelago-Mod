@@ -12,8 +12,6 @@
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
 
-namespace fs = std::filesystem;
-
 HOOK(bool, __fastcall, _InputEverythingElse, 0x1402AB070, long long a1, int btn)
 {
     return ImGui::GetIO().WantCaptureKeyboard ? false : original_InputEverythingElse(a1, btn);
@@ -47,65 +45,27 @@ LRESULT CALLBACK HookedWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
     return CallWindowProc(APGUI::g_OriginalWndProc, hWnd, msg, wParam, lParam);
 }
 
-// Archipelago Mod variables
-bool skip_mainmenu = false;
-
-const fs::path LocalPath = fs::current_path();
-const fs::path ConfigTOML = "config.toml";
-
-void processConfig() {
-    // The days of reloading the config for changes is over. Do it in the Client!
-    static bool once = false;
-
-    if (once)
-        return;
-
-    once = true;
-
-    // Move to a class and do not do this on init time
-    try {
-        std::ifstream file(LocalPath / ConfigTOML); // CWD is the mod folder within Init
-        if (!file.is_open()) {
-            APLogger::print("Error opening config file: %s\n", ConfigTOML.c_str());
-            return;
-        }
-
-        auto data = toml::parse(file);
-
-        skip_mainmenu = data["skip_mainmenu"].value_or(false);
-        APLogger::config(data);
-        APClient::config(data);
-        APDeathLink::config(data);
-        APTraps::config(data);
-        APReload::config(data);
-    }
-    catch (const std::exception& e) {
-        APLogger::print("Error parsing config file: %s\n", e.what());
-    }
-}
-
 HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long long a2)
 {
-    auto pvName = (std::string*)(PvPlayData + 0x2CEF8);
+    auto &pvName = *reinterpret_cast<std::string*>(PvPlayData + 0x2CEF8);
 
     // This might be somewhere in PvPlayData without having to call out
     auto PvGameData = (char*)reinterpret_cast<uint64_t(__fastcall*)(void)>(0x14027DD90)();
     int diff[3];
     memcpy(diff, PvGameData, 3 * sizeof(int));
 
-    int &playerGrade = *(int*)(PvPlayData + 0x2D190);
+    int &playerGrade = *reinterpret_cast<int*>(PvPlayData + 0x2D190);
 
     // A grade of 1 happens only at playerPercent < 40% (good luck surviving above Easy)
     // Instead of AP patching the comparison, recheck it here.
-    auto playerPercent = (int*)(PvPlayData + 0x2D304);
-    auto clearPercent = (int*)(PvPlayData + 0x2D308);
+    auto &playerPercent = *reinterpret_cast<int*>(PvPlayData + 0x2D304);
+    auto &clearPercent = *reinterpret_cast<int*>(PvPlayData + 0x2D308);
 
-    if (playerGrade == 2 && *playerPercent < *clearPercent)
+    if (playerGrade == 2 && playerPercent < clearPercent)
         playerGrade = 1; // "Cheap"
 
-    if (playerGrade >= APClient::clearGrade)
-    {
-        APClient::LocationSend(*(int*)(PvPlayData + 0x10));
+    if (playerGrade >= APClient::clearGrade) {
+        APClient::LocationSend(*reinterpret_cast<int*>(PvPlayData + 0x10));
     }
     else {
         //playerGrade = 0; // Potentially use the UI to communicate clearGrade?
@@ -189,9 +149,7 @@ HOOK(void, __fastcall, _ChangeGameSubState, 0x1527E49E0, int state, int substate
             }
         }
 
-        processConfig();
-
-        if (skip_mainmenu && skipped == false) {
+       if (APReload::skipMainMenu && skipped == false) {
             APLogger::print("Skipping main menu (state: %d)\n", state);
             skipped = true;
             original_ChangeGameSubState(2, 47);

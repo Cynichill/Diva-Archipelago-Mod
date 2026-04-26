@@ -11,7 +11,9 @@ namespace APTraps
 	extern bool isSudden;
 	extern bool isHidden;
 
-	void config(toml::v3::ex::parse_result& data);
+	void config(const toml::table& settings);
+	void save(toml::table& settings);
+
 	int reset();
 	void resetIcon();
 	void run();

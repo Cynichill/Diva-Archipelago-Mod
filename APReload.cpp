@@ -9,23 +9,41 @@ namespace APReload
     std::string reloadVal;
     int reloadKeyCode;
     int reloadDelay = 10;
+    bool skipMainMenu = false;
 
-    void config(toml::v3::ex::parse_result& data)
+    void config(const toml::table& settings)
     {
-        reloadVal = data["reload_key"].value_or<std::string>("F7");
+        toml::table section;
+        if (settings.contains("reload") && settings["reload"].is_table())
+            section = *settings["reload"].as_table();
+
+        reloadVal = section["reload_key"].value_or<std::string>("F7");
+        reloadVal = reloadVal.empty() ? "F7" : reloadVal;
         reloadKeyCode = GetReloadKeyCode(reloadVal);
 
-        APLogger::print("reload_key: %s (0x%x)\n",
-                         reloadVal.c_str(), static_cast<int>(reloadKeyCode));
+        APLogger::print("reload_key: %s (0x%x)\n", reloadVal.c_str(), static_cast<int>(reloadKeyCode));
 
-        reloadDelay = std::clamp(data["reload_delay"].value_or(10), 1, 10);
+        reloadDelay = std::clamp(section["reload_delay"].value_or(10), 1, 10);
         APLogger::print("reload_delay: %ims\n", reloadDelay);
+
+        skipMainMenu = section["reload_skip_main_menu"].value_or(false);
+        APLogger::print("reload_skip_main_menu: %i\n", skipMainMenu);
 
         // DATA_TEST patch thanks to Debug mod: samyuu, nastys, vixen256, korenkonder, skyth
         WRITE_MEMORY(0x140441153, uint8_t, 0xE9, 0x1E, 0x00, 0x00, 0x00, 0x00);
 
         if (!hGameWindow)
             hGameWindow = GetActiveWindow();
+    }
+
+    void save(toml::table& settings)
+    {
+        toml::table config;
+        config.insert("reload_key", reloadVal);
+        config.insert("reload_delay", reloadDelay);
+        config.insert("reload_skip_main_menu", skipMainMenu);
+
+        settings.insert("reload", config);
     }
 
     void scan()
@@ -81,5 +99,31 @@ namespace APReload
         APLogger::print("Reload > %i/%i\n", state, substate);
         auto _ChangeGameSubState = reinterpret_cast<uint64_t(__fastcall*)(int32_t, int32_t)>(0x1527E49E0);
         _ChangeGameSubState(state, substate);
+    }
+
+    void ImGuiTab()
+    {
+        if (ImGui::CollapsingHeader("Reloading")) {
+            if (ImGui::Button("Reload game"))
+                APReload::run();
+
+            ImGui::SameLine();
+            if (ImGui::Button("Force"))
+                APReload::ChangeGameState(1);
+
+            ImGui::SameLine();
+            ImGui::Text("Reload key: %s", APReload::reloadVal.c_str());
+            ImGui::SameLine();
+            HelpMarker("Can only be changed from settings file.");
+
+
+            ImGui::SliderInt("Reload delay", &APReload::reloadDelay, 1, 10);
+            ImGui::SameLine();
+            HelpMarker("How long to wait for the reload.\nLower is faster but may break.\nBest with DivaModLoader PR #36");
+
+            ImGui::Checkbox("Skip main menu", &APReload::skipMainMenu);
+            ImGui::SameLine();
+            HelpMarker("Skip the main menu after title screen.\nCombine with IntroPatch to skip to song select.");
+        }
     }
 }

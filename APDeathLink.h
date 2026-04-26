@@ -16,7 +16,8 @@ namespace APDeathLink
 	extern int death_link_amnesty;
 	extern int death_link_amnesty_count;
 
-	void config(toml::v3::ex::parse_result& data);
+	void config(const toml::table& settings);
+	void save(toml::table& settings);
 	void reset();
 	void check_fail();
 	void run(bool);

@@ -166,6 +166,7 @@
     <ClInclude Include="APIDHandler.h" />
     <ClInclude Include="APLogger.h" />
     <ClInclude Include="APReload.h" />
+    <ClInclude Include="APSettings.h" />
     <ClInclude Include="APTraps.h" />
     <ClInclude Include="core_types.h" />
     <ClInclude Include="APDeathLink.h" />
@@ -183,6 +184,7 @@
     <ClCompile Include="APIDHandler.cpp" />
     <ClCompile Include="APLogger.cpp" />
     <ClCompile Include="APReload.cpp" />
+    <ClCompile Include="APSettings.cpp" />
     <ClCompile Include="APTraps.cpp" />
     <ClCompile Include="APDeathLink.cpp" />
     <ClCompile Include="Dependencies\imgui\backends\imgui_impl_dx11.cpp" />

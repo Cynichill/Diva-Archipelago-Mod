@@ -15,4 +15,7 @@ namespace APGUI
     void onFrame();
     void warning();
     void ImGuiTab();
+
+    void config(const toml::table& settings);
+    void save(toml::table &settings);
 }
