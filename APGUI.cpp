@@ -14,18 +14,12 @@ namespace APGUI
 
     bool auto_hide_client = true; // Hide Client during gameplay
     bool& devMode = APClient::devMode;
+    bool showWarning = true; // First run warning
 
     bool showImGuiDemo = false;
     bool g_ImGuiInitialized = false;
     bool firstFrame = true;
     bool prevUnfocused = false;
-
-    // First run warning
-    namespace fs = std::filesystem;
-    auto LocalPath = fs::current_path();
-    fs::path ConfigTOML = LocalPath / "config.toml";
-    fs::path reload_file = LocalPath / ".reload_warning";
-    bool showWarning = true;
 
     ID3D11Device* g_Device = nullptr;
     ID3D11DeviceContext* g_Context = nullptr;
@@ -136,6 +130,7 @@ namespace APGUI
             section = *settings["gui"].as_table();
 
         auto_hide_client = section["auto_hide_client"].value_or(true);
+        showWarning = section["warning"].value_or(true);
 
         float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
         auto scale = section["font_scale"].value_or(main_scale);
@@ -149,49 +144,37 @@ namespace APGUI
         toml::table config;
         config.insert("auto_hide_client", auto_hide_client);
         config.insert("font_scale", ImGui::GetStyle().FontScaleDpi);
+        config.insert("warning", showWarning);
 
         settings.insert("gui", config);
     }
 
     void warning()
     {
-        if (!showWarning || fs::exists(reload_file))
+        if (!showWarning)
             return;
 
-        try {
-            // This is a wasteful read, but it "should" only ever happen one time ever
-            std::ifstream file(ConfigTOML);
-            auto data = toml::parse(file);
+        ImGui::OpenPopup("Archipelago Mod - First Run");
+        if (ImGui::BeginPopupModal("Archipelago Mod - First Run", NULL, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize))
+        {
+            ImGui::SetWindowFocus("Archipelago Mod - First Run");
 
-            ImGui::OpenPopup("Archipelago Mod - First Run");
-            if (ImGui::BeginPopupModal("Archipelago Mod - First Run", NULL, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize))
+            std::string warn1 = "After connecting, press the reload key while on the song list to get new songs.\n"
+                "Songs can be cleared on any available difficulty for the same checks.\n\n";
+            ImGui::Text("%s", warn1.c_str());
+
+            ImGui::Text("\nCurrent reload key: %s", APReload::reloadVal.c_str());
+
+            ImGui::Separator();
+            if (ImGui::Button("Okay"))
             {
-                ImGui::SetWindowFocus("Archipelago Mod - First Run");
+                showWarning = false;
+                APSettings::save();
 
-                std::string warn1 = "After connecting, press the reload key while on the song list to get new songs.\n"
-                    "Songs can be cleared on any available difficulty for the same checks.\n\n";
-                ImGui::Text("%s", warn1.c_str());
-
-                ImGui::Text("Defaults for some options can be configured in the mod's");
-                ImGui::SameLine();
-                ImGui::TextLinkOpenURL("config.toml", ConfigTOML.string().c_str());
-
-                ImGui::Text("\nCurrent reload key: %s", (std::string)data["reload_key"].value_or("F7"));
-
-                ImGui::Separator();
-                if (ImGui::Button("I don't remember installing this mod"))
-                {
-                    showWarning = false;
-                    std::ofstream reload_out(reload_file);
-                    reload_out.close();
-                    ImGui::CloseCurrentPopup();
-                    ImGui::EndPopup();
-                }
+                ImGui::CloseCurrentPopup();
                 ImGui::EndPopup();
             }
-        }
-        catch (const std::exception& e) {
-            APLogger::print("Error parsing config file: %s\n", e.what());
+            ImGui::EndPopup();
         }
     }
 
