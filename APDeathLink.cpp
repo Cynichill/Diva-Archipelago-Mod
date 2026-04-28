@@ -40,19 +40,19 @@ namespace APDeathLink
         if (settings.contains("death_link") && settings["death_link"].is_table())
             section = *settings["death_link"].as_table();
 
-        death_link = settings["enabled"].value_or(false);
-        APLogger::print("death_link enabled set to %d (config: %d)\n", death_link);
+        death_link = section["enabled"].value_or(false);
+        APLogger::print("death_link enabled set to %i (config: %i)\n", death_link);
 
-        int config_death_link_amnesty = settings["amnesty"].value_or(0);
+        int config_death_link_amnesty = section["amnesty"].value_or(0);
         death_link_amnesty = std::clamp(config_death_link_amnesty, 0, 20);
         death_link_amnesty_count = death_link_amnesty;
         APLogger::print("death_link amnesty set to %d (config: %d)\n", death_link_amnesty, config_death_link_amnesty);
 
-        int config_percent = settings["percent"].value_or(death_link_percent);
+        int config_percent = section["percent"].value_or(death_link_percent);
         death_link_percent = std::clamp(config_percent, 0, 100);
         APLogger::print("death_link percent set to %d (config: %d)\n", death_link_percent, config_percent);
 
-        float config_safety = settings["safety"].value_or(death_link_safety);
+        float config_safety = section["safety"].value_or(death_link_safety);
         death_link_safety = std::clamp(config_safety, 0.0f, 30.0f);
         APLogger::print("death_link safety set to %.02f (config: %.02f)\n", death_link_safety, config_safety);
 
