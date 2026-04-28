@@ -16,6 +16,7 @@ namespace APClient
 
     char slotName[17] = "Player1"; // Slot names cap at 16 characters + terminator
     char slotServer[128] = "archipelago.gg:38281";
+    bool hideServer = false;
     char slotPassword[128] = ""; // No password cap?
 
     char say[256] = ""; // Client -> Server
@@ -77,6 +78,7 @@ namespace APClient
 
         strncpy(slotName, config_name.c_str(), config_name.size() + 1);
         strncpy(slotServer, config_server.c_str(), config_server.size() + 1);
+        hideServer = section["slot_server_hide"].value_or(false);
         strncpy(slotPassword, config_pass.c_str(), config_pass.size() + 1);
     }
 
@@ -85,6 +87,7 @@ namespace APClient
         toml::table config;
         config.insert("slot_name", slotName);
         config.insert("slot_server", slotServer);
+        config.insert("slot_server_hide", hideServer);
         config.insert("slot_password", slotPassword);
 
         settings.insert("client", config);
@@ -386,7 +389,12 @@ namespace APClient
                     ImGui::BeginDisabled();
 
                 ImGui::InputText("Slot Name", slotName, sizeof(slotName));
-                ImGui::InputText("Server", slotServer, sizeof(slotServer));
+                ImGui::InputText("Server", slotServer, sizeof(slotServer), !hideServer ? 0 : ImGuiInputTextFlags_Password);
+                if (ImGui::BeginPopupContextItem("##hideServer")) {
+                    ImGui::Checkbox("Hide", &hideServer);
+                    ImGui::EndPopup();
+                }
+
                 ImGui::InputText("Password", slotPassword, sizeof(slotPassword), ImGuiInputTextFlags_Password);
 
                 if (AP_IsInit())
