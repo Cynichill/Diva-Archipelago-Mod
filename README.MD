@@ -1,4 +1,5 @@
 [![MSBuild](https://github.com/Cynichill/Diva-Archipelago-Mod/actions/workflows/msbuild.yml/badge.svg)](https://github.com/Cynichill/Diva-Archipelago-Mod/actions/workflows/msbuild.yml)
+
 Prebuilt Release and Debug versions can be found in [Actions](https://github.com/Cynichill/Diva-Archipelago-Mod/actions).
 Builds happen on commit and automatically weekly.
 
