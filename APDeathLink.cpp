@@ -99,6 +99,12 @@ namespace APDeathLink
         death_link_amnesty_count -= 1;
     }
 
+    void recvHP()
+    {
+        HPtemp = 0;
+        HPreceived += 1;
+        HPnumerator = HPreceived;
+    }
 
     void prog_hp_update()
     {

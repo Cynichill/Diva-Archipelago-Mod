@@ -229,8 +229,7 @@ namespace APClient
             case 2:
                 break; // Filler
             case 3:
-                progHPtemp = 0;
-                progHPReceived += 1;
+                APDeathLink::recvHP();
                 break;
             case 4:
                 APTraps::touchHidden();

@@ -22,6 +22,7 @@ namespace APDeathLink
 	void check_fail();
 	void run(bool);
 	void runAmnesty(); // "Send death", but after checking amnesty.
+	void recvHP();
 	void prog_hp_update();
 	void prog_hp_reset();
 	void setHP(uint8_t);
