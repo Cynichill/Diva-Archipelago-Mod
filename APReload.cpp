@@ -104,12 +104,14 @@ namespace APReload
     void ImGuiTab()
     {
         if (ImGui::CollapsingHeader("Reloading")) {
-            if (ImGui::Button("Reload game"))
-                APReload::run();
+            int* state = (int*)0x14CC61078;
 
-            ImGui::SameLine();
-            if (ImGui::Button("Force"))
-                APReload::ChangeGameState(1);
+            if (*state == 0 || *state == 3) {
+               if (ImGui::Button("Unstick")) APReload::ChangeGameState(1);
+            }
+            else {
+                if (ImGui::Button("Reload game")) APReload::run();
+            }
 
             ImGui::SameLine();
             ImGui::Text("Reload key: %s", APReload::reloadVal.c_str());
