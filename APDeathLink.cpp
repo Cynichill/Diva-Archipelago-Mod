@@ -91,6 +91,7 @@ namespace APDeathLink
         static std::string msg = "The Disappearance of " + std::string(APClient::getSlotName());
 
         if (death_link_amnesty == 0 || death_link_amnesty_count == 0) {
+            APLogger::print("DeathLink > Send\n");
             death_link_amnesty_count = death_link_amnesty;
             AP_DeathLinkSend(msg);
             return;
