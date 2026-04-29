@@ -107,25 +107,25 @@ namespace APReload
             int* state = (int*)0x14CC61078;
 
             if (*state == 0 || *state == 3) {
-               if (ImGui::Button("Unstick")) APReload::ChangeGameState(1);
+               if (ImGui::Button("Unstick")) ChangeGameState(1);
             }
             else {
                 if (ImGui::Button("Reload game")) APReload::run();
             }
 
             ImGui::SameLine();
-            ImGui::Text("Reload key: %s", APReload::reloadVal.c_str());
+            ImGui::Text("Reload key: %s", reloadVal.c_str());
             ImGui::SameLine();
             HelpMarker("Can only be changed from settings file.");
 
 
-            ImGui::SliderInt("Reload delay", &APReload::reloadDelay, 1, 10);
+            ImGui::SliderInt("Reload delay", &reloadDelay, 1, 10);
             ImGui::SameLine();
             HelpMarker("How long to wait for the reload.\nLower is faster but may break.\nBest with DivaModLoader PR #36");
 
-            ImGui::Checkbox("Skip main menu", &APReload::skipMainMenu);
+            ImGui::Checkbox("Skip main menu", &skipMainMenu);
             ImGui::SameLine();
-            HelpMarker("Skip the main menu after title screen.\nCombine with IntroPatch to skip to song select.");
+            HelpMarker("Skip the main menu after title screen.\nUse with IntroPatch to skip to song select.");
         }
     }
 }
