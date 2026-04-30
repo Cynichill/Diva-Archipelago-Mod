@@ -76,10 +76,18 @@ namespace APClient
         std::string config_server = section["slot_server"].value_or("archipelago.gg:38281");
         std::string config_pass = section["slot_password"].value_or("");
 
-        strncpy(slotName, config_name.c_str(), config_name.size() + 1);
-        strncpy(slotServer, config_server.c_str(), config_server.size() + 1);
+        std::size_t slotName_len = min(config_name.size(), sizeof(slotName) - 1);
+        std::size_t slotServer_len = min(config_server.size(), sizeof(slotServer) - 1);
+        std::size_t slotPassword_len = min(config_pass.size(), sizeof(slotPassword) - 1);
+
+        strncpy(slotName, config_name.c_str(), slotName_len);
+        strncpy(slotServer, config_server.c_str(), slotServer_len);
         hideServer = section["slot_server_hide"].value_or(false);
-        strncpy(slotPassword, config_pass.c_str(), config_pass.size() + 1);
+        strncpy(slotPassword, config_pass.c_str(), slotPassword_len);
+
+        slotName[slotName_len] = '\0';
+        slotServer[slotServer_len] = '\0';
+        slotPassword[slotPassword_len] = '\0';
     }
 
     void save(toml::table& settings)
