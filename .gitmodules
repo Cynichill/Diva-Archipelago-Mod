@@ -1,0 +1,7 @@
+[submodule "Dependencies/APCpp"]
+	path = Dependencies/APCpp
+	url = https://github.com/N00byKing/APCpp.git
+    ignore = dirty
+[submodule "Dependencies/imgui"]
+	path = Dependencies/imgui
+	url = https://github.com/ocornut/imgui.git

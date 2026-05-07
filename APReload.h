@@ -1,20 +1,22 @@
 #pragma once
-#include <toml++/toml.h>
+#include "pch.h"
+#include "virtualKey.h"
+#include <algorithm>
+#include <thread>
 
-class APReload
+namespace APReload
 {
-	public:
-		void config(toml::v3::ex::parse_result& data);
-		void scan();
-		void sleepStartup();
+	extern std::string reloadVal;
+	extern int reloadDelay;
+	extern bool skipMainMenu;
 
-		// Config
-		int reloadDelay = 1000; // ms delay to allow state change
-		std::string reloadVal = "F7"; // human readable reload key to convert to key code
-		int reloadKeyCode = 0x76; // key code of reloadVal
+	void config(const toml::table& settings);
+	void save(toml::table& settings);
+	void scan();
+	void run();
+	void sleepStartup();
+	void ChangeGameState(int32_t state);
+	void ChangeGameSubState(int32_t state, int32_t substate);
 
-	private:
-		void ChangeGameState(int32_t state);
-		void ChangeGameSubState(int32_t state, int32_t substate);
-};
-
+	void ImGuiTab();
+}

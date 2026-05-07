@@ -1,0 +1,258 @@
+#include "APClient.h"
+#include "APDeathLink.h"
+#include "APGUI.h"
+#include "APHints.h"
+#include "APIDHandler.h"
+#include "APLogger.h"
+#include "APReload.h"
+#include "APSettings.h"
+#include "APTraps.h"
+
+namespace APGUI
+{
+    // Configurables
+
+    bool auto_hide_client = true; // Hide Client during gameplay
+    bool& devMode = APClient::devMode;
+    bool showWarning = true; // First run warning
+
+    bool showImGuiDemo = false;
+    bool g_ImGuiInitialized = false;
+    bool firstFrame = true;
+    bool prevUnfocused = false;
+
+    ID3D11Device* g_Device = nullptr;
+    ID3D11DeviceContext* g_Context = nullptr;
+    HWND g_hWnd = nullptr;
+    WNDPROC g_OriginalWndProc = nullptr;
+
+    void init(IDXGISwapChain* swapChain)
+    {
+        if (g_ImGuiInitialized)
+            return;
+
+        ImGui_ImplWin32_EnableDpiAwareness();
+        float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
+
+        // Get device + context
+        swapChain->GetDevice(__uuidof(ID3D11Device), (void**)&g_Device);
+        g_Device->GetImmediateContext(&g_Context);
+
+        // Get window handle
+        DXGI_SWAP_CHAIN_DESC desc;
+        swapChain->GetDesc(&desc);
+        g_hWnd = desc.OutputWindow;
+
+        // Init ImGui
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGui::StyleColorsDark();
+
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.ScaleAllSizes(main_scale);
+        style.FontScaleDpi = main_scale;
+
+        ImGui_ImplWin32_Init(g_hWnd);
+        ImGui_ImplDX11_Init(g_Device, g_Context);
+
+        g_ImGuiInitialized = true;
+
+        APSettings::load();
+    }
+
+    void onFrame()
+    {
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+
+        // auto hide client when in game, not paused, not on results
+        auto PvPlayData = 0x1412C2330;
+        if (auto_hide_client && *(bool*)PvPlayData && !*(bool*)(PvPlayData + 0x1) && !*(bool*)(PvPlayData + 0x2D17D)) {
+            ImGui::GetIO().WantCaptureKeyboard = false;
+            ImGui::GetIO().WantCaptureMouse = false;
+            ImGui::SetNextFrameWantCaptureKeyboard(false);
+            ImGui::SetNextFrameWantCaptureMouse(false);
+
+            ImGui::Render();
+            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+            return;
+        }
+
+        if (showImGuiDemo)
+            ImGui::ShowDemoWindow();
+
+        ImGui::Begin("Archipelago Mod###APClient", NULL,
+                    ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
+
+        if (ImGui::BeginTabBar("APTabs" /*, ImGuiTabBarFlags_Reorderable*/)) {
+            APClient::ImGuiTab();
+
+            if (devMode || AP_GetConnectionStatus() == AP_ConnectionStatus::Authenticated) {
+                APIDHandler::ImGuiTab();
+                APHints::ImGuiTab();
+                APDeathLink::ImGuiTab();
+                APTraps::ImGuiTab();
+            }
+
+            APGUI::ImGuiTab();
+
+            ImGui::EndTabBar();
+        }
+
+        if (!firstFrame)
+        {
+            ImVec2 display_size = ImGui::GetIO().DisplaySize;
+            ImVec2 window_pos = ImVec2(display_size.x - ImGui::GetWindowWidth() - (display_size.x * static_cast<float>(0.01)),
+                                       display_size.y - ImGui::GetWindowHeight() - (display_size.y * static_cast<float>(0.01)));
+
+            ImGui::SetWindowPos(window_pos, ImGuiCond_FirstUseEver);
+        }
+        else {
+            firstFrame = false;
+            ImGui::SetWindowFocus(0);
+        }
+
+        warning();
+
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    void config(const toml::table& settings)
+    {
+        toml::table section;
+        if (settings.contains("gui") && settings["gui"].is_table())
+            section = *settings["gui"].as_table();
+
+        auto_hide_client = section["auto_hide_client"].value_or(true);
+        showWarning = section["warning"].value_or(true);
+
+        float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
+        auto scale = section["font_scale"].value_or(main_scale);
+        scale = std::clamp(scale, 0.75f, 4.0f);
+
+        ImGui::GetStyle().FontScaleDpi = scale;
+    }
+
+    void save(toml::table &settings)
+    {
+        toml::table config;
+        config.insert("auto_hide_client", auto_hide_client);
+        config.insert("font_scale", ImGui::GetStyle().FontScaleDpi);
+        config.insert("warning", showWarning);
+
+        settings.insert("gui", config);
+    }
+
+    void warning()
+    {
+        if (!showWarning)
+            return;
+
+        ImGui::OpenPopup("Archipelago Mod - First Run");
+        if (ImGui::BeginPopupModal("Archipelago Mod - First Run", NULL, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize))
+        {
+            ImGui::SetWindowFocus("Archipelago Mod - First Run");
+
+            std::string warn1 = "After connecting, press the reload key while on the song list to get new songs.\n"
+                "Songs can be cleared on any available difficulty for the same checks.\n\n";
+            ImGui::Text("%s", warn1.c_str());
+
+            ImGui::Text("\nCurrent reload key: %s", APReload::reloadVal.c_str());
+
+            ImGui::Separator();
+            if (ImGui::Button("Okay"))
+            {
+                showWarning = false;
+                APSettings::save();
+
+                ImGui::CloseCurrentPopup();
+                ImGui::EndPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
+
+    void ImGuiTab()
+    {
+        if (ImGui::BeginTabItem("Advanced")) {
+            ImGui::Checkbox("Hide window during gameplay", &auto_hide_client);
+            APSettings::ImGuiTab();
+
+            ImGui::Separator();
+
+            APReload::ImGuiTab();
+
+            if (ImGui::CollapsingHeader("Styling")) {
+                ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
+                ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f, "%.02f");
+                ImGui::SameLine();
+                HelpMarker("1.25 recommended for 1440p\n1.75 recommended for 4K");
+
+                if (ImGui::DragFloat("Global Alpha", &ImGui::GetStyle().Alpha, 0.01f, 0.50f, 1.0f, "%.2f"))
+                    ImGui::GetStyle().Alpha = max(ImGui::GetStyle().Alpha, 0.5f); // unlike the demo, actually prevent a 0
+            }
+
+            if (ImGui::CollapsingHeader("Developer Mode")) {
+                if (ImGui::Checkbox("Enable Developer Mode", &devMode)) devMode = false;
+                if (ImGui::BeginPopupContextItem("##xx")) {
+                    if (ImGui::MenuItem("Are you sure?##xx"))
+                        devMode = !devMode;
+
+                    ImGui::EndPopup();
+                }
+
+                if (devMode) {
+                    // Easy crashes with other mods that already freopen'd to stdout
+                    /*if (!GetConsoleWindow() && ImGui::Button("Console")) {
+                        AllocConsole();
+                        APLogger::print("DO NOT CLOSE THIS WINDOW OR THE GAME WILL CLOSE\n");
+                    }*/
+
+                    if (ImGui::Button("Reset")) {
+                        APClient::seedIDs.clear();
+                        APClient::recvIDs.clear();
+                        APClient::missingIDs.clear();
+
+                        APReload::run();
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Sample Random IDs")) {
+                        APClient::seedIDs.clear();
+                        APClient::seedIDs.push_back(0); // Prevent seedIDs == recvIDs
+                        APClient::recvIDs.clear();
+
+                        // This doesn't need good random. The biggest issue it will have is picking a valid ID.
+                        for (int i = 0; i < 500; ++i)
+                        {
+                            int id = rand() % 10000 + 1;
+                            APClient::seedIDs.push_back(id);
+
+                            if (rand() % (rand() % 10 + 1) == 1)
+                                APClient::PushRecvID(id);
+                        }
+
+                        APReload::run();
+                    }
+
+                    ImGui::SameLine();
+                    HelpMarker("Fills the IDHandler with \"random\" IDs up to 10000.\n"
+                        "Try toggling Freeplay from the Tracker tab.");
+
+                    ImGui::SameLine();
+                    ImGui::Text("%d/%d recv/seed", APClient::recvIDs.size(), APClient::seedIDs.size());
+
+                    APLogger::ImGuiTab();
+                }
+            }
+
+            ImGui::EndTabItem();
+        }
+    }
+}
