@@ -13,6 +13,7 @@ Archipelago Mod and APCpp build targets **need to be the same.** If you experien
    - File > Open > Folder (Ctrl+Alt+Shift+O)
    - Open the APCpp folder
    - Right-click `CMakeLists.txt` in Solution Explorer > Build
+     - You may need to create a `x64-Release` Build target
 3. Copy/move/symlink `APCpp\out\build\x64-Debug\APCpp.dll` to the game's Archipelago Mod folder.
    - This is dynamically linked when the mod loads. No need to edit `config.toml`.
 4. Build Archipelago Mod as normal.
