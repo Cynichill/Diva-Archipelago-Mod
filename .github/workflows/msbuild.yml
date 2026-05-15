@@ -28,7 +28,9 @@ jobs:
 
     - uses: microsoft/setup-msbuild@v3
     
-    - uses: actions/cache@v5
+    - name: Restore APCpp build cache
+      id: apcpp-cache
+      uses: actions/cache/restore@v5
       with:
         path: |
           ./Dependencies/APCpp
@@ -37,6 +39,16 @@ jobs:
     - name: Configure APCpp
       working-directory: ./Dependencies/APCpp
       run: cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_config }} -S . -B out
+
+    - name: Save APCpp build cache
+      if: >
+        github.event_name != 'pull_request' &&
+        steps.apcpp-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: |
+          ./Dependencies/APCpp
+        key: ${{ steps.apcpp-cache.outputs.cache-primary-key }}
 
     - name: Build APCpp
       working-directory: ./Dependencies/APCpp
