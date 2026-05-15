@@ -182,6 +182,24 @@ HOOK(void, __fastcall, _load_null, 0x1405948E0, long long* a1, unsigned long lon
     original_load_null(a1, a2, a3, a4);
 }
 
+HOOK(void, __fastcall, _PvGameApplyDiff, 0x14027BB00, long long* data, int diff)
+{
+    // Dodging hooks from at least X SP and New Classics.
+    // Allow ID 700 (Ievan Polkka Tutorial) to be things other than Easy.
+    // TODO: Not this. Find out where the force to Easy happens.
+
+    const auto &pvID = *reinterpret_cast<int*>((char*)*data + 0x4);
+
+    if (pvID == 700) {
+        // Use last played base difficulty (ExEx might require shipping it in mod_pv_db, so skip for now)
+        auto PvGameData = (char*)reinterpret_cast<uint64_t(__fastcall*)(void)>(0x14027DD90)();
+        diff = *reinterpret_cast<int*>((char*)PvGameData + 0x4);
+        APLogger::print("Overriding ID 700 diff to %i\n", diff);
+    }
+
+    original_PvGameApplyDiff(data, diff);
+}
+
 extern "C"
 {
     void __declspec(dllexport) OnFrame(IDXGISwapChain* swapChain)
@@ -205,6 +223,7 @@ extern "C"
         INSTALL_HOOK(_PvResultsFinalize);
         INSTALL_HOOK(_PvLoop);
         INSTALL_HOOK(_PvCalculateGrade);
+        INSTALL_HOOK(_PvGameApplyDiff);
         INSTALL_HOOK(_ModifierSudden);
         INSTALL_HOOK(_ModifierHidden);
         INSTALL_HOOK(_SafetyDuration);
