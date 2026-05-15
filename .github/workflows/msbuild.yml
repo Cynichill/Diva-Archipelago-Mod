@@ -61,7 +61,6 @@ jobs:
         # path: .\Dependencies\APCpp\out\${{ matrix.build_config }}\*
 
     - name: Build Archipelago
-      working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /m /p:Configuration=${{ matrix.build_config }} ${{env.SOLUTION_FILE_PATH}}
 
     - shell: cmd
