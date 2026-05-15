@@ -47,25 +47,26 @@ LRESULT CALLBACK HookedWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long long a2)
 {
-    auto &pvName = *reinterpret_cast<std::string*>(PvPlayData + 0x2CEF8);
-
     // This might be somewhere in PvPlayData without having to call out
     auto PvGameData = (char*)reinterpret_cast<uint64_t(__fastcall*)(void)>(0x14027DD90)();
     int diff[3];
     memcpy(diff, PvGameData, 3 * sizeof(int));
 
-    int &playerGrade = *reinterpret_cast<int*>(PvPlayData + 0x2D190);
-
     // A grade of 1 happens only at playerPercent < 40% (good luck surviving above Easy)
     // Instead of AP patching the comparison, recheck it here.
+    auto &pvID = *reinterpret_cast<int*>(PvPlayData + 0x10);
+    auto &pvName = *reinterpret_cast<std::string*>(PvPlayData + 0x2CEF8);
+    auto &playerGrade = *reinterpret_cast<int*>(PvPlayData + 0x2D190);
     auto &playerPercent = *reinterpret_cast<int*>(PvPlayData + 0x2D304);
     auto &clearPercent = *reinterpret_cast<int*>(PvPlayData + 0x2D308);
 
     if (playerGrade == 2 && playerPercent < clearPercent)
         playerGrade = 1; // "Cheap"
 
+    APLogger::print("Finished ID %i with grade %i\n", pvID, playerGrade);
+
     if (playerGrade >= APClient::clearGrade) {
-        APClient::LocationSend(*reinterpret_cast<int*>(PvPlayData + 0x10));
+        APClient::LocationSend(pvID);
     }
     else {
         //playerGrade = 0; // Potentially use the UI to communicate clearGrade?
@@ -73,6 +74,7 @@ HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long l
         APDeathLink::deathLinked = true;
     }
 
+    // Run the original function, resets playerGrade to what it should be (if previously downgraded to Cheap)
     original_PvResultsFinalize(PvPlayData, a2);
 }
 

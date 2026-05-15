@@ -289,9 +289,12 @@ namespace APClient
     {
         if (pvID == victoryID / 10)
         {
+            APLogger::print("Client: Sending goal completion from ID %i\n", pvID);
             AP_StoryComplete();
         }
         else {
+            APLogger::print("Client: Sending locations for ID %i\n", pvID);
+
             // Song locations are in pairs
             int64_t APID = pvID * 10;
 
