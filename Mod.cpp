@@ -186,7 +186,7 @@ HOOK(void, __fastcall, _PvGameApplyDiff, 0x14027BB00, long long* data, int diff)
 {
     // Dodging hooks from at least X SP and New Classics.
     // Allow ID 700 (Ievan Polkka Tutorial) to be things other than Easy.
-    // TODO: Not this. Find out where the force to Easy happens.
+    // TODO: Not this. Find out where the force to Easy happens: 0x15E4BD270()
 
     const auto &pvID = *reinterpret_cast<int*>((char*)*data + 0x4);
 
