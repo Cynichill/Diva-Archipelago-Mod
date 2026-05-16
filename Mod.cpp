@@ -47,28 +47,29 @@ LRESULT CALLBACK HookedWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 HOOK(void, __fastcall, _PvResultsFinalize, 0x14024B800, char* PvPlayData, long long a2)
 {
-    auto &pvName = *reinterpret_cast<std::string*>(PvPlayData + 0x2CEF8);
-
     // This might be somewhere in PvPlayData without having to call out
     auto PvGameData = (char*)reinterpret_cast<uint64_t(__fastcall*)(void)>(0x14027DD90)();
     int diff[3];
     memcpy(diff, PvGameData, 3 * sizeof(int));
 
-    int &playerGrade = *reinterpret_cast<int*>(PvPlayData + 0x2D190);
-
     // A grade of 1 happens only at playerPercent < 40% (good luck surviving above Easy)
     // Instead of AP patching the comparison, recheck it here.
+    auto &pvID = *reinterpret_cast<int*>(PvPlayData + 0x10);
+    auto &pvName = *reinterpret_cast<std::string*>(PvPlayData + 0x2CEF8);
+    // Pull playerGrade out for now instead of referencing. Potentially use the UI to communicate clearGrade?
+    int playerGrade = *reinterpret_cast<int*>(PvPlayData + 0x2D190);
     auto &playerPercent = *reinterpret_cast<int*>(PvPlayData + 0x2D304);
     auto &clearPercent = *reinterpret_cast<int*>(PvPlayData + 0x2D308);
 
     if (playerGrade == 2 && playerPercent < clearPercent)
         playerGrade = 1; // "Cheap"
 
+    APLogger::print("Finished ID %i with grade %i >= %i\n", pvID, playerGrade, APClient::clearGrade);
+
     if (playerGrade >= APClient::clearGrade) {
-        APClient::LocationSend(*reinterpret_cast<int*>(PvPlayData + 0x10));
+        APClient::LocationSend(pvID);
     }
     else {
-        //playerGrade = 0; // Potentially use the UI to communicate clearGrade?
         APDeathLink::runAmnesty();
         APDeathLink::deathLinked = true;
     }
@@ -181,6 +182,24 @@ HOOK(void, __fastcall, _load_null, 0x1405948E0, long long* a1, unsigned long lon
     original_load_null(a1, a2, a3, a4);
 }
 
+HOOK(void, __fastcall, _PvGameApplyDiff, 0x14027BB00, long long* data, int diff)
+{
+    // Dodging hooks from at least X SP and New Classics.
+    // Allow ID 700 (Ievan Polkka Tutorial) to be things other than Easy.
+    // TODO: Not this. Find out where the force to Easy happens: 0x15E4BD270()
+
+    const auto &pvID = *reinterpret_cast<int*>((char*)*data + 0x4);
+
+    if (pvID == 700) {
+        // Use last played base difficulty (ExEx might require shipping it in mod_pv_db, so skip for now)
+        auto PvGameData = (char*)reinterpret_cast<uint64_t(__fastcall*)(void)>(0x14027DD90)();
+        diff = *reinterpret_cast<int*>((char*)PvGameData + 0x4);
+        APLogger::print("Overriding ID 700 diff to %i\n", diff);
+    }
+
+    original_PvGameApplyDiff(data, diff);
+}
+
 extern "C"
 {
     void __declspec(dllexport) OnFrame(IDXGISwapChain* swapChain)
@@ -204,6 +223,7 @@ extern "C"
         INSTALL_HOOK(_PvResultsFinalize);
         INSTALL_HOOK(_PvLoop);
         INSTALL_HOOK(_PvCalculateGrade);
+        INSTALL_HOOK(_PvGameApplyDiff);
         INSTALL_HOOK(_ModifierSudden);
         INSTALL_HOOK(_ModifierHidden);
         INSTALL_HOOK(_SafetyDuration);

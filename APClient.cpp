@@ -287,11 +287,21 @@ namespace APClient
 
     void LocationSend(int64_t pvID)
     {
+        // There is no current way to send an arbitrary ID so limit to received ones. Usually what's on the Tracker.
+        // Specifically to prevent misfires of the AP and Tutorial songs but may benefit Freeplay.
+        if (std::find(recvIDs.begin(), recvIDs.end(), pvID) == recvIDs.end() /*&& !devMode*/) {
+            APLogger::print("Client: Skip location send for ID %i (not received)\n", pvID);
+            return;
+        }
+
         if (pvID == victoryID / 10)
         {
+            APLogger::print("Client: Sending goal completion from ID %i\n", pvID);
             AP_StoryComplete();
         }
         else {
+            APLogger::print("Client: Sending locations for ID %i\n", pvID);
+
             // Song locations are in pairs
             int64_t APID = pvID * 10;
 
