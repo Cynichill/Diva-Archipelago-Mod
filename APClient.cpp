@@ -290,7 +290,7 @@ namespace APClient
         // There is no current way to send an arbitrary ID so limit to received ones. Usually what's on the Tracker.
         // Specifically to prevent misfires of the AP and Tutorial songs but may benefit Freeplay.
         if (std::find(recvIDs.begin(), recvIDs.end(), pvID) == recvIDs.end() /*&& !devMode*/) {
-            APLogger::print("Client: Skip location send for ID %i (not received)", pvID);
+            APLogger::print("Client: Skip location send for ID %i (not received)\n", pvID);
             return;
         }
 
