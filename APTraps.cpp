@@ -84,6 +84,7 @@ namespace APTraps
 		{ "Stun Trap",				{ TrapID::Stutter } },
 		{ "Swap Trap",				{ TrapID::Icon } },
 		{ "Tiny Trap",				{ TrapID::PSP } },
+		{ "Wailnard",				{ TrapID::Stutter } },
 		{ "Zoom In Trap",			{ TrapID::PSP } },
 		{ "Zoom Out Trap",			{ TrapID::PSP } },
 		{ "Zoom Trap",				{ TrapID::PSP } },
