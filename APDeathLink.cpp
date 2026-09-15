@@ -24,7 +24,11 @@ namespace APDeathLink
     int death_link_amnesty_count = 0;
     bool deathLinked = false; // true after calling a kill so future kills are ignored (until reset)
 
-    bool resetQueued = false; // True: the next time Death Link checks run, reset the song.
+    /*
+    True: the next time Death Link checks run, reset the song: resetSong()
+    Test cases: dying at 0 HP (hook), dying to prog HP, dying to a DL.
+    */
+    bool resetQueued = false;
 
     void* _PvReset = sigScan("\x48\x89\x5c\x24\x10\x48\x89\x74\x24\x18\x55\x57\x41\x54\x41\x56\x41\x57\x48\x8b\xec\x48\x81\xec\x80\x00\x00\x00\x0f\x29\x74\x24\x70\x48\x8b\x05\x50\x8c\xb5\x00\x48\x33\xc4\x48\x89\x45\xe0\x48\x8b\xf9",
                             "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
