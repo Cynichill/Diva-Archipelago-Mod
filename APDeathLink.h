@@ -22,7 +22,8 @@ namespace APDeathLink
 	void config(const toml::table& settings);
 	void save(toml::table& settings);
 	void reset();
-	void check_fail();
+	void check_fail(); // check_fail(false)
+	void check_fail(const bool skip_hp_check); // skip_hp_check true: do not return early if HP > 0 (checked elsewhere)
 	void run(bool received);
 	void runAmnesty(); // "Send death", but after checking amnesty.
 	void recvHP();
