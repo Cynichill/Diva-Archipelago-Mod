@@ -6,38 +6,38 @@ style = "ARCADE"
 
 [[songs.easy]]
 style = "CONSOLE"
-script_file_name = "rom/script_nc/pv_144.dsc"
-level = "PV_LV_07_5"
+script_file_name = "rom/script_nc/pv_144_easy.dsc"
+level = "PV_LV_02_5"
 
 [[songs.easy]]
 style = "MIXED"
-script_file_name = "rom/script_nc/pv_144_mix.dsc"
-level = "PV_LV_07_5"
+script_file_name = "rom/script_nc/pv_144_easy.dsc"
+level = "PV_LV_02_5"
 
 [[songs.normal]]
 style = "ARCADE"
 
 [[songs.normal]]
 style = "CONSOLE"
-script_file_name = "rom/script_nc/pv_144.dsc"
-level = "PV_LV_07_5"
+script_file_name = "rom/script_nc/pv_144_normal.dsc"
+level = "PV_LV_04_5"
 
 [[songs.normal]]
 style = "MIXED"
-script_file_name = "rom/script_nc/pv_144_mix.dsc"
-level = "PV_LV_07_5"
+script_file_name = "rom/script_nc/pv_144_normal_mix.dsc"
+level = "PV_LV_05_0"
 
 [[songs.hard]]
 style = "ARCADE"
 
 [[songs.hard]]
 style = "CONSOLE"
-script_file_name = "rom/script_nc/pv_144.dsc"
-level = "PV_LV_07_5"
+script_file_name = "rom/script_nc/pv_144_hard.dsc"
+level = "PV_LV_07_0"
 
 [[songs.hard]]
 style = "MIXED"
-script_file_name = "rom/script_nc/pv_144_mix.dsc"
+script_file_name = "rom/script_nc/pv_144_hard.dsc"
 level = "PV_LV_07_5"
 
 [[songs.extreme]]
@@ -45,23 +45,23 @@ style = "ARCADE"
 
 [[songs.extreme]]
 style = "CONSOLE"
-script_file_name = "rom/script_nc/pv_144.dsc"
-level = "PV_LV_07_5"
+script_file_name = "rom/script_nc/pv_144_extreme.dsc"
+level = "PV_LV_08_0"
 
 [[songs.extreme]]
 style = "MIXED"
-script_file_name = "rom/script_nc/pv_144_mix.dsc"
-level = "PV_LV_07_5"
+script_file_name = "rom/script_nc/pv_144_extreme_mix.dsc"
+level = "PV_LV_08_5"
 
 [[songs.ex_extreme]]
 style = "ARCADE"
 
 [[songs.ex_extreme]]
 style = "CONSOLE"
-script_file_name = "rom/script_nc/pv_144.dsc"
-level = "PV_LV_07_5"
+script_file_name = "rom/script_nc/pv_144_extreme.dsc"
+level = "PV_LV_08_0"
 
 [[songs.ex_extreme]]
 style = "MIXED"
-script_file_name = "rom/script_nc/pv_144_mix.dsc"
-level = "PV_LV_07_5"
+script_file_name = "rom/script_nc/pv_144_extreme_mix.dsc"
+level = "PV_LV_08_5"
