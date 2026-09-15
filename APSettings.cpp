@@ -68,6 +68,6 @@ namespace APSettings
         ImGui::SameLine();
         if (ImGui::Button("Reload")) APSettings::load();
         ImGui::SameLine();
-        ImGui::TextLinkOpenURL("Open settings.toml", SettingsTOML.u8string().c_str());
+        ImGui::TextLinkOpenURL("Open settings.toml", SettingsTOML.string().c_str());
     }
 }

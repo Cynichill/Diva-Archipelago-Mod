@@ -27,17 +27,28 @@
 #include <detours.h>
 #include <Archipelago.h>
 #include "APLogger.h"
+#include "APGUI.h"
 #include "Helpers.h"
+
+using namespace nlohmann;
 
 const uint64_t PvPlayData = 0x1412C2330; // Struct eventually(TM)
 
 // ...\Hatsune Miku Project DIVA Mega Mix Plus\mods\ArchipelagoMod
 const std::filesystem::path BasePath = std::filesystem::current_path();
 
+// For some potential back (and hopefully not future) compat.
+// Songs are spaced out by this amount. This should match the datapackage's item ID of "Love is War [1]".
+// The most common issue would be ID changes in the space before it.
+inline int AP_ID_FACTOR = 100;
+
 // TODO: Relocate
 inline void HelpMarker(const char* desc)
 {
-    ImGui::TextDisabled("(?)");
+    if (!APGUI::inlineTooltips) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+    }
     if (ImGui::BeginItemTooltip())
     {
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);

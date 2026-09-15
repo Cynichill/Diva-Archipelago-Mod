@@ -15,6 +15,8 @@ namespace APHints
     bool hintHideChecked = true;
     bool hintOwnLocationsOnly = false;
 
+    bool resortHints = false; // If true, run a sort the next time the Hint table is visible.
+
     // For updating known hints without further !hint chats (and saving on PrintJSONs)
     std::string hintsRaw_S; // Request response, JSON in a string
     AP_GetServerDataRequest hintsRequest;
@@ -66,6 +68,34 @@ namespace APHints
         return false;
     }
 
+    void sortHints(ImGuiTableSortSpecs *hintSortSpec)
+    {
+        if (hintSortSpec != nullptr) {
+            std::sort(
+                Hints.begin(), Hints.end(),
+                [hintSortSpec](AP_HintMessage a, AP_HintMessage b)
+                {
+                    if (hintSortSpec->Specs->ColumnIndex == 0)
+                        return a.checked > b.checked;
+                    else if (hintSortSpec->Specs->ColumnIndex == 1)
+                        return a.sendPlayer > b.sendPlayer;
+                    else if (hintSortSpec->Specs->ColumnIndex == 2)
+                        return a.recvPlayer > b.recvPlayer;
+                    else if (hintSortSpec->Specs->ColumnIndex == 3)
+                        return a.item > b.item;
+                    else if (hintSortSpec->Specs->ColumnIndex == 4)
+                        return a.location > b.location;
+
+                    return a.item > b.item;
+                }
+            );
+            if (hintSortSpec->Specs->SortDirection == ImGuiSortDirection_Descending)
+                std::reverse(Hints.begin(), Hints.end());
+        }
+
+        resortHints = false;
+    }
+
     void handleHintMessage(const AP_HintMessage& recvHint)
     {
         if (!isPlayer(recvHint.sendPlayer) && !isPlayer(recvHint.recvPlayer))
@@ -76,6 +106,7 @@ namespace APHints
             if (hint == recvHint)
             {
                 hint.checked = recvHint.checked;
+                resortHints = true;
                 return;
             }
         }
@@ -83,13 +114,14 @@ namespace APHints
         if (isPlayer(recvHint.sendPlayer))
         {
             // TODO: ID Remaps
-            auto itemID = location_name_to_id[recvHint.location] / 10;
+            auto itemID = location_name_to_id[recvHint.location] / AP_ID_FACTOR;
 
-            if (std::find(HintedIDs.begin(), HintedIDs.end(), itemID) == HintedIDs.end())
+            if (std::ranges::find(HintedIDs, itemID) == HintedIDs.end())
                 HintedIDs.push_back(itemID);
         }
 
         Hints.push_back(recvHint);
+        resortHints = true;
     }
 
     void refreshHints()
@@ -114,13 +146,13 @@ namespace APHints
             return;
         }
 
-        nlohmann::json tempHints;
+        json tempHints;
 
         try {
-            nlohmann::json tempHints = nlohmann::json::parse(hintsRaw_S);
+            json tempHints = json::parse(hintsRaw_S);
 
             for (const auto& hint : tempHints) {
-                if (hint["status"] != 40 || hint["item"] < 10 || hint["receiving_player"] != AP_GetPlayerID())
+                if (hint["status"] != 40 || hint["item"] < 100 || hint["receiving_player"] != AP_GetPlayerID())
                     continue;
 
                 auto itemName = item_ap_id_to_name[hint["item"]];
@@ -131,7 +163,7 @@ namespace APHints
                 }
             }
         }
-        catch (const nlohmann::json::parse_error& e) {
+        catch (const json::parse_error& e) {
             APLogger::print(__FUNCTION__": JSON parse error: (%d) %s\n", e.byte, e.what());
         }
         catch (const std::exception& e) {
@@ -152,11 +184,13 @@ namespace APHints
                     hint.checked = true;
             }
         }
+
+        resortHints = true;
     }
 
     void updateByItemName(const std::string &itemName)
     {
-        if (item_name_to_ap_id[itemName] < 10)
+        if (item_name_to_ap_id[itemName] < AP_ID_FACTOR)
             return; // Without location data, good luck. Dupes make some sense at least.
 
         for (auto& hint : Hints) {
@@ -165,6 +199,8 @@ namespace APHints
                 hint.checked = true;
             }
         }
+
+        resortHints = true;
     }
 
     void ImGuiTab()
@@ -180,7 +216,6 @@ namespace APHints
             refreshHints();*/
 
         ImGui::Checkbox("Hide checked", &hintHideChecked);
-        ImGui::SameLine();
         HelpMarker("Non-song items may be out of date until manually refreshed.");
         ImGui::SameLine();
 
@@ -212,17 +247,23 @@ namespace APHints
         ImGui::Text("%s", hintLabel.c_str());
 
         if (ImGui::BeginTable("tableHints", 5,
+            ImGuiTableFlags_Sortable |
             ImGuiTableFlags_BordersInner | ImGuiTableFlags_Hideable | ImGuiTableFlags_HighlightHoveredColumn |
             ImGuiTableFlags_Reorderable | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg |
-            ImGuiTableFlags_ScrollX | ImGuiTableFlags_SizingFixedFit
+            ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingFixedFit
         ))
         {
-            ImGui::TableSetupColumn(" ");
+            ImGui::TableSetupScrollFreeze(0, 1);
+            ImGui::TableSetupColumn("Checked");
             ImGui::TableSetupColumn("Finder");
             ImGui::TableSetupColumn("Receiver");
-            ImGui::TableSetupColumn("Item");
+            ImGui::TableSetupColumn("Item", ImGuiTableColumnFlags_DefaultSort);
             ImGui::TableSetupColumn("Location");
             ImGui::TableHeadersRow();
+
+            auto hintSortSpec = ImGui::TableGetSortSpecs();
+            if (hintSortSpec != nullptr && (hintSortSpec->SpecsDirty || resortHints))
+                sortHints(hintSortSpec);
 
             int uid = 0;
             for (const AP_HintMessage& hint : Hints) {
@@ -234,6 +275,12 @@ namespace APHints
                 if (hintOwnLocationsOnly && !isMyCheck)
                     continue;
 
+                // TODO: ID Remaps
+                auto locID = location_name_to_id[hint.location.c_str()];
+                auto itemName = item_ap_id_to_name[(locID / AP_ID_FACTOR) * AP_ID_FACTOR];
+
+                bool haveItem = isMyCheck && std::ranges::find(recvIDs, locID / AP_ID_FACTOR) != recvIDs.end();
+
                 ImGui::TableNextRow();
 
                 uid += 1;
@@ -242,22 +289,16 @@ namespace APHints
                 ImGui::TableSetColumnIndex(0);
                 ImGui::Text("%s", hint.checked ? "X" : " ");
 
-                ImGui::TableSetColumnIndex(1);
+                ImGui::TableNextColumn();
                 ImGui::Text("%s", hint.sendPlayer.c_str());
 
-                ImGui::TableSetColumnIndex(2);
+                ImGui::TableNextColumn();
                 ImGui::Text("%s", hint.recvPlayer.c_str());
 
-                ImGui::TableSetColumnIndex(3);
+                ImGui::TableNextColumn();
                 ImGui::Text("%s", hint.item.c_str());
 
-                ImGui::TableSetColumnIndex(4);
-
-                // TODO: ID Remaps
-                auto locID = location_name_to_id[hint.location.c_str()];
-                auto itemName = item_ap_id_to_name[(locID / 10) * 10];
-
-                bool haveItem = isMyCheck && std::find(recvIDs.begin(), recvIDs.end(), locID / 10) != recvIDs.end();
+                ImGui::TableNextColumn();
 
                 if (haveItem)
                     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -267,13 +308,31 @@ namespace APHints
                 if (haveItem)
                     ImGui::PopStyleColor();
 
-                if (isMyCheck && !haveItem) {
-                    if (ImGui::BeginPopupContextItem("##xx")) {
-                        if (ImGui::MenuItem("Hint this song##xx"))
-                            AP_Say("!hint " + itemName);
+                ImGui::TableSetColumnIndex(0);
 
-                        ImGui::EndPopup();
+                ImGui::Selectable("##xx", false, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap);
+
+                if (ImGui::BeginPopupContextItem("##xx")) {
+                    if (isMyCheck) {
+                        if (haveItem) {
+                            ImGui::MenuItem("You have this already!", NULL, false, false);
+                        }
+                        else {
+                            if (ImGui::MenuItem("Hint this##xx"))
+                                AP_Say("!hint " + itemName);
+                        }
                     }
+                    else {
+                        if (ImGui::MenuItem("Copy hint##xx")) {
+                            std::string h = std::string(APClient::getSlotName()) + "'s " + hint.item + " is at " + hint.location + " in " + hint.sendPlayer + "'s world";
+                            ImGui::SetClipboardText(h.c_str());
+                        }
+                    }
+
+                    if (ImGui::MenuItem("Copy location name##xx"))
+                        ImGui::SetClipboardText(hint.location.c_str());
+
+                    ImGui::EndPopup();
                 }
 
                 ImGui::PopID();

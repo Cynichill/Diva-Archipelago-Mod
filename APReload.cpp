@@ -9,7 +9,7 @@ namespace APReload
     std::string reloadVal;
     int reloadKeyCode;
     int reloadDelay = 10;
-    bool skipMainMenu = false;
+    bool skipMainMenu = true;
 
     void config(const toml::table& settings)
     {
@@ -27,7 +27,7 @@ namespace APReload
         reloadDelay = std::clamp(section["delay"].value_or(10), 1, 10);
         APLogger::print("reload delay: %ims\n", reloadDelay * 100);
 
-        skipMainMenu = section["skip_main_menu"].value_or(false);
+        skipMainMenu = section["skip_main_menu"].value_or(true);
         APLogger::print("reload skip_main_menu: %i\n", skipMainMenu);
 
         // DATA_TEST patch thanks to Debug mod: samyuu, nastys, vixen256, korenkonder, skyth
@@ -49,13 +49,13 @@ namespace APReload
 
     void scan()
     {
-        if (!hGameWindow)
+        if (!hGameWindow || GetForegroundWindow() != hGameWindow)
             return;
 
         static bool pressed = false;
 
         bool wasPressed = pressed;
-        pressed = (GetKeyState(reloadKeyCode) & 0x8000) != 0;
+        pressed = (GetAsyncKeyState(reloadKeyCode) & 0x8000) != 0;
 
         if (pressed && !wasPressed)
             run();
@@ -124,16 +124,13 @@ namespace APReload
 
             ImGui::SameLine();
             ImGui::Text("Reload key: %s", reloadVal.c_str());
-            ImGui::SameLine();
             HelpMarker("Can only be changed from settings file.");
 
 
-            ImGui::SliderInt("Reload delay", &reloadDelay, 1, 10);
-            ImGui::SameLine();
+            ImGui::SliderInt("Reload delay", &reloadDelay, 1, 10, NULL, ImGuiSliderFlags_AlwaysClamp);
             HelpMarker("How long to wait for the reload.\nLower is faster but may break.\nBest with DivaModLoader PR #36");
 
             ImGui::Checkbox("Skip main menu", &skipMainMenu);
-            ImGui::SameLine();
             HelpMarker("Skip the main menu after title screen.\nUse with IntroPatch to skip to song select.");
         }
     }

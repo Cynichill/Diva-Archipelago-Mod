@@ -8,6 +8,7 @@ namespace APReload
 {
 	extern std::string reloadVal;
 	extern int reloadDelay;
+	extern int reloadKeyCode;
 	extern bool skipMainMenu;
 
 	void config(const toml::table& settings);

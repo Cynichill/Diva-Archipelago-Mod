@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-2022 # windows-latest
+    runs-on: windows-latest # windows-2022: msvc 143
     
     strategy:
       matrix:

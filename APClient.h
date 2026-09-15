@@ -18,10 +18,13 @@ namespace APClient
     extern std::unordered_map<int64_t, std::string> location_id_to_name;
 
     // Slot and play data
+
     extern int64_t victoryID;
     extern int clearGrade;
     extern int leekHave;
     extern int leekNeed;
+    extern int locHave;
+    extern int locNeed;
 
     void UpdateMissing();
 
@@ -38,9 +41,12 @@ namespace APClient
     void DataRequest(const std::string key, const std::function<void(std::string raw)> callback);
     void CheckMessages();
 
-    void RecvDeath(std::string src, std::string cause);
+    void RecvDeath(const std::string& src, const std::string& cause);
 
     bool LoadDatapackage();
+
+    void UpdateTags();
+
     void ImGuiTab();
 }
 

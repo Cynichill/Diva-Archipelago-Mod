@@ -19,6 +19,8 @@ namespace APGUI
     float alphaDefault = 1.0f;
     float alphaIngame = 1.0f;
 
+    bool inlineTooltips = true; // True: Help tooltips become regular hovers instead of (?)
+
     bool showImGuiDemo = false;
     bool firstFrame = true;
 
@@ -64,6 +66,11 @@ namespace APGUI
         APSettings::load();
     }
 
+    bool isInGame()
+    {
+        return *(bool*)PvPlayData && !*(bool*)(PvPlayData + 0x1) && !*(bool*)(PvPlayData + 0x2D17D);
+    }
+
     void onFrame(IDXGISwapChain* swapChain)
     {
         ImGui_ImplDX11_NewFrame();
@@ -73,9 +80,7 @@ namespace APGUI
         // Weird focus behavior on create so keep every frame.
         ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingOverCentralNode);
 
-        // auto hide client when in game, not paused, not on results
-        bool ingame = *(bool*)PvPlayData && !*(bool*)(PvPlayData + 0x1) && !*(bool*)(PvPlayData + 0x2D17D);
-        if (ingame && autoHideClient) {
+        if (isInGame() && autoHideClient) {
             ImGui::SetWindowFocus(nullptr);
             ImGui::GetIO().WantCaptureKeyboard = false;
             ImGui::GetIO().WantCaptureMouse = false;
@@ -87,7 +92,7 @@ namespace APGUI
             return;
         }
         while (ShowCursor(true) < 1); // If the GUI is visible, the cursor should be too.
-        ImGui::GetStyle().Alpha = ingame ? alphaIngame : alphaDefault;
+        ImGui::GetStyle().Alpha = isInGame() ? alphaIngame : alphaDefault;
 
         if (showImGuiDemo)
             ImGui::ShowDemoWindow();
@@ -253,24 +258,21 @@ namespace APGUI
         if (ImGui::CollapsingHeader("Styling")) {
             ImGui::Checkbox("Hide during gameplay", &autoHideClient);
             ImGui::Checkbox("Enable docking support", &enableDocking);
+            HelpMarker("Instead of a single window with tabs, spawn each tab as its own window for more customization.");
+
             ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
-            ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f, "%.02f");
-            ImGui::SameLine();
+            ImGui::Checkbox("Inline help tooltips", &inlineTooltips);
+            HelpMarker("That's me!");
+            ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f, "%.02f", ImGuiSliderFlags_AlwaysClamp);
             HelpMarker("1.25 recommended for 1440p\n1.75 recommended for 4K");
 
-            if (ImGui::DragFloat("Default Alpha", &alphaDefault, 0.01f, 0.5f, 1.0f, "%.2f"))
-                alphaDefault = max(alphaDefault, 0.5f); // unlike the demo, actually prevent a 0
-
-            if (ImGui::DragFloat("In-game Alpha", &alphaIngame, 0.01f, 0.1f, 1.0f, "%.2f"))
-                alphaIngame = max(alphaIngame, 0.1f);
-
-            ImGui::SameLine();
+            ImGui::DragFloat("Default Alpha", &alphaDefault, 0.01f, 0.5f, 1.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::DragFloat("In-game Alpha", &alphaIngame, 0.01f, 0.1f, 1.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
             HelpMarker("If not hidden during gameplay, lower alpha to this instead.");
         }
 
         if (ImGui::CollapsingHeader("Developer Mode")) {
             ImGui::Checkbox("Enable Developer Mode", &devMode);
-            ImGui::SameLine();
             HelpMarker("Dangerous! For the curious or the stuck.");
 
             if (devMode) {
@@ -307,7 +309,6 @@ namespace APGUI
                     APReload::run();
                 }
 
-                ImGui::SameLine();
                 HelpMarker("Fills the IDHandler with \"random\" IDs up to 10000.\n"
                     "Try toggling Freeplay from the Tracker tab.\n"
                     "Effectively an offline Archipelago."
@@ -315,6 +316,8 @@ namespace APGUI
 
                 ImGui::SameLine();
                 ImGui::Text("%d/%d recv/seed", APClient::recvIDs.size(), APClient::seedIDs.size());
+
+                ImGui::Text("AP_ID_FACTOR: %i", AP_ID_FACTOR);
 
                 APLogger::ImGuiTab();
             }

@@ -10,5 +10,6 @@ namespace APLogger
 	void save(toml::table& settings);
 
 	void print(const char* const fmt, ...);
+	void fromAPCpp(const std::string line);
 	void ImGuiTab();
 }

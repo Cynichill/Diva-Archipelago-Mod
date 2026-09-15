@@ -8,7 +8,7 @@ namespace APLogger
     std::string APLogLocal;
 
     std::ofstream APLog;
-    const std::filesystem::path LogPath = std::filesystem::current_path() / "log.txt";
+    const std::filesystem::path LogPath = BasePath / "log.txt";
 
     void config(const toml::table& settings)
     {
@@ -17,6 +17,7 @@ namespace APLogger
             section = *settings["logger"].as_table();
 
         log_to_file = section["log_to_file"].value_or(false);
+        APLogger::print("log_to_file: %d\n", log_to_file);
     }
 
     void save(toml::table& settings)
@@ -50,21 +51,25 @@ namespace APLogger
             printf("[Archipelago] %s", line);
 
         if (log_to_file) {
-            APLog.open(LogPath, std::ofstream::out | std::ofstream::app);
+            if (!APLog.is_open())
+                APLog.open(LogPath, std::ofstream::out | std::ofstream::app);
 
-            if (APLog)
-                APLog.write(line, strlen(line));
+            if (APLog.is_open()) {
+                APLog << line;
+                APLog.flush();
+            }
         }
+    }
+
+    void fromAPCpp(const std::string line)
+    {
+        print("%s\n", line.c_str());
     }
 
     // Previously considered for a tab, made a collapsable header instead
     void ImGuiTab()
     {
-        /*if (!APClient::devMode)
-            return;*/
-
         if (ImGui::CollapsingHeader("Logging")) {
-            // TODO: Check write perms?
             ImGui::Checkbox("Log to file", &log_to_file);
             if (log_to_file) {
                 ImGui::SameLine();
