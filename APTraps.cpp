@@ -245,8 +245,12 @@ namespace APTraps
 
 	float getTrapEndTime(float& timestampTrap)
 	{
+		// TODO:
+		// Previously returned 0.0f or getSongLength(), when traps were tracked by their start time and went negative instead.
+		// getSongLength() is 0.0f by default and not updated until the next song is started.
+		// Could recalc on start if 0.0f, or set it ridiculously high here.
 		if (trapDuration == 0.0f)
-			return getSongLength();
+			return 3939.0f;
 
 		auto now = getGameTime();
 		return (trapExtendDuration && timestampTrap > 0.0f ? timestampTrap : now) + trapDuration;
