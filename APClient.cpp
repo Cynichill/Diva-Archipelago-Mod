@@ -423,10 +423,10 @@ namespace APClient
         std::vector<std::string> tags;
 
         if (APDeathLink::death_link)
-            tags.push_back("DeathLink");
+            tags.insert(tags.end(), APDeathLink::death_link_tags.begin(), APDeathLink::death_link_tags.end());
 
         if (APTraps::trap_link)
-            tags.push_back("TrapLink");
+            tags.insert(tags.end(), APTraps::trap_link_tags.begin(), APTraps::trap_link_tags.end());
 
         AP_UpdateTags(tags);
     }

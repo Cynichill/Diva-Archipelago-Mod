@@ -45,6 +45,7 @@ namespace APTraps
 	extern bool isHidden;
 	extern bool isSlow;
 	extern bool trap_link;
+	extern std::vector<std::string> trap_link_tags;
 
 	void config(const toml::table& settings);
 	void save(toml::table& settings);
