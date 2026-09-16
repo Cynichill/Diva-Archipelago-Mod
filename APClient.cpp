@@ -668,87 +668,74 @@ namespace APClient
 
             ImGui::BeginChild("ClientLog", ImVec2(0, ImGui::GetContentRegionAvail().y - (ImGui::GetFrameHeightWithSpacing() * 1.2f)));
 
-            if (ClientLogCopyMode) {
-                //ImGui::InputTextMultiline(
-                //    "##APLogMulti",
-                //    (char*)ClientLog.c_str(),
-                //    ClientLog.size() + 1,
-                //    ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y),
-                //    ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap
-                //);
-            }
-            else {
-                ImGui::BeginChild("APLogUnformatted");
+            ImGui::BeginChild("APLogUnformatted");
 
-                //ImGui::PushTextWrapPos(0.0f);
+            //ImGui::PushTextWrapPos(0.0f);
 
-                for (auto msg : ClientMessages) {
-                    if (msg->type == AP_MessageType::ItemSend) {
-                        if (!ClientMessagesFilter_Send) continue;
+            for (auto msg : ClientMessages) {
+                if (msg->type == AP_MessageType::ItemSend) {
+                    if (!ClientMessagesFilter_Send) continue;
 
-                        auto msg_send = static_cast<AP_ItemSendMessage*>(msg);
-                        bool isSlotSend = APHints::isPlayer(msg_send->sendPlayer);
-                        if (ClientMessagesFilter_Self && !isSlotSend) continue;
+                    auto msg_send = static_cast<AP_ItemSendMessage*>(msg);
+                    bool isSlotSend = APHints::isPlayer(msg_send->sendPlayer);
+                    if (ClientMessagesFilter_Self && !isSlotSend) continue;
 
-                        bool isSame = msg_send->sendPlayer == msg_send->recvPlayer;
-                        bool isSlotRecv = APHints::isPlayer(msg_send->recvPlayer);
+                    bool isSame = msg_send->sendPlayer == msg_send->recvPlayer;
+                    bool isSlotRecv = APHints::isPlayer(msg_send->recvPlayer);
 
-                        std::vector<std::pair<ImVec4*, std::string>> parts = {
-                            { isSlotSend ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_send->sendPlayer },
-                            { nullptr, std::string(isSame ? "found their" : "sent") },
-                            { flagsToColor(msg_send->flags), msg_send->item },
-                        };
+                    std::vector<std::pair<ImVec4*, std::string>> parts = {
+                        { isSlotSend ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_send->sendPlayer },
+                        { nullptr, std::string(isSame ? "found their" : "sent") },
+                        { flagsToColor(msg_send->flags), msg_send->item },
+                    };
 
-                        if (!isSame) {
-                            parts.push_back({ nullptr, std::string("to") });
-                            parts.push_back({ isSlotRecv ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_send->recvPlayer });
-                        }
-
-                        RichTextWrap(parts);
+                    if (!isSame) {
+                        parts.push_back({ nullptr, std::string("to") });
+                        parts.push_back({ isSlotRecv ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_send->recvPlayer });
                     }
-                    else if (msg->type == AP_MessageType::ItemRecv) {
-                        if (!ClientMessagesFilter_Recv) continue;
 
-                        auto msg_recv = static_cast<AP_ItemRecvMessage*>(msg);
-                        bool isSlot = APHints::isPlayer(msg_recv->sendPlayer);
-
-                        std::vector<std::pair<ImVec4*, std::string>> parts = {
-                            { isSlot ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_recv->sendPlayer },
-                            { nullptr, std::string(isSlot ? "found their" : "sent") },
-                            { flagsToColor(msg_recv->flags), msg_recv->item },
-                        };
-
-                        if (!isSlot) {
-                            parts.push_back({ nullptr, std::string("to") });
-                            parts.push_back({ &ClientMessagesColor_Player, std::string(getSlotName()) });
-                        }
-
-                        RichTextWrap(parts);
-                    }
-                    else {
-                        if (
-                            msg->type == AP_MessageType::Countdown && !ClientMessagesFilter_Countdown ||
-                            msg->type == AP_MessageType::ServerChat && !ClientMessagesFilter_Server ||
-                            msg->type == AP_MessageType::Chat && !ClientMessagesFilter_Chat ||
-                            msg->type == AP_MessageType::Hint && !ClientMessagesFilter_Hint
-                            )
-                            continue;
-
-                        ImGui::TextWrapped(msg->text.c_str());
-                    }
+                    RichTextWrap(parts);
                 }
+                else if (msg->type == AP_MessageType::ItemRecv) {
+                    if (!ClientMessagesFilter_Recv) continue;
 
-                //ImGui::PopTextWrapPos();
+                    auto msg_recv = static_cast<AP_ItemRecvMessage*>(msg);
+                    bool isSlot = APHints::isPlayer(msg_recv->sendPlayer);
 
-                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f)
-                    ImGui::SetScrollHereY(1.0f);
+                    std::vector<std::pair<ImVec4*, std::string>> parts = {
+                        { isSlot ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_recv->sendPlayer },
+                        { nullptr, std::string(isSlot ? "found their" : "sent") },
+                        { flagsToColor(msg_recv->flags), msg_recv->item },
+                    };
 
-                ImGui::EndChild();
+                    if (!isSlot) {
+                        parts.push_back({ nullptr, std::string("to") });
+                        parts.push_back({ &ClientMessagesColor_Player, std::string(getSlotName()) });
+                    }
+
+                    RichTextWrap(parts);
+                }
+                else {
+                    if (
+                        msg->type == AP_MessageType::Countdown && !ClientMessagesFilter_Countdown ||
+                        msg->type == AP_MessageType::ServerChat && !ClientMessagesFilter_Server ||
+                        msg->type == AP_MessageType::Chat && !ClientMessagesFilter_Chat ||
+                        msg->type == AP_MessageType::Hint && !ClientMessagesFilter_Hint
+                        )
+                        continue;
+
+                    ImGui::TextWrapped(msg->text.c_str());
+                }
             }
+
+            //ImGui::PopTextWrapPos();
+
+            if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f)
+                ImGui::SetScrollHereY(1.0f);
+
+            ImGui::EndChild();
 
             if (ImGui::BeginPopupContextItem("##xx")) {
-                ImGui::MenuItem("Copy mode (no autoscroll)", nullptr, &ClientLogCopyMode);
-
                 if (ImGui::BeginMenu("Show message types")) {
                     ImGui::MenuItem("Only show relevant sends", nullptr, &ClientMessagesFilter_Self);
                     ImGui::Separator();
