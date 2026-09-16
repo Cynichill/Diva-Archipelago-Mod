@@ -111,6 +111,7 @@ namespace APDeathLink
 
         if (death_link_amnesty != 0 && death_link_amnesty_count != 0) {
             death_link_amnesty_count -= 1;
+            APLogger::print("DeathLink > Amnesty: %i / %i\n", death_link_amnesty - death_link_amnesty_count, death_link_amnesty);
             return;
         }
 
@@ -200,8 +201,13 @@ namespace APDeathLink
 
     void check_fail()
     {
-        //if (*(int*)DivaGameHP > 0)
-        //    return;
+        check_fail(false);
+    }
+
+    void check_fail(const bool skip_hp_check)
+    {
+        if (!skip_hp_check && *(int*)DivaGameHP > 0)
+            return;
 
         if (deathLinked) {
             APLogger::print("DeathLink > Fail: Already dying\n");
@@ -227,6 +233,8 @@ namespace APDeathLink
 
     void resetSong()
     {
+        APLogger::print("[%6.2f] DeathLink < Auto retry (%i HP / HP Floor: %i, queued: %i)\n",
+                        *(float*)DivaGameTimer, *(int*)DivaGameHP, HPfloor, resetQueued);
         PvReset(PvPlayData);
     }
 
@@ -302,7 +310,7 @@ namespace APDeathLink
         const bool& maxCombo = *(int*)(PvPlayData + 0x2D25C) > 0;
 
         if (HP == 0  && !noFail && auto_retry && APGUI::isInGame() && (deathLinked || maxCombo) /* && death_link */) {
-            if (!deathLinked) check_fail();
+            if (!deathLinked) check_fail(true);
             //if (maxCombo)
             resetQueued = true;
             return;
