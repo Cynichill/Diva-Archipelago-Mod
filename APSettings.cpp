@@ -64,7 +64,7 @@ namespace APSettings
 
     void ImGuiTab()
     {
-        if (ImGui::Button("Save")) APSettings::save();
+        if (ImGui::Button("Save settings")) APSettings::save();
         ImGui::SameLine();
         if (ImGui::Button("Reload")) APSettings::load();
         ImGui::SameLine();
