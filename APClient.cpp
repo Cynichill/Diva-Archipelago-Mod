@@ -24,8 +24,8 @@ namespace APClient
     char say[256] = ""; // Client -> Server
     bool ClientLogCopyMode = false;
 
-    // TODO: Helper function to clean up pointers either on front pop or .clear()
     std::deque<AP_Message*> ClientMessages;
+    int ClientMessagesMax = 1000;
     bool ClientMessagesFilter_Self = false; // Only show own sends
     bool ClientMessagesFilter_Recv = true;
     bool ClientMessagesFilter_Send = true;
@@ -33,6 +33,7 @@ namespace APClient
     bool ClientMessagesFilter_Server = true;
     bool ClientMessagesFilter_Hint = true;
     bool ClientMessagesFilter_Countdown = true;
+    bool ClientMessagesFilter_Plain = true;
 
     ImVec4 ClientMessagesColor_Player = ImColor(237, 0, 237, 255);
     ImVec4 ClientMessagesColor_Others = ImColor(249, 249, 209, 255);
@@ -91,6 +92,7 @@ namespace APClient
         ClientMessagesFilter_Send = section["show_send"].value_or(ClientMessagesFilter_Send);
         ClientMessagesFilter_Self = section["show_send_self"].value_or(ClientMessagesFilter_Self);
         ClientMessagesFilter_Server = section["show_server"].value_or(ClientMessagesFilter_Server);
+        ClientMessagesFilter_Server = section["show_plain"].value_or(ClientMessagesFilter_Plain);
 
         // Colors
 
@@ -142,6 +144,7 @@ namespace APClient
         config.insert("show_send", ClientMessagesFilter_Send);
         config.insert("show_send_self", ClientMessagesFilter_Self);
         config.insert("show_server", ClientMessagesFilter_Server);
+        config.insert("show_plain", ClientMessagesFilter_Plain);
 
         // Colors
 
@@ -287,6 +290,28 @@ namespace APClient
 
             AP_Start();
         }
+    }
+
+    void pushClientMessage(AP_Message* msg)
+    {
+        if (
+            msg->type == AP_MessageType::Countdown && !ClientMessagesFilter_Countdown ||
+            msg->type == AP_MessageType::ServerChat && !ClientMessagesFilter_Server ||
+            msg->type == AP_MessageType::Chat && !ClientMessagesFilter_Chat ||
+            msg->type == AP_MessageType::Hint && !ClientMessagesFilter_Hint ||
+            msg->type == AP_MessageType::Plaintext && !ClientMessagesFilter_Plain
+            )
+            return;
+
+
+        while (ClientMessages.size() > ClientMessagesMax) {
+            auto front = ClientMessages.front();
+            delete front;
+
+            ClientMessages.pop_front();
+        }
+
+        ClientMessages.push_back(msg);
     }
 
     void clearClientMessages()
@@ -438,18 +463,18 @@ namespace APClient
             if (msg->type == AP_MessageType::ItemRecv) {
                 auto msg_recv = static_cast<AP_ItemRecvMessage*>(msg);
                 auto msg_push = new AP_ItemRecvMessage(*msg_recv);
-                ClientMessages.push_back(msg_push);
+                pushClientMessage(msg_push);
             }
             else if (msg->type == AP_MessageType::ItemSend) {
                 auto msg_send = static_cast<AP_ItemSendMessage*>(msg);
                 auto msg_push = new AP_ItemSendMessage(*msg_send);
-                ClientMessages.push_back(msg_push);
+                pushClientMessage(msg_push);
             }
             else if (msg->type == AP_MessageType::Hint)
             {
                 auto msg_hint = static_cast<AP_HintMessage*>(msg);
                 auto msg_push = new AP_HintMessage(*msg_hint);
-                ClientMessages.push_back(msg_push);
+                pushClientMessage(msg_push);
 
                 APHints::handleHintMessage(*msg_hint);
             }
@@ -457,7 +482,7 @@ namespace APClient
                 auto msg_push = new AP_Message(*msg);
                 //msg_push->type = AP_MessageType::Plaintext;
                 //msg_push->text = msg->text;
-                ClientMessages.push_back(msg_push);
+                pushClientMessage(msg_push);
             }
 
             APLogger::print("%s\n", msg->text.c_str());
@@ -470,7 +495,7 @@ namespace APClient
     {
         auto msg = new AP_Message;
         msg->text = cause.empty() ? src + " died" : cause;
-        ClientMessages.push_back(msg);
+        pushClientMessage(msg);
 
         if (src == slotName && !APDeathLink::death_link_self) return;
         APDeathLink::run(true);
@@ -716,14 +741,6 @@ namespace APClient
                     RichTextWrap(parts);
                 }
                 else {
-                    if (
-                        msg->type == AP_MessageType::Countdown && !ClientMessagesFilter_Countdown ||
-                        msg->type == AP_MessageType::ServerChat && !ClientMessagesFilter_Server ||
-                        msg->type == AP_MessageType::Chat && !ClientMessagesFilter_Chat ||
-                        msg->type == AP_MessageType::Hint && !ClientMessagesFilter_Hint
-                        )
-                        continue;
-
                     ImGui::TextWrapped(msg->text.c_str());
                 }
             }
@@ -745,6 +762,7 @@ namespace APClient
                     ImGui::MenuItem("Chat", nullptr, &ClientMessagesFilter_Chat);
                     ImGui::MenuItem("Server chat", nullptr, &ClientMessagesFilter_Server);
                     ImGui::MenuItem("Countdown", nullptr, &ClientMessagesFilter_Countdown);
+                    ImGui::MenuItem("Plain", nullptr, &ClientMessagesFilter_Plain);
 
                     ImGui::EndMenu();
                 }
@@ -762,6 +780,11 @@ namespace APClient
                     ImGui::EndMenu();
                 }
                 if (ImGui::MenuItem("Clear")) clearClientMessages();
+                if (devMode) {
+                    ImGui::BeginDisabled();
+                    ImGui::Text("%i / %i", ClientMessages.size(), ClientMessagesMax);
+                    ImGui::EndDisabled();
+                }
                 ImGui::EndPopup();
             }
 
