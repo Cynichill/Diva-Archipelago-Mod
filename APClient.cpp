@@ -459,7 +459,6 @@ namespace APClient
         if (AP_IsMessagePending()) {
             AP_Message* msg = AP_GetLatestMessage();
 
-            // Not enough tangible info for recv/send
             if (msg->type == AP_MessageType::ItemRecv) {
                 auto msg_recv = static_cast<AP_ItemRecvMessage*>(msg);
                 auto msg_push = new AP_ItemRecvMessage(*msg_recv);
