@@ -217,7 +217,7 @@ namespace APClient
 
         json data = json::parse(bouncePacket.data);
 
-        if (bouncePacket.tags->front() == "TrapLink") {
+        if (bouncePacket.tags->front() == APTraps::trap_link_tags.front()) {
             std::string src = data.value("source", "");
 
             if (src.empty() || src == std::string(getSlotName()))
@@ -226,7 +226,7 @@ namespace APClient
             std::string trap = data.value("trap_name", "");
             APTraps::linkRecv(trap);
         }
-        else if (bouncePacket.tags->front() == "DeathLink") {
+        else if (bouncePacket.tags->front() == APDeathLink::death_link_tags.front()) {
             RecvDeath(data.value("source", ""), data.value("cause", ""));
         }
     }
