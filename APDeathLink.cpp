@@ -122,7 +122,7 @@ namespace APDeathLink
         bounce.tags = &death_link_tags;
 
         json data;
-        data["time"] = (int64_t)std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        data["time"] = (int64_t)std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         data["source"] = APClient::getSlotName();
         data["cause"] = std::format("The Disappearance of {}", APClient::getSlotName()); // TODO: Slot aliases?
         bounce.data = data.dump();
