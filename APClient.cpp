@@ -92,7 +92,7 @@ namespace APClient
         ClientMessagesFilter_Send = section["show_send"].value_or(ClientMessagesFilter_Send);
         ClientMessagesFilter_Self = section["show_send_self"].value_or(ClientMessagesFilter_Self);
         ClientMessagesFilter_Server = section["show_server"].value_or(ClientMessagesFilter_Server);
-        ClientMessagesFilter_Server = section["show_plain"].value_or(ClientMessagesFilter_Plain);
+        ClientMessagesFilter_Plain = section["show_plain"].value_or(ClientMessagesFilter_Plain);
 
         // Colors
 
@@ -694,8 +694,6 @@ namespace APClient
 
             ImGui::BeginChild("APLogUnformatted");
 
-            //ImGui::PushTextWrapPos(0.0f);
-
             for (auto msg : ClientMessages) {
                 if (msg->type == AP_MessageType::ItemSend) {
                     if (!ClientMessagesFilter_Send) continue;
@@ -744,10 +742,9 @@ namespace APClient
                 }
             }
 
-            //ImGui::PopTextWrapPos();
-
-            if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f)
-                ImGui::SetScrollHereY(1.0f);
+            static bool atBottom;
+            atBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f;
+            if (atBottom) ImGui::SetScrollHereY(1.0f);
 
             ImGui::EndChild();
 
