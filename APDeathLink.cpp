@@ -14,7 +14,8 @@ namespace APDeathLink
     float death_link_safety = 10.0f; // Seconds after receiving a DL to avoid chain reaction DLs.
     bool auto_retry = false; // True: queue a song reset if a DL would kill
 
-    std::vector<std::string> death_link_tags = { "DeathLink" }; // Potential for DL Groups
+    char death_link_group[40]; // Suffix to "DeathLink" to only Bounce to/from this tag. Clear liberally/don't persist.
+    std::vector<std::string> death_link_tags = { "DeathLink" }; // Precalced for Bounce packet and UpdateTags
 
     const uint64_t DivaGameHP = PvPlayData + 0x2D234;
     const uint64_t DivaGameTimer = PvPlayData + 0x2C010;
@@ -122,7 +123,7 @@ namespace APDeathLink
         bounce.tags = &death_link_tags;
 
         json data;
-        data["time"] = (int64_t)std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        data["time"] = (int64_t)std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         data["source"] = APClient::getSlotName();
         data["cause"] = std::format("The Disappearance of {}", APClient::getSlotName()); // TODO: Slot aliases?
         bounce.data = data.dump();
@@ -378,6 +379,14 @@ namespace APDeathLink
                 ImGui::SliderFloat("Death Link Safety", &death_link_safety, 5.0f, 30.0f, "%.1f seconds", ImGuiSliderFlags_AlwaysClamp);
                 HelpMarker("Seconds after receiving where dying does not send one out.");
             }
+
+            ImGui::PushItemFlag(ImGuiItemFlags_LiveEditOnInputText, false);
+            if (ImGui::InputText("Death Link Group", death_link_group, sizeof(death_link_group)), nullptr, ImGuiInputTextFlags_EnterReturnsTrue) {
+                death_link_tags = { std::format("DeathLink{}", strlen(death_link_group) > 0 ? death_link_group : "") };
+                APClient::UpdateTags();
+            }
+            ImGui::PopItemFlag();
+            HelpMarker("Send and receive Death Links from this group.\nLeave empty to stay in the default group.");
 
             ImGui::Checkbox("Same slot deaths", &death_link_self);
             HelpMarker("When playing a slot co-op, react to deaths from the same slot.");

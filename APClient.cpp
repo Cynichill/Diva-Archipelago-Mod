@@ -6,6 +6,7 @@
 #include "APReload.h"
 #include "APSettings.h"
 #include "APTraps.h"
+#include <deque>
 
 namespace APClient
 {
@@ -21,9 +22,26 @@ namespace APClient
     char slotPassword[128] = ""; // No password cap?
 
     char say[256] = ""; // Client -> Server
-    std::string ClientLog = ""; // Various memory management concerns.
     bool ClientLogCopyMode = false;
-    bool ClientLogFilterSend = false;
+
+    std::deque<AP_Message*> ClientMessages;
+    int ClientMessagesMax = 1000;
+    bool ClientMessagesFilter_Self = false; // Only show own sends
+    bool ClientMessagesFilter_Recv = true;
+    bool ClientMessagesFilter_Send = true;
+    bool ClientMessagesFilter_Chat = true;
+    bool ClientMessagesFilter_Server = true;
+    bool ClientMessagesFilter_Hint = true;
+    bool ClientMessagesFilter_Countdown = true;
+    bool ClientMessagesFilter_Plain = true;
+
+    ImVec4 ClientMessagesColor_Player = ImColor(237, 0, 237, 255);
+    ImVec4 ClientMessagesColor_Others = ImColor(249, 249, 209, 255);
+
+    ImVec4 ClientMessagesColor_Progression = ImColor(173, 153, 239, 255);
+    ImVec4 ClientMessagesColor_Useful = ImColor(107, 137, 229, 255);
+    ImVec4 ClientMessagesColor_Trap = ImColor(249, 127, 112, 255);
+    ImVec4 ClientMessagesColor_Filler = ImColor(0, 237, 237, 255);
 
     // Hold server data messaging
     std::vector<std::pair<AP_GetServerDataRequest, std::function<void(std::string raw)>>> DataRequests;
@@ -37,10 +55,6 @@ namespace APClient
     std::unordered_map<int64_t, std::string> item_ap_id_to_name;
     std::unordered_map<std::string, int64_t> location_name_to_id;
     std::unordered_map<int64_t, std::string> location_id_to_name;
-
-    // TODO: Relocate?
-    int clearGrade = 2;
-    char diffs[5][10] = {"Cheap", "Standard", "Great", "Excellent", "Perfect"};
 
     // Archipelago state
 
@@ -56,6 +70,8 @@ namespace APClient
     int leekNeed = 0;
     int locHave = 0;
     int locNeed = 0;
+    int clearGrade = 2;
+    char diffs[5][10] = { "Cheap", "Standard", "Great", "Excellent", "Perfect" }; // TODO: Relocate?
 
     int &progHPReceived = APDeathLink::HPreceived;
     int &progHPtemp = APDeathLink::HPtemp;
@@ -63,12 +79,35 @@ namespace APClient
 
     void config(const toml::table& settings)
     {
-        if (AP_GetConnectionStatus() != AP_ConnectionStatus::Disconnected)
-            return;
-
         toml::table section;
         if (settings.contains("client") && settings["client"].is_table())
             section = *settings["client"].as_table();
+
+        // Message filters
+
+        ClientMessagesFilter_Chat = section["show_chat"].value_or(ClientMessagesFilter_Chat);
+        ClientMessagesFilter_Recv = section["show_countdown"].value_or(ClientMessagesFilter_Recv);
+        ClientMessagesFilter_Hint = section["show_hint"].value_or(ClientMessagesFilter_Hint);
+        ClientMessagesFilter_Recv = section["show_recv"].value_or(ClientMessagesFilter_Recv);
+        ClientMessagesFilter_Send = section["show_send"].value_or(ClientMessagesFilter_Send);
+        ClientMessagesFilter_Self = section["show_send_self"].value_or(ClientMessagesFilter_Self);
+        ClientMessagesFilter_Server = section["show_server"].value_or(ClientMessagesFilter_Server);
+        ClientMessagesFilter_Plain = section["show_plain"].value_or(ClientMessagesFilter_Plain);
+
+        // Colors
+
+        ClientMessagesColor_Player = ImColor(section["color_player"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Player)));
+        ClientMessagesColor_Others = ImColor(section["color_others"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Others)));
+
+        ClientMessagesColor_Progression = ImColor(section["color_progression"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Progression)));
+        ClientMessagesColor_Useful = ImColor(section["color_useful"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Useful)));
+        ClientMessagesColor_Trap = ImColor(section["color_trap"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Trap)));
+        ClientMessagesColor_Filler = ImColor(section["color_filler"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Filler)));
+
+        if (AP_GetConnectionStatus() != AP_ConnectionStatus::Disconnected)
+            return;
+
+        // Connection info
 
         std::string config_name = section["slot_name"].value_or("Player1");
         std::string config_server = section["slot_server"].value_or("archipelago.gg:38281");
@@ -95,6 +134,27 @@ namespace APClient
         config.insert("slot_server", slotServer);
         config.insert("slot_server_hide", hideServer);
         config.insert("slot_password", slotPassword);
+
+        // Message filters
+
+        config.insert("show_chat", ClientMessagesFilter_Chat);
+        config.insert("show_countdown", ClientMessagesFilter_Recv);
+        config.insert("show_hint", ClientMessagesFilter_Hint);
+        config.insert("show_recv", ClientMessagesFilter_Recv);
+        config.insert("show_send", ClientMessagesFilter_Send);
+        config.insert("show_send_self", ClientMessagesFilter_Self);
+        config.insert("show_server", ClientMessagesFilter_Server);
+        config.insert("show_plain", ClientMessagesFilter_Plain);
+
+        // Colors
+
+        config.insert("color_player", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Player));
+        config.insert("color_others", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Others));
+
+        config.insert("color_progression", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Progression));
+        config.insert("color_useful", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Useful));
+        config.insert("color_trap", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Trap));
+        config.insert("color_filler", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Filler));
 
         settings.insert("client", config);
     }
@@ -157,7 +217,7 @@ namespace APClient
 
         json data = json::parse(bouncePacket.data);
 
-        if (bouncePacket.tags->front() == "TrapLink") {
+        if (bouncePacket.tags->front() == APTraps::trap_link_tags.front()) {
             std::string src = data.value("source", "");
 
             if (src.empty() || src == std::string(getSlotName()))
@@ -166,7 +226,7 @@ namespace APClient
             std::string trap = data.value("trap_name", "");
             APTraps::linkRecv(trap);
         }
-        else if (bouncePacket.tags->front() == "DeathLink") {
+        else if (bouncePacket.tags->front() == APDeathLink::death_link_tags.front()) {
             RecvDeath(data.value("source", ""), data.value("cause", ""));
         }
     }
@@ -232,6 +292,36 @@ namespace APClient
         }
     }
 
+    void pushClientMessage(AP_Message* msg)
+    {
+        if (
+            msg->type == AP_MessageType::Countdown && !ClientMessagesFilter_Countdown ||
+            msg->type == AP_MessageType::ServerChat && !ClientMessagesFilter_Server ||
+            msg->type == AP_MessageType::Chat && !ClientMessagesFilter_Chat ||
+            msg->type == AP_MessageType::Hint && !ClientMessagesFilter_Hint ||
+            msg->type == AP_MessageType::Plaintext && !ClientMessagesFilter_Plain
+            )
+            return;
+
+
+        while (ClientMessages.size() > ClientMessagesMax) {
+            auto front = ClientMessages.front();
+            delete front;
+
+            ClientMessages.pop_front();
+        }
+
+        ClientMessages.push_back(msg);
+    }
+
+    void clearClientMessages()
+    {
+        for (auto i : ClientMessages)
+            delete i;
+
+        ClientMessages.clear();
+    }
+
     void reset()
     {
         datapackageLoaded = false;
@@ -244,7 +334,7 @@ namespace APClient
         CheckedLocations.clear();
 
         say[0] = '\0';
-        ClientLog.clear();
+        clearClientMessages();
 
         clearGrade = 2;
         victoryID = 0;
@@ -320,15 +410,6 @@ namespace APClient
         }
     }
 
-    void LogAppend(const std::string &text)
-    {
-        if (text.empty()) return;
-
-        if (ClientLog.length() > 0)
-            ClientLog += "\n";
-        ClientLog += text;
-    }
-
     // Server messages
 
     void DataRequest(const std::string key, std::function<void(std::string raw)> callback)
@@ -377,31 +458,33 @@ namespace APClient
 
         if (AP_IsMessagePending()) {
             AP_Message* msg = AP_GetLatestMessage();
-            std::string hold_msg;
 
-            // Not enough tangible info for recv/send
-            /*if (msg->type == AP_MessageType::ItemRecv) {
-                auto recv_msg = static_cast<AP_ItemRecvMessage*>(msg);
-                hold_msg = recv_msg->sendPlayer + " sent " + recv_msg->item;
-            }*/
-            if (msg->type == AP_MessageType::ItemSend) {
-                auto send_msg = static_cast<AP_ItemSendMessage*>(msg);
-                hold_msg = (ClientLogFilterSend && !APHints::isPlayer(send_msg->recvPlayer)) ? "" : send_msg->text;
+            if (msg->type == AP_MessageType::ItemRecv) {
+                auto msg_recv = static_cast<AP_ItemRecvMessage*>(msg);
+                auto msg_push = new AP_ItemRecvMessage(*msg_recv);
+                pushClientMessage(msg_push);
+            }
+            else if (msg->type == AP_MessageType::ItemSend) {
+                auto msg_send = static_cast<AP_ItemSendMessage*>(msg);
+                auto msg_push = new AP_ItemSendMessage(*msg_send);
+                pushClientMessage(msg_push);
             }
             else if (msg->type == AP_MessageType::Hint)
             {
-                AP_HintMessage* h_msg = static_cast<AP_HintMessage*>(msg);
-                APHints::handleHintMessage(*h_msg);
-                hold_msg = h_msg->text;
+                auto msg_hint = static_cast<AP_HintMessage*>(msg);
+                auto msg_push = new AP_HintMessage(*msg_hint);
+                pushClientMessage(msg_push);
+
+                APHints::handleHintMessage(*msg_hint);
             }
             else {
-                hold_msg = msg->text;
+                auto msg_push = new AP_Message(*msg);
+                //msg_push->type = AP_MessageType::Plaintext;
+                //msg_push->text = msg->text;
+                pushClientMessage(msg_push);
             }
 
-            if (!hold_msg.empty()) {
-                APLogger::print("%s\n", hold_msg.c_str());
-                LogAppend(hold_msg);
-            }
+            APLogger::print("%s\n", msg->text.c_str());
 
             AP_ClearLatestMessage();
         }
@@ -409,7 +492,9 @@ namespace APClient
 
     void RecvDeath(const std::string& src, const std::string& cause)
     {
-        LogAppend(cause.empty() ? src + " died" : cause);
+        auto msg = new AP_Message;
+        msg->text = cause.empty() ? src + " died" : cause;
+        pushClientMessage(msg);
 
         if (src == slotName && !APDeathLink::death_link_self) return;
         APDeathLink::run(true);
@@ -423,10 +508,10 @@ namespace APClient
         std::vector<std::string> tags;
 
         if (APDeathLink::death_link)
-            tags.push_back("DeathLink");
+            tags.insert(tags.end(), APDeathLink::death_link_tags.begin(), APDeathLink::death_link_tags.end());
 
         if (APTraps::trap_link)
-            tags.push_back("TrapLink");
+            tags.insert(tags.end(), APTraps::trap_link_tags.begin(), APTraps::trap_link_tags.end());
 
         AP_UpdateTags(tags);
     }
@@ -484,6 +569,53 @@ namespace APClient
         datapackageLoaded = true;
 
         return true;
+    }
+
+    ImVec4* flagsToColor(const int flags)
+    {
+        if (flags & static_cast<int>(AP_ItemFlags::Advancement))
+            return &ClientMessagesColor_Progression;
+        else if (flags & static_cast<int>(AP_ItemFlags::Useful))
+            return &ClientMessagesColor_Useful;
+        else if (flags & static_cast<int>(AP_ItemFlags::Trap))
+            return &ClientMessagesColor_Trap;
+
+        return &ClientMessagesColor_Filler;
+    }
+
+    void RichTextWrap(const std::vector<std::pair<ImVec4*, std::string>> &parts)
+    {
+        for (auto& [color, str] : parts) {
+            if (color != nullptr)
+                ImGui::PushStyleColor(ImGuiCol_Text, *color);
+
+            auto words = std::views::split(str, ' ') | std::views::transform([](auto&& subrange) {
+                return std::string(subrange.begin(), subrange.end());
+                });
+
+            for (auto it = words.begin(); it != words.end(); ++it) {
+                const auto& word = *it;
+                auto avail = ImGui::GetContentRegionAvail().x;
+                auto size = ImGui::CalcTextSize((word + " ").c_str()).x;
+
+                if (size > avail)
+                    ImGui::Spacing();
+
+                ImGui::Text(word.c_str());
+
+                const auto& nextword = *std::next(it);
+                auto nextavail = ImGui::GetContentRegionAvail().x;
+                auto nextsize = ImGui::CalcTextSize((nextword + " ").c_str()).x;
+
+                if (nextsize <= nextavail)
+                    ImGui::SameLine();
+            }
+
+            if (color != nullptr)
+                ImGui::PopStyleColor();
+        }
+
+        ImGui::Spacing();
     }
 
     void ImGuiTab()
@@ -560,39 +692,95 @@ namespace APClient
 
             ImGui::BeginChild("ClientLog", ImVec2(0, ImGui::GetContentRegionAvail().y - (ImGui::GetFrameHeightWithSpacing() * 1.2f)));
 
-            if (ClientLogCopyMode) {
-                ImGui::InputTextMultiline(
-                    "##APLogMulti",
-                    (char*)ClientLog.c_str(),
-                    ClientLog.size() + 1,
-                    ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y),
-                    ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap
-                );
-            }
-            else {
-                ImGui::BeginChild("APLogUnformatted");
+            ImGui::BeginChild("APLogUnformatted");
 
-                ImGui::PushTextWrapPos(0.0f);
+            for (auto msg : ClientMessages) {
+                if (msg->type == AP_MessageType::ItemSend) {
+                    if (!ClientMessagesFilter_Send) continue;
 
-                std::istringstream stream(ClientLog);
-                std::string line;
+                    auto msg_send = static_cast<AP_ItemSendMessage*>(msg);
+                    bool isSlotSend = APHints::isPlayer(msg_send->sendPlayer);
+                    if (ClientMessagesFilter_Self && !isSlotSend) continue;
 
-                while (std::getline(stream, line)) {
-                    ImGui::TextUnformatted(line.c_str());
+                    bool isSame = msg_send->sendPlayer == msg_send->recvPlayer;
+                    bool isSlotRecv = APHints::isPlayer(msg_send->recvPlayer);
+
+                    std::vector<std::pair<ImVec4*, std::string>> parts = {
+                        { isSlotSend ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_send->sendPlayer },
+                        { nullptr, std::string(isSame ? "found their" : "sent") },
+                        { flagsToColor(msg_send->flags), msg_send->item },
+                    };
+
+                    if (!isSame) {
+                        parts.push_back({ nullptr, std::string("to") });
+                        parts.push_back({ isSlotRecv ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_send->recvPlayer });
+                    }
+
+                    RichTextWrap(parts);
                 }
+                else if (msg->type == AP_MessageType::ItemRecv) {
+                    if (!ClientMessagesFilter_Recv) continue;
 
-                ImGui::PopTextWrapPos();
+                    auto msg_recv = static_cast<AP_ItemRecvMessage*>(msg);
+                    bool isSlot = APHints::isPlayer(msg_recv->sendPlayer);
 
-                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f)
-                    ImGui::SetScrollHereY(1.0f);
+                    std::vector<std::pair<ImVec4*, std::string>> parts = {
+                        { isSlot ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_recv->sendPlayer },
+                        { nullptr, std::string(isSlot ? "found their" : "sent") },
+                        { flagsToColor(msg_recv->flags), msg_recv->item },
+                    };
 
-                ImGui::EndChild();
+                    if (!isSlot) {
+                        parts.push_back({ nullptr, std::string("to") });
+                        parts.push_back({ &ClientMessagesColor_Player, std::string(getSlotName()) });
+                    }
+
+                    RichTextWrap(parts);
+                }
+                else {
+                    ImGui::TextWrapped(msg->text.c_str());
+                }
             }
+
+            static bool atBottom;
+            atBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f;
+            if (atBottom) ImGui::SetScrollHereY(1.0f);
+
+            ImGui::EndChild();
 
             if (ImGui::BeginPopupContextItem("##xx")) {
-                ImGui::MenuItem("Copy mode (no autoscroll)", nullptr, &ClientLogCopyMode);
-                ImGui::MenuItem("Filter sends to me", nullptr, &ClientLogFilterSend);
-                if (ImGui::MenuItem("Clear")) ClientLog.clear();
+                if (ImGui::BeginMenu("Show message types")) {
+                    ImGui::MenuItem("Only show relevant sends", nullptr, &ClientMessagesFilter_Self);
+                    ImGui::Separator();
+                    ImGui::MenuItem("Item sent", nullptr, &ClientMessagesFilter_Send);
+                    ImGui::MenuItem("Item received", nullptr, &ClientMessagesFilter_Recv);
+                    ImGui::MenuItem("Hints", nullptr, &ClientMessagesFilter_Hint);
+                    ImGui::MenuItem("Chat", nullptr, &ClientMessagesFilter_Chat);
+                    ImGui::MenuItem("Server chat", nullptr, &ClientMessagesFilter_Server);
+                    ImGui::MenuItem("Countdown", nullptr, &ClientMessagesFilter_Countdown);
+                    ImGui::MenuItem("Plain", nullptr, &ClientMessagesFilter_Plain);
+
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Colors")) {
+                    ImGui::ColorEdit4(getSlotName(), (float*)&ClientMessagesColor_Player, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::ColorEdit4("Others##xx", (float*)&ClientMessagesColor_Others, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+
+                    ImGui::Separator();
+
+                    ImGui::ColorEdit4("Progression", (float*)&ClientMessagesColor_Progression, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::ColorEdit4("Useful", (float*)&ClientMessagesColor_Useful, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::ColorEdit4("Trap", (float*)&ClientMessagesColor_Trap, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::ColorEdit4("Filler", (float*)&ClientMessagesColor_Filler, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+
+                    ImGui::EndMenu();
+                }
+                if (ImGui::MenuItem("Clear")) clearClientMessages();
+                if (devMode) {
+                    ImGui::BeginDisabled();
+                    ImGui::Text("%i / %i", ClientMessages.size(), ClientMessagesMax);
+                    ImGui::EndDisabled();
+                }
                 ImGui::EndPopup();
             }
 

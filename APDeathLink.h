@@ -16,6 +16,7 @@ namespace APDeathLink
 	extern int death_link_amnesty;
 	extern int death_link_amnesty_count;
 	extern bool auto_retry; // True: queue a song reset if a DL would kill
+	extern std::vector<std::string> death_link_tags;
 
 	void resetSong();
 
