@@ -256,11 +256,16 @@ namespace APGUI
         APReload::ImGuiTab();
 
         if (ImGui::CollapsingHeader("Styling")) {
+            if (ImGui::Button("Light"))
+                ImGui::StyleColorsLight();
+            ImGui::SameLine();
+            if (ImGui::Button("Dark"))
+                ImGui::StyleColorsDark();
+
             ImGui::Checkbox("Hide during gameplay", &autoHideClient);
             ImGui::Checkbox("Enable docking support", &enableDocking);
             HelpMarker("Instead of a single window with tabs, spawn each tab as its own window for more customization.");
 
-            ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
             ImGui::Checkbox("Inline help tooltips", &inlineTooltips);
             HelpMarker("That's me!");
             ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f, "%.02f", ImGuiSliderFlags_AlwaysClamp);
@@ -272,6 +277,7 @@ namespace APGUI
         }
 
         if (ImGui::CollapsingHeader("Developer Mode")) {
+            ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
             ImGui::Checkbox("Enable Developer Mode", &devMode);
             HelpMarker("Dangerous! For the curious or the stuck.");
 
