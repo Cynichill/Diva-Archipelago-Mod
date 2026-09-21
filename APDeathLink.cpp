@@ -310,11 +310,17 @@ namespace APDeathLink
         bool& noFail = *(bool*)(PvPlayData + 0x2D31D);
         const bool& maxCombo = *(int*)(PvPlayData + 0x2D25C) > 0;
 
-        if (HP == 0  && !noFail && auto_retry && APGUI::isInGame() && (deathLinked || maxCombo) /* && death_link */) {
-            if (!deathLinked) check_fail(true);
-            //if (maxCombo)
-            resetQueued = true;
-            return;
+        if (HP == 0 && !noFail && auto_retry && APGUI::isInGame() && (deathLinked || maxCombo) /* && death_link */) {
+            if (APGUI::isInGame()) {
+                if (!deathLinked) check_fail(true);
+                //if (maxCombo)
+                resetQueued = true;
+                return;
+            }
+            else {
+                auto now = *(float*)DivaGameTimer;
+                APLogger::print("[%6.2f] DeathLink < Skipping auto retry (not in game)\n", now);
+            }
         }
 
         WRITE_MEMORY(DivaGameHP, int, HP);

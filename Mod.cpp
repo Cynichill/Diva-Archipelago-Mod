@@ -5,7 +5,6 @@
 #include "APIDHandler.h"
 #include "APReload.h"
 #include "APTraps.h"
-#include "Diva.h"
 #include "SigScan.h"
 
 // 0x1402AB070
