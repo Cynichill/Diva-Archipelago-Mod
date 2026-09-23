@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "pch.h"
 
+class Trap;
+
 namespace fs = std::filesystem;
 
 namespace APTraps
@@ -26,10 +28,10 @@ namespace APTraps
 	extern bool& devMode;
 	extern std::mt19937 mt;
 	extern float trapDuration;
-	extern bool isSudden;
-	extern bool isHidden;
 	extern bool trap_link;
 	extern std::vector<std::string> trap_link_tags;
+
+	void registerTrap(Trap* trap);
 
 	void config(const toml::table& settings);
 	void save(toml::table& settings);
@@ -43,10 +45,6 @@ namespace APTraps
 
 	float getTrapEndTime(float& timestampTrap);
 
-	void touchSudden();
-	void touchSudden(bool force);
-	void touchHidden();
-	void touchHidden(bool force);
 	void linkSend(const std::string& trapName);
 	void linkRecv(const std::string& trapName);
 

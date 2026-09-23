@@ -29,3 +29,7 @@ void Trap::ImGuiConfig()
 void Trap::ImGuiStatus()
 {
 }
+
+void Trap::ImGuiExpose()
+{
+}

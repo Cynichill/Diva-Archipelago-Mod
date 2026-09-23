@@ -1,80 +1,113 @@
 #include "..\APTraps.h"
 #include "trap_psp.h"
 
-auto adjustViewport = reinterpret_cast<void(__fastcall*)(void* p1, int width, int height, void* p4)>(0x1402C27E0);
+// Crashes if called before rendering. Check APGUI::firstFrame.
+auto resize = reinterpret_cast<void(__fastcall*)(int width, int height, bool p3, bool mute)>(0x1402B7CD0);
 
-void TrapPSP::config(const toml::table& settings)
+// Does not crash. Called by above anyway.
+//auto resizeB = reinterpret_cast<void(__fastcall*)(void* p1, int width, int height, void* p4)>(0x1402C27E0);
+
+namespace TrapPSP
 {
-	height = std::clamp(settings["psp_height"].value_or(height), 45, 544);
-	APLogger::print("trap psp_height: %i\n", height);
-}
-
-void TrapPSP::save(toml::table& settings)
-{
-	settings.insert("psp_height", height);
-}
-
-void TrapPSP::reset()
-{
-	Trap::reset();
-
-	int& currentHeight = *(int*)(*(prevRes.path) + 0x44);
-	if (prevRes.height > 0 && prevRes.height != currentHeight) {
-		adjustViewport(nullptr, prevRes.width, prevRes.height, nullptr);
-		prevRes.clear();
-	}
-}
-
-void TrapPSP::touch()
-{
-	reset();
-
-	if (!running)
-		prevRes.update();
-
-	running = true;
-	timestamp = APTraps::getTrapEndTime(timestamp);
-
-	APLogger::print("[%6.2f] Trap < PSP (expires: %.2f, %i x %i)\n", now, timestamp, prevRes.width, prevRes.height);
-}
-
-void TrapPSP::tick()
-{
-	if (!running) return;
-
-	if (now >= timestamp) {
-		APLogger::print("[%6.2f] Trap > PSP expired\n", now);
-		reset();
-		return;
+	void _TrapPSP::config(const toml::table& settings)
+	{
+		pspHeight = std::clamp(settings["psp_height"].value_or(pspHeight), 45, 544);
+		APLogger::print("trap psp_height: %i\n", pspHeight);
 	}
 
-	int& currentHeight = *(int*)(*(prevRes.path) + 0x44);
-	if (APGUI::isInGame()) {
-		if (currentHeight == height) return;
-
-		ImGui::SetWindowFocus(nullptr); // The client is going to be unusable anyway.
-		adjustViewport(nullptr, height % 272 == 0 ? 480 * height / 272 : prevRes.width * height / prevRes.height, height, nullptr);
+	void _TrapPSP::save(toml::table& settings)
+	{
+		settings.insert("psp_height", pspHeight);
 	}
-	else if (prevRes.height > 0 && prevRes.height != currentHeight) {
-		adjustViewport(nullptr, prevRes.width, prevRes.height, nullptr);
+
+	void _TrapPSP::resetRes()
+	{
+		if (APGUI::firstFrame || APGUI::g_hWnd == nullptr)
+			return;
+
+		RECT rect;
+		if (GetClientRect(APGUI::g_hWnd, &rect))
+			resize(rect.right, rect.bottom, false, false);
+		//resizeB(nullptr, rect.right, rect.bottom, nullptr);
 	}
-}
 
-void TrapPSP::ImGuiConfig()
-{
-	std::string res = std::format("{}x{}", height % 272 == 0 ? 480 * height / 272 : height * 16 / 9, height);
-	if (ImGui::SliderInt("PSP resolution", &height, 90, 272, res.c_str()))
-		height = std::clamp(height, 45, 544);
-	HelpMarker("Resolution for the PSP Trap.\nBlurry? Try a display mode other than \"Fullscreen\".");
-}
+	void _TrapPSP::reset()
+	{
+		Trap::reset();
 
-void TrapPSP::ImGuiStatus()
-{
-	if (!running) return;
+		resetRes();
+	}
 
-	ImGui::TableNextRow();
-	ImGui::TableNextColumn();
-	ImGui::Text("PSP");
-	ImGui::TableNextColumn();
-	ImGui::Text("%.02f %i x %i", timestamp - now, prevRes.width, prevRes.height);
+	void _TrapPSP::touch()
+	{
+		if (!running)
+			resetRes();
+
+		running = true;
+		timestamp = APTraps::getTrapEndTime(timestamp);
+
+		APLogger::print("[%6.2f] Trap < PSP (expires: %.2f)\n", now, timestamp);
+	}
+
+	void _TrapPSP::tick()
+	{
+		if (!running) return;
+
+		if (now >= timestamp) {
+			APLogger::print("[%6.2f] Trap > PSP expired\n", now);
+			reset();
+			return;
+		}
+
+		if (APGUI::isInGame()) {
+			if (res.height() == pspHeight) return;
+
+			ImGui::SetWindowFocus(nullptr); // The client is going to be unusable anyway.
+
+			RECT rect;
+			GetClientRect(APGUI::g_hWnd, &rect);
+
+
+			int width = pspHeight % 272 == 0 ? 480 * pspHeight / 272 : rect.right * pspHeight / rect.bottom;
+			double ratio = (double)width/ (double)rect.right;
+			int height = (int)((double)rect.bottom * ratio);
+
+			resize(width, height, false, false);
+			//resizeB(nullptr, width, height, nullptr);
+		}
+		else {
+			resetRes();
+		}
+	}
+
+	void _TrapPSP::resized()
+	{
+	}
+
+	void _TrapPSP::ImGuiConfig()
+	{
+		std::string res = std::format("{}x{}", pspHeight % 272 == 0 ? 480 * pspHeight / 272 : pspHeight * 16 / 9, pspHeight);
+		if (ImGui::SliderInt("PSP resolution", &pspHeight, 90, 272, res.c_str()))
+			pspHeight = std::clamp(pspHeight, 45, 544);
+		HelpMarker("Resolution for the PSP Trap.\nBlurry? Try a display mode other than \"Fullscreen\".");
+	}
+
+	void _TrapPSP::ImGuiStatus()
+	{
+		if (!running) return;
+
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::Text("PSP");
+		ImGui::TableNextColumn();
+		ImGui::Text("%.02f %i x %i", timestamp - now, res.width(), res.height());
+	}
+
+	void _TrapPSP::ImGuiExpose()
+	{
+		if (ImGui::Button("PSP"))
+			touch();
+	}
+
+	_TrapPSP trap;
 }

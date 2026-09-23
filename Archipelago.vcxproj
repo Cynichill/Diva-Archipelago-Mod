@@ -180,6 +180,7 @@
     <ClInclude Include="traps\trap_psp.h" />
     <ClInclude Include="traps\trap_sfx.h" />
     <ClInclude Include="traps\trap_slow.h" />
+    <ClInclude Include="traps\trap_sudden_hidden.h" />
     <ClInclude Include="virtualKey.h" />
   </ItemGroup>
   <ItemGroup>
@@ -212,6 +213,7 @@
     <ClCompile Include="traps\trap_psp.cpp" />
     <ClCompile Include="traps\trap_sfx.cpp" />
     <ClCompile Include="traps\trap_slow.cpp" />
+    <ClCompile Include="traps\trap_sudden_hidden.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependencies\Detours\lib\detours.lib" />

@@ -7,6 +7,7 @@
 namespace APGUI
 {
     extern bool inlineTooltips;
+    extern bool firstFrame; // false: rendering has started (past game init)
 
     extern HWND g_hWnd;
     extern WNDPROC g_OriginalWndProc;

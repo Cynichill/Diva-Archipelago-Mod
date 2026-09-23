@@ -133,18 +133,6 @@ HOOK(void, __fastcall, _PvUpdateHP, 0x14fb926f0, uintptr_t PvPlayData, int a2, c
     }
 }
 
-// 0x14024B720
-void* ModifierSudden = sigScan("\x83\xb9\x20\xd1\x02\x00\x03\x0f\x94\xc0\xc3", "xxxxxxxxxxx");
-HOOK(bool, __fastcall, _ModifierSudden, ModifierSudden, long long a1) {
-    return APTraps::isSudden || original_ModifierSudden(a1);
-}
-
-// 0x14024B730
-void* ModifierHidden = sigScan("\x83\xb9\x20\xd1\x02\x00\x02\x0f\x94\xc0\xc3", "xxxxxxxxxxx");
-HOOK(bool, __fastcall, _ModifierHidden, ModifierHidden, long long a1) {
-    return APTraps::isHidden || original_ModifierHidden(a1);
-}
-
 // 0x14024A5F0
 void* SafetyDuration = sigScan("\x66\x0f\x6e\x81\x10\xd3\x02\x00\x0f\x57\xc9\x0f\x5b\xc0\xf3\x0f\x5c\x81\x3c\xd3\x02\x00\xf3\x0f\x5f\xc1\xc3", "xxxxxxxxxxxxxxxxxxxxxxxxxxx");
 HOOK(float, __fastcall, _SafetyDuration, SafetyDuration, long long a1) {
@@ -277,8 +265,6 @@ extern "C"
         INSTALL_HOOK(_PvGameApplyDiff);
         INSTALL_HOOK(_PvLoop);
         INSTALL_HOOK(_PvUpdateHP);
-        INSTALL_HOOK(_ModifierSudden);
-        INSTALL_HOOK(_ModifierHidden);
         INSTALL_HOOK(_SafetyDuration);
 
         INSTALL_HOOK(_ChangeGameSubState);

@@ -1,6 +1,8 @@
 #include "APClient.h"
 #include "APTraps.h"
 #include <deque>
+#include "traps/trap.h"
+#include "traps/trap_sudden_hidden.h"
 #include "traps/trap_sfx.h"
 #include "traps/trap_psp.h"
 #include "traps/trap_icon.h"
@@ -13,7 +15,6 @@ namespace APTraps
 	// Config
 
 	float trapDuration = 15.0f;
-	bool trapOverlap = false;
 	bool trapExtendDuration = false; // True: Extend existing trap durations instead of overwriting. NEVER EXTEND STUTTER!
 	bool queueTraps = false;
 	float queueTrapRate = 0.0f; // +: Wait between traps, 0: apply after previous, -: Wait and overlap
@@ -105,23 +106,20 @@ namespace APTraps
 
 	float lastRun = 0.0f; // For delta time against APTraps::DivaGameTimer
 
-	bool isSudden = false; // Had trouble with this as a bool(timestamp > 0)
-	bool isHidden = false; // Had trouble with this as a bool(timestamp > 0)
-
 	std::deque<TrapID> trapQueue; // TODO
-
-	float timestampSudden = 0.0f; // Time the trap expires
-	float timestampHidden = 0.0f; // Time the trap expires
 
 	std::random_device rd;
 	std::mt19937 mt;
 
-	TrapPSP _TrapPSP;
-	TrapSFX _TrapSFX;
-	TrapIcon _TrapIcon;
-	TrapSlow _TrapSlow;
+	std::vector<Trap*>& registeredTraps()
+	{
+		static std::vector<Trap*> traps;
+		return traps;
+	}
 
-	std::vector<Trap*> registeredTraps = { &_TrapIcon, &_TrapSlow, &_TrapPSP, &_TrapSFX, };
+	void registerTrap(Trap* trap) {
+		registeredTraps().push_back(trap);
+	}
 
 	void config(const toml::table& settings)
 	{
@@ -135,9 +133,6 @@ namespace APTraps
 		trapExtendDuration = section["duration_extend"].value_or(trapExtendDuration);
 		APLogger::print("trap extend duration: %i\n", trapExtendDuration);
 
-		trapOverlap = section["overlap"].value_or(trapOverlap);
-		APLogger::print("trap overlap: %d\n", trapOverlap);
-
 		queueTraps = section["queue"].value_or(queueTraps);
 		APLogger::print("trap queue: %d\n", queueTraps);
 
@@ -150,7 +145,7 @@ namespace APTraps
 		trap_link_others = section["trap_link_others"].value_or(trap_link_others);
 		APLogger::print("trap_link_others: %d\n", trap_link_others);
 
-		for (Trap* t : registeredTraps) {
+		for (Trap* t : registeredTraps()) {
 			t->config(section);
 		}
 
@@ -162,13 +157,12 @@ namespace APTraps
 		toml::table config;
 		config.insert("duration", trapDuration);
 		config.insert("duration_extend", trapExtendDuration);
-		config.insert("overlap", trapOverlap);
 		config.insert("trap_link", trap_link);
 		config.insert("trap_link_others", trap_link_others);
 		config.insert("queue", queueTraps);
 		config.insert("queue_rate", queueTrapRate);
 
-		for (Trap* t : registeredTraps) {
+		for (Trap* t : registeredTraps()) {
 			t->save(config);
 		}
 
@@ -182,12 +176,7 @@ namespace APTraps
 		lastRun = 0.0f;
 		mt.seed(rd());
 
-		timestampSudden = 0.0f;
-		timestampHidden = 0.0f;
-		isHidden = false;
-		isSudden = false;
-
-		for (Trap* t : registeredTraps) {
+		for (Trap* t : registeredTraps()) {
 			t->reset();
 		}
 
@@ -217,50 +206,6 @@ namespace APTraps
 		return (trapExtendDuration && timestampTrap > 0.0f ? timestampTrap : now) + trapDuration;
 	}
 
-	void touchSudden()
-	{
-		touchSudden(false);
-	}
-
-	void touchSudden(bool force)
-	{
-		float now = getGameTime();
-		timestampSudden = getTrapEndTime(timestampSudden);
-
-		APLogger::print("[%6.2f] Trap < Sudden (expires: %.2f)\n", now, timestampSudden);
-		isSudden = true;
-
-		bool overlap = force || trapOverlap;
-
-		if (!overlap && isHidden) {
-			APLogger::print("[%6.2f] Trap < Hidden -> Sudden (expires: %.2f)\n", now, timestampSudden);
-			timestampHidden = 0.0f;
-			isHidden = false;
-		}
-	}
-
-	void touchHidden()
-	{
-		touchHidden(false);
-	}
-
-	void touchHidden(bool force)
-	{
-		float now = getGameTime();
-		timestampHidden = getTrapEndTime(timestampHidden);
-
-		APLogger::print("[%6.2f] Trap < Hidden (expires: %.2f)\n", now, timestampHidden);
-		isHidden = true;
-
-		bool overlap = force || trapOverlap;
-
-		if (!overlap && isSudden) {
-			APLogger::print("[%6.2f] Trap < Sudden -> Hidden (expires: %.2f)\n", now, timestampHidden);
-			timestampSudden = 0.0f;
-			isSudden = false;
-		}
-	}
-
 	bool canRecv(const int64_t itemID)
 	{
 		return itemID >= static_cast<int64_t>(TrapID::Hidden) && itemID <= static_cast<int64_t>(TrapID::PSP);
@@ -273,32 +218,32 @@ namespace APTraps
 		switch (trap) {
 		case TrapID::Hidden:
 			if (!notify) return;
-			touchHidden();
+			TrapSuhidden::trap.touchSudden();
 			linkSend("Hidden Trap");
 			break;
 		case TrapID::Sudden:
 			if (!notify) return;
-			touchSudden();
+			TrapSuhidden::trap.touchSudden();
 			linkSend("Sudden Trap");
 			break;
 		case TrapID::Stutter:
 			if (!notify) return;
-			_TrapSlow.touch(true);
+			TrapSlow::trap.touchStutter();
 			linkSend("Stutter Trap");
 			break;
 		case TrapID::Icon:
 			if (!notify) return;
-			_TrapIcon.touch();
+			TrapIcon::trap.touch();
 			linkSend("Icon Trap");
 			break;
 		case TrapID::Slow:
 			if (!notify) return;
-			_TrapSlow.touch();
+			TrapSlow::trap.touchSlow();
 			linkSend("Slow Trap");
 			break;
 		case TrapID::PSP:
 			if (!notify) return;
-			_TrapPSP.touch();
+			TrapPSP::trap.touch();
 			linkSend("PSP Trap");
 			break;
 		}
@@ -341,22 +286,22 @@ namespace APTraps
 			switch (trapID)
 			{
 			case TrapID::Hidden:
-				touchHidden(traps.size() > 1);
+				TrapSuhidden::trap.touchHidden(traps.size() > 1);
 				break;
 			case TrapID::Sudden:
-				touchSudden(traps.size() > 1);
+				TrapSuhidden::trap.touchSudden(traps.size() > 1);
 				break;
 			case TrapID::Stutter:
-				_TrapSlow.touch(true);
+				TrapSlow::trap.touchStutter();
 				break;
 			case TrapID::Icon:
-				_TrapIcon.touch();
+				TrapIcon::trap.touch();
 				break;
 			case TrapID::Slow:
-				_TrapSlow.touch();
+				TrapSlow::trap.touchSlow();
 				break;
 			case TrapID::PSP:
-				_TrapPSP.touch();
+				TrapPSP::trap.touch();
 				break;
 			}
 		}
@@ -370,8 +315,8 @@ namespace APTraps
 	void runFrame()
 	{
 		// TODO: These traps disable themselves if the menu is open.
-		_TrapSlow.tick();
-		_TrapPSP.tick();
+		TrapSlow::trap.tick();
+		TrapPSP::trap.tick();
 	}
 
 	void run()
@@ -388,20 +333,8 @@ namespace APTraps
 
 		lastRun = now;
 
-		for (Trap* t : registeredTraps) {
+		for (Trap* t : registeredTraps()) {
 			t->tick();
-		}
-
-		if (isSudden && now >= timestampSudden) {
-			APLogger::print("[%6.2f] Trap > Sudden expired\n", now);
-			timestampSudden = 0.0f;
-			isSudden = false;
-		}
-
-		if (isHidden && now >= timestampHidden) {
-			APLogger::print("[%6.2f] Trap > Hidden expired\n", now);
-			timestampHidden = 0.0f;
-			isHidden = false;
 		}
 	}
 
@@ -420,11 +353,9 @@ namespace APTraps
 			HelpMarker("Receiving a trap that's already running adds to its duration instead of overwriting it.");
 		}
 
-		for (Trap* t : registeredTraps) {
+		for (Trap* t : registeredTraps()) {
 			t->ImGuiConfig();
 		}
-
-		ImGui::Checkbox("Allow Sudden and Hidden to overlap", &trapOverlap);
 
 		/*
 		ImGui::Separator();
@@ -457,20 +388,17 @@ namespace APTraps
 			if (ImGui::Button("Reset"))
 				reset();
 			ImGui::SameLine();
-			if (ImGui::Button("Sudden"))
-				touchSudden();
-			ImGui::SameLine();
-			if (ImGui::Button("Hidden"))
-				touchHidden();
-			ImGui::SameLine();
-			if (ImGui::Button("Stutter"))
-				_TrapSlow.touch(true);
-			ImGui::SameLine();
+			if (ImGui::Button("All"))
+				for (Trap* t : registeredTraps()) t->touch();
+			HelpMarker("Tempting.");
 
-			for (Trap* t : registeredTraps) {
-				if (ImGui::Button(t->name.c_str()))
-					t->touch();
+			for (Trap* t : registeredTraps()) {
+				ImGui::PushID(t);
+
+				t->ImGuiExpose();
 				ImGui::SameLine();
+
+				ImGui::PopID();
 			}
 			ImGui::Spacing();
 
@@ -486,25 +414,7 @@ namespace APTraps
 
 			if (ImGui::BeginTable("tableTraps", 2))
 			{
-				if (isSudden)
-				{
-					ImGui::TableNextRow();
-					ImGui::TableNextColumn();
-					ImGui::Text("Sudden");
-					ImGui::TableNextColumn();
-					ImGui::Text("%.02f", timestampSudden - now);
-				}
-
-				if (isHidden)
-				{
-					ImGui::TableNextRow();
-					ImGui::TableNextColumn();
-					ImGui::Text("Hidden");
-					ImGui::TableNextColumn();
-					ImGui::Text("%.02f", timestampHidden - now);
-				}
-
-				for (Trap* t : registeredTraps) {
+				for (Trap* t : registeredTraps()) {
 					t->ImGuiStatus();
 				}
 
