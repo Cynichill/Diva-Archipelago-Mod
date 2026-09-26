@@ -387,7 +387,7 @@ namespace APDeathLink
             }
 
             ImGui::PushItemFlag(ImGuiItemFlags_LiveEditOnInputText, false);
-            if (ImGui::InputText("Death Link Group", death_link_group, sizeof(death_link_group)), nullptr, ImGuiInputTextFlags_EnterReturnsTrue) {
+            if (ImGui::InputText("Death Link Group", death_link_group, sizeof(death_link_group), ImGuiInputTextFlags_EnterReturnsTrue)) {
                 death_link_tags = { std::format("DeathLink{}", strlen(death_link_group) > 0 ? death_link_group : "") };
                 APClient::UpdateTags();
             }
