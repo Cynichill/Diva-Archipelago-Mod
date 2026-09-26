@@ -16,7 +16,7 @@ namespace APClient
 
     // Any char where a string makes sense is for ImGui::InputText without using ImGui's stdlib string.
 
-    char slotName[17] = "Player1"; // Slot names cap at 16 characters + terminator
+    char slotName[64] = "Player1"; // Slot names cap at 16 characters, not bytes. Good luck everyone.
     char slotServer[128] = "archipelago.gg:38281";
     bool hideServer = false;
     char slotPassword[128] = ""; // No password cap?
