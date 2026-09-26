@@ -303,6 +303,14 @@ namespace APClient
             )
             return;
 
+        if (ClientMessagesFilter_Self) {
+            if (msg->type == AP_MessageType::ItemSend) {
+                auto msg_send = static_cast<AP_ItemSendMessage*>(msg);
+                bool isSlotSend = APHints::isPlayer(msg_send->sendPlayer);
+                if (!isSlotSend)
+                    return;
+            }
+        }
 
         while (ClientMessages.size() > ClientMessagesMax) {
             auto front = ClientMessages.front();
@@ -700,7 +708,6 @@ namespace APClient
 
                     auto msg_send = static_cast<AP_ItemSendMessage*>(msg);
                     bool isSlotSend = APHints::isPlayer(msg_send->sendPlayer);
-                    if (ClientMessagesFilter_Self && !isSlotSend) continue;
 
                     bool isSame = msg_send->sendPlayer == msg_send->recvPlayer;
                     bool isSlotRecv = APHints::isPlayer(msg_send->recvPlayer);
