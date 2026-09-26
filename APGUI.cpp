@@ -16,6 +16,7 @@ namespace APGUI
     bool enableDocking = false;
     bool autoHideClient = true; // Hide Client during gameplay
     bool showWarning = true; // First run warning
+    bool darkMode = true; // True: use ImGui's Dark style, otherwise the Light style
     float alphaDefault = 1.0f;
     float alphaIngame = 1.0f;
     bool inlineTooltips = true; // True: Help tooltips become regular hovers instead of (?)
@@ -184,20 +185,26 @@ namespace APGUI
         if (settings.contains("gui") && settings["gui"].is_table())
             section = *settings["gui"].as_table();
 
-        autoHideClient = section["autoHideClient"].value_or(true);
-        showWarning = section["warning"].value_or(true);
-        enableDocking = section["docking"].value_or(false);
+        autoHideClient = section["autoHideClient"].value_or(autoHideClient);
+        showWarning = section["warning"].value_or(showWarning);
+        enableDocking = section["docking"].value_or(enableDocking);
 
         float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
         auto scale = section["fontScale"].value_or(main_scale);
         scale = std::clamp(scale, 0.75f, 4.0f);
         ImGui::GetStyle().FontScaleDpi = scale;
 
-        float _alphaDefault = section["alphaDefault"].value_or(1.0f);
+        float _alphaDefault = section["alphaDefault"].value_or(alphaDefault);
         alphaDefault = std::clamp(_alphaDefault, 0.5f, 1.0f);
 
-        float _alphaIngame = section["alphaIngame"].value_or(1.0f);
+        float _alphaIngame = section["alphaIngame"].value_or(alphaIngame);
         alphaIngame = std::clamp(_alphaIngame, 0.1f, 1.0f);
+
+        darkMode = section["darkMode"].value_or(darkMode);
+        if (darkMode)
+            ImGui::StyleColorsDark();
+        else
+            ImGui::StyleColorsLight();
     }
 
     void save(toml::table &settings)
@@ -209,6 +216,7 @@ namespace APGUI
         config.insert("warning", showWarning);
         config.insert("alphaDefault", alphaDefault);
         config.insert("alphaIngame", alphaIngame);
+        config.insert("darkMode", darkMode);
 
         settings.insert("gui", config);
     }
@@ -262,11 +270,12 @@ namespace APGUI
         APReload::ImGuiTab();
 
         if (ImGui::CollapsingHeader("Styling")) {
-            if (ImGui::Button("Light"))
-                ImGui::StyleColorsLight();
-            ImGui::SameLine();
-            if (ImGui::Button("Dark"))
-                ImGui::StyleColorsDark();
+            if (ImGui::Checkbox("Dark mode", &darkMode)) {
+                if (darkMode)
+                    ImGui::StyleColorsDark();
+                else
+                    ImGui::StyleColorsLight();
+            }
 
             ImGui::Checkbox("Hide during gameplay", &autoHideClient);
             ImGui::Checkbox("Enable docking support", &enableDocking);
