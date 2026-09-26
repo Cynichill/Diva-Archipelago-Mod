@@ -21,7 +21,6 @@ namespace TrapPSP {
 		void reset();
 		void touch();
 		void tick();
-		void resized();
 		void ImGuiConfig();
 		void ImGuiStatus();
 		void ImGuiExpose();

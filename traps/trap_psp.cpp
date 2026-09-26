@@ -29,6 +29,8 @@ namespace TrapPSP
 		if (GetClientRect(APGUI::g_hWnd, &rect))
 			resize(rect.right, rect.bottom, false, false);
 		//resizeB(nullptr, rect.right, rect.bottom, nullptr);
+
+		APGUI::forceHide = false;
 	}
 
 	void _TrapPSP::reset()
@@ -60,13 +62,16 @@ namespace TrapPSP
 		}
 
 		if (APGUI::isInGame()) {
-			if (res.height() == pspHeight) return;
+			if (!APGUI::forceHide) {
+				// GUI will hide on the next frame, so skip this one to reduce flicker if it would be in the viewable area.
+				APGUI::forceHide = true;
+				return;
+			}
 
-			ImGui::SetWindowFocus(nullptr); // The client is going to be unusable anyway.
+			if (res.height() == pspHeight) return;
 
 			RECT rect;
 			GetClientRect(APGUI::g_hWnd, &rect);
-
 
 			int width = pspHeight % 272 == 0 ? 480 * pspHeight / 272 : rect.right * pspHeight / rect.bottom;
 			double ratio = (double)width/ (double)rect.right;
@@ -78,10 +83,6 @@ namespace TrapPSP
 		else {
 			resetRes();
 		}
-	}
-
-	void _TrapPSP::resized()
-	{
 	}
 
 	void _TrapPSP::ImGuiConfig()

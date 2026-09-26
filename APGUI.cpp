@@ -18,11 +18,13 @@ namespace APGUI
     bool showWarning = true; // First run warning
     float alphaDefault = 1.0f;
     float alphaIngame = 1.0f;
-
     bool inlineTooltips = true; // True: Help tooltips become regular hovers instead of (?)
+
+    // Internal
 
     bool showImGuiDemo = false;
     bool firstFrame = true;
+    bool forceHide = false;
 
     // TODO: Move names into own namespace?
     std::vector<std::pair<const char*, std::function<void()>>> windows = {
@@ -80,7 +82,7 @@ namespace APGUI
         // Weird focus behavior on create so keep every frame.
         ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingOverCentralNode);
 
-        if (isInGame() && autoHideClient) {
+        if (isInGame() && (autoHideClient || forceHide)) {
             ImGui::SetWindowFocus(nullptr);
             ImGui::GetIO().WantCaptureKeyboard = false;
             ImGui::GetIO().WantCaptureMouse = false;
@@ -91,6 +93,10 @@ namespace APGUI
             ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
             return;
         }
+        else {
+            forceHide = false;
+        }
+
         while (ShowCursor(true) < 1); // If the GUI is visible, the cursor should be too.
         ImGui::GetStyle().Alpha = isInGame() ? alphaIngame : alphaDefault;
 

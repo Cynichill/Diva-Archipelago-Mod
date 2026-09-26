@@ -30,6 +30,9 @@ public:
 	// Reset the entire state of the trap. If a progressive/combo trap, reset all of them.
 	virtual void reset();
 
+	// Return Trap::running
+	virtual bool isRunning();
+
 	// Prepare the trap, including possibly a partial reset, for the next tick().
 	// If a progressive/combo trap, start all of them. Individual traps should have a touchX() and resetX().
 	// To support extending, preserve and run timestamps through APTraps::getTrapEndTime().

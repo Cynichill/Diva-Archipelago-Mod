@@ -14,6 +14,11 @@ void Trap::reset()
 	timestamp = 0.0f;
 }
 
+bool Trap::isRunning()
+{
+	return running;
+}
+
 void Trap::touch()
 {
 }
