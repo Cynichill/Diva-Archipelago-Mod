@@ -50,9 +50,9 @@ struct SFXList {
 };
 
 struct PvPlayData_SFX { // PvPlayData + 0x2CF18
-	DivaString button;
-	DivaString unk;
-	DivaString slide;
+	DivaString se_name; // button
+	DivaString pvbranch_success_se_name;
+	DivaString slide_name; // flick
 	DivaString chainslide_first_name;
 	DivaString chainslide_sub_name;
 	DivaString chainslide_success_name;

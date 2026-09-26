@@ -30,7 +30,8 @@ namespace APTraps
 		{ "Stutter Trap",	{ TrapID::Stutter } },
 		{ "Icon Trap",		{ TrapID::Icon } },
 		{ "Slow Trap",		{ TrapID::Slow } },
-		{ "PSP Trap",		{ TrapID::PSP } }
+		{ "PSP Trap",		{ TrapID::PSP } },
+		{ "SFX Trap",		{ TrapID::SFX } },
 	};
 
 	// Known traps from other games, when trap_link_others is true

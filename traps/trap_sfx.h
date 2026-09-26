@@ -21,6 +21,7 @@ namespace TrapSFX
 		float timestampRollNext = 0.0f;
 
 		char prevButton[32] = "";
+		char prevChance[32] = "";
 		char prevSlide[32] = "";
 		char prevChainFirst[32] = "";
 		char prevChainSub[32] = "";
