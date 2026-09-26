@@ -128,7 +128,7 @@ namespace TrapSlow
 		ImGui::SameLine();
 
 		if (ImGui::Button("Slow"))
-			touch();
+			touchSlow();
 	}
 
 	_TrapSlow trap;
