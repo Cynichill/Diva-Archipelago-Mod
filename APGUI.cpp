@@ -39,9 +39,6 @@ namespace APGUI
 
     void init(IDXGISwapChain* swapChain, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
     {
-        ImGui_ImplWin32_EnableDpiAwareness();
-        float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
-
         g_Device = device;
         g_Context = deviceContext;
 
@@ -55,6 +52,9 @@ namespace APGUI
         ImGui::StyleColorsDark();
 
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard;
+
+        ImGui_ImplWin32_EnableDpiAwareness();
+        float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
 
         ImGuiStyle& style = ImGui::GetStyle();
         style.ScaleAllSizes(main_scale);
