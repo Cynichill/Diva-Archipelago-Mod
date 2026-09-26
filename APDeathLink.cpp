@@ -7,7 +7,7 @@ namespace APDeathLink
     bool &devMode = APClient::devMode;
 
     // Config options
-    bool death_link = false; // In-game state, not APCpp. Connection should always have the DeathLink tag from APCpp.
+    bool death_link = false; // In-game state, not APCpp. Update connection via APClient::UpdateTags.
     bool death_link_self = false; // Specifically for co-op play, if slot can kill itself.
     int death_link_amnesty = 0; // Pair with death_link_amnesty_count
     int death_link_percent = 100; // Percentage of max HP to lose on receive. "If at or below this, die."

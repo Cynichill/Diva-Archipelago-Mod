@@ -277,7 +277,7 @@ namespace APHints
 
                 // TODO: ID Remaps
                 auto locID = location_name_to_id[hint.location.c_str()];
-                auto itemName = item_ap_id_to_name[(locID / AP_ID_FACTOR) * AP_ID_FACTOR];
+                auto &itemName = item_ap_id_to_name[(locID / AP_ID_FACTOR) * AP_ID_FACTOR];
 
                 bool haveItem = isMyCheck && std::ranges::find(recvIDs, locID / AP_ID_FACTOR) != recvIDs.end();
 
