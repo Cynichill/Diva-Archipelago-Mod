@@ -404,12 +404,12 @@ namespace APTraps
 			ImGui::Spacing();
 
 			if (trap_link) {
-				static char tl[20];
-				ImGui::InputText("##xx", tl, sizeof(tl));
+				static std::string trapName = "";
+				ImGui::InputText("##xx", &trapName);
 				ImGui::SameLine();
 				if (!APGUI::isInGame()) ImGui::BeginDisabled();
 				if (ImGui::Button("Trap Link##xx"))
-					linkRecv(std::string(tl));
+					linkRecv(trapName);
 				if (!APGUI::isInGame()) ImGui::EndDisabled();
 			}
 
