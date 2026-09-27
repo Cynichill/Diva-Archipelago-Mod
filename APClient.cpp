@@ -691,11 +691,22 @@ namespace APClient
 
             ImGui::Separator();
 
+            // ImGui Clipper alternative: if not at bottom (to keep scroll) or unfocused, render only part of the client messages
+            static bool atBottom;
+            int logStop = static_cast<int>(ClientMessages.size());
+            int logStart = !atBottom || ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) ? 0 : max(0, logStop - (ClientMessagesMax / 4));
+
             ImGui::BeginChild("ClientLog", ImVec2(0, ImGui::GetContentRegionAvail().y - (ImGui::GetFrameHeightWithSpacing() * 1.2f)));
 
             ImGui::BeginChild("APLogUnformatted");
 
+            int i = 0;
+
             for (auto msg : ClientMessages) {
+                i += 1;
+                if (i < logStart)
+                    continue;
+
                 if (msg->type == AP_MessageType::ItemSend) {
                     if (!ClientMessagesFilter_Send) continue;
 
@@ -742,7 +753,6 @@ namespace APClient
                 }
             }
 
-            static bool atBottom;
             atBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.0f;
             if (atBottom) ImGui::SetScrollHereY(1.0f);
 
