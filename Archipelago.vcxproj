@@ -200,6 +200,7 @@
     <ClCompile Include="Dependencies\imgui\imgui_draw.cpp" />
     <ClCompile Include="Dependencies\imgui\imgui_tables.cpp" />
     <ClCompile Include="Dependencies\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Dependencies\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="Dependencies\SigScan.cpp" />
     <ClCompile Include="Mod.cpp" />
     <ClCompile Include="pch.cpp">

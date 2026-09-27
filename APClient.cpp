@@ -14,14 +14,12 @@ namespace APClient
 
     bool devMode = false;
 
-    // Any char where a string makes sense is for ImGui::InputText without using ImGui's stdlib string.
-
-    char slotName[64] = "Player1"; // Slot names cap at 16 characters, not bytes. Good luck everyone.
-    char slotServer[128] = "archipelago.gg:38281";
+    std::string slotName = "Player1"; // Slot names cap at 16 characters, not bytes. Good luck everyone.
+    std::string slotServer = "archipelago.gg:38281";
     bool hideServer = false;
-    char slotPassword[128] = ""; // No password cap?
+    std::string slotPassword = ""; // No password cap?
 
-    char say[256] = ""; // Client -> Server
+    std::string say = "";
     bool ClientLogCopyMode = false;
 
     std::deque<AP_Message*> ClientMessages;
@@ -109,13 +107,9 @@ namespace APClient
 
         // Connection info
 
-        std::string config_name = section["slot_name"].value_or("Player1");
-        std::string config_server = section["slot_server"].value_or("archipelago.gg:38281");
-        std::string config_pass = section["slot_password"].value_or("");
-
-        snprintf(slotName, sizeof(slotName), "%s", config_name.c_str());
-        snprintf(slotServer, sizeof(slotServer), "%s", config_server.c_str());
-        snprintf(slotPassword, sizeof(slotPassword), "%s", config_pass.c_str());
+        slotName = section["slot_name"].value_or(slotName);
+        slotServer = section["slot_server"].value_or(slotServer);
+        slotPassword = section["slot_password"].value_or(slotPassword);
 
         hideServer = section["slot_server_hide"].value_or(false);
     }
@@ -152,7 +146,7 @@ namespace APClient
         settings.insert("client", config);
     }
 
-    char* getSlotName()
+    const std::string& getSlotName()
     {
         return slotName;
     }
@@ -213,7 +207,7 @@ namespace APClient
         if (bouncePacket.tags->front() == APTraps::trap_link_tags.front()) {
             std::string src = data.value("source", "");
 
-            if (src.empty() || src == std::string(getSlotName()))
+            if (src.empty() || src == getSlotName())
                 return;
 
             std::string trap = data.value("trap_name", "");
@@ -267,7 +261,7 @@ namespace APClient
 
         if (AP_GetConnectionStatus() == AP_ConnectionStatus::Disconnected)
         {
-            AP_Init(slotServer, GameName, slotName, slotPassword);
+            AP_Init(slotServer.c_str(), GameName, slotName.c_str(), slotPassword.c_str());
             AP_RegisterBouncedCallback(RecvBounce);
 
             AP_SetItemClearCallback(ItemClear);
@@ -626,8 +620,8 @@ namespace APClient
             if (AP_IsInit())
                 ImGui::BeginDisabled();
 
-            ImGui::InputText("Slot Name", slotName, sizeof(slotName));
-            ImGui::InputText("Server", slotServer, sizeof(slotServer), !hideServer ? 0 : ImGuiInputTextFlags_Password);
+            ImGui::InputText("Slot Name", &slotName);
+            ImGui::InputText("Server", &slotServer, !hideServer ? 0 : ImGuiInputTextFlags_Password);
             if (ImGui::BeginPopupContextItem("##hideServer")) {
                 ImGui::MenuItem("Hide server", nullptr, &hideServer);
                 ImGui::EndPopup();
@@ -637,7 +631,7 @@ namespace APClient
                 "\n\nExample addresses:\n archipelago.gg:38281\n localhost:38281\n 127.0.0.1:38281"
             );
 
-            ImGui::InputText("Password", slotPassword, sizeof(slotPassword), ImGuiInputTextFlags_Password);
+            ImGui::InputText("Password", &slotPassword, ImGuiInputTextFlags_Password);
 
             if (AP_IsInit())
                 ImGui::EndDisabled();
@@ -743,7 +737,7 @@ namespace APClient
 
                     if (!isSlot) {
                         parts.push_back({ nullptr, std::string("to") });
-                        parts.push_back({ &ClientMessagesColor_Player, std::string(getSlotName()) });
+                        parts.push_back({ &ClientMessagesColor_Player, getSlotName() });
                     }
 
                     RichTextWrap(parts);
@@ -773,7 +767,7 @@ namespace APClient
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Colors")) {
-                    ImGui::ColorEdit4(getSlotName(), (float*)&ClientMessagesColor_Player, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::ColorEdit4(getSlotName().c_str(), (float*)&ClientMessagesColor_Player, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
                     ImGui::ColorEdit4("Others##xx", (float*)&ClientMessagesColor_Others, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
 
                     ImGui::Separator();
@@ -811,12 +805,12 @@ namespace APClient
                 winCon = std::format("{} / {} Checks", locHave, locNeed);
 
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize((winCon + (APGUI::inlineTooltips ? " " : " (?) ")).c_str()).x);
-            if (ImGui::InputText("##APsay", say, sizeof(say), ImGuiInputTextFlags_EnterReturnsTrue))
+            if (ImGui::InputText("##APsay", &say, ImGuiInputTextFlags_EnterReturnsTrue))
             {
                 refocus = true;
-                if (strlen(say) > 0) {
-                    AP_Say(std::string(say));
-                    say[0] = '\0';
+                if (!say.empty()) {
+                    AP_Say(say);
+                    say.clear();
                 }
             }
             ImGui::PopItemWidth();
