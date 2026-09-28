@@ -148,11 +148,17 @@ HOOK(float, __fastcall, _SafetyDuration, SafetyDuration, long long a1) {
 // 0x1404C5950
 void* ReadDBLine = sigScan("\x48\x83\xec\x38\x80\x39\x00\x48\x8b\x02\x4c\x8b\x42\x08\x48\x8d\x54\x24\x20\x48\x89\x44\x24\x20\x4c\x89\x44\x24\x28\x74\x12", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 HOOK(char**, __fastcall, _ReadDBLine, ReadDBLine, uint64_t a1, char** pv_db_prop) {
-    std::string line(pv_db_prop[0], pv_db_prop[1]);
+    if (!APClient::devMode && AP_GetConnectionStatus() == AP_ConnectionStatus::Disconnected)
+        return original_ReadDBLine(a1, pv_db_prop);
+
     char** original = original_ReadDBLine(a1, pv_db_prop);
 
-    if (original != nullptr && **original >= '1' && **original <= '2' && !APIDHandler::check(line))
-        **original = '0';
+    if (original != nullptr && *original != nullptr && **original >= '1' && **original <= '2') {
+        std::string line(pv_db_prop[0], pv_db_prop[1]);
+        if (!APIDHandler::check(line)) {
+            **original = '0';
+        }
+    }
 
     return original;
 }
