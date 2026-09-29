@@ -16,13 +16,16 @@ namespace APGUI
     bool enableDocking = false;
     bool autoHideClient = true; // Hide Client during gameplay
     bool showWarning = true; // First run warning
+    bool darkMode = true; // True: use ImGui's Dark style, otherwise the Light style
     float alphaDefault = 1.0f;
     float alphaIngame = 1.0f;
-
     bool inlineTooltips = true; // True: Help tooltips become regular hovers instead of (?)
+
+    // Internal
 
     bool showImGuiDemo = false;
     bool firstFrame = true;
+    bool forceHide = false;
 
     // TODO: Move names into own namespace?
     std::vector<std::pair<const char*, std::function<void()>>> windows = {
@@ -39,9 +42,6 @@ namespace APGUI
 
     void init(IDXGISwapChain* swapChain, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
     {
-        ImGui_ImplWin32_EnableDpiAwareness();
-        float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
-
         g_Device = device;
         g_Context = deviceContext;
 
@@ -55,6 +55,9 @@ namespace APGUI
         ImGui::StyleColorsDark();
 
         ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard;
+
+        ImGui_ImplWin32_EnableDpiAwareness();
+        float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
 
         ImGuiStyle& style = ImGui::GetStyle();
         style.ScaleAllSizes(main_scale);
@@ -80,7 +83,7 @@ namespace APGUI
         // Weird focus behavior on create so keep every frame.
         ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingOverCentralNode);
 
-        if (isInGame() && autoHideClient) {
+        if (isInGame() && (autoHideClient || forceHide)) {
             ImGui::SetWindowFocus(nullptr);
             ImGui::GetIO().WantCaptureKeyboard = false;
             ImGui::GetIO().WantCaptureMouse = false;
@@ -91,6 +94,10 @@ namespace APGUI
             ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
             return;
         }
+        else {
+            forceHide = false;
+        }
+
         while (ShowCursor(true) < 1); // If the GUI is visible, the cursor should be too.
         ImGui::GetStyle().Alpha = isInGame() ? alphaIngame : alphaDefault;
 
@@ -178,20 +185,26 @@ namespace APGUI
         if (settings.contains("gui") && settings["gui"].is_table())
             section = *settings["gui"].as_table();
 
-        autoHideClient = section["autoHideClient"].value_or(true);
-        showWarning = section["warning"].value_or(true);
-        enableDocking = section["docking"].value_or(false);
+        autoHideClient = section["autoHideClient"].value_or(autoHideClient);
+        showWarning = section["warning"].value_or(showWarning);
+        enableDocking = section["docking"].value_or(enableDocking);
 
         float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY));
         auto scale = section["fontScale"].value_or(main_scale);
         scale = std::clamp(scale, 0.75f, 4.0f);
         ImGui::GetStyle().FontScaleDpi = scale;
 
-        float _alphaDefault = section["alphaDefault"].value_or(1.0f);
+        float _alphaDefault = section["alphaDefault"].value_or(alphaDefault);
         alphaDefault = std::clamp(_alphaDefault, 0.5f, 1.0f);
 
-        float _alphaIngame = section["alphaIngame"].value_or(1.0f);
+        float _alphaIngame = section["alphaIngame"].value_or(alphaIngame);
         alphaIngame = std::clamp(_alphaIngame, 0.1f, 1.0f);
+
+        darkMode = section["darkMode"].value_or(darkMode);
+        if (darkMode)
+            ImGui::StyleColorsDark();
+        else
+            ImGui::StyleColorsLight();
     }
 
     void save(toml::table &settings)
@@ -203,6 +216,7 @@ namespace APGUI
         config.insert("warning", showWarning);
         config.insert("alphaDefault", alphaDefault);
         config.insert("alphaIngame", alphaIngame);
+        config.insert("darkMode", darkMode);
 
         settings.insert("gui", config);
     }
@@ -256,11 +270,17 @@ namespace APGUI
         APReload::ImGuiTab();
 
         if (ImGui::CollapsingHeader("Styling")) {
+            if (ImGui::Checkbox("Dark mode", &darkMode)) {
+                if (darkMode)
+                    ImGui::StyleColorsDark();
+                else
+                    ImGui::StyleColorsLight();
+            }
+
             ImGui::Checkbox("Hide during gameplay", &autoHideClient);
             ImGui::Checkbox("Enable docking support", &enableDocking);
             HelpMarker("Instead of a single window with tabs, spawn each tab as its own window for more customization.");
 
-            ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
             ImGui::Checkbox("Inline help tooltips", &inlineTooltips);
             HelpMarker("That's me!");
             ImGui::DragFloat("Font DPI Scale", &ImGui::GetStyle().FontScaleDpi, 0.02f, 0.75f, 4.0f, "%.02f", ImGuiSliderFlags_AlwaysClamp);
@@ -272,6 +292,7 @@ namespace APGUI
         }
 
         if (ImGui::CollapsingHeader("Developer Mode")) {
+            ImGui::Checkbox("Show ImGui demo", &showImGuiDemo);
             ImGui::Checkbox("Enable Developer Mode", &devMode);
             HelpMarker("Dangerous! For the curious or the stuck.");
 

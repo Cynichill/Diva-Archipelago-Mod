@@ -58,13 +58,13 @@ namespace APSettings
         APTraps::save(settings);
 
         settingsFile << "# It is recommend to make changes and save settings within the game.\n"
-                        "# Invalid or missing settings here will use their defaults.\n\n";
+                        "# Invalid or missing settings here will use their defaults on restart.\n\n";
         settingsFile << toml::toml_formatter{ settings, toml::format_flags::relaxed_float_precision };
     }
 
     void ImGuiTab()
     {
-        if (ImGui::Button("Save")) APSettings::save();
+        if (ImGui::Button("Save settings")) APSettings::save();
         ImGui::SameLine();
         if (ImGui::Button("Reload")) APSettings::load();
         ImGui::SameLine();

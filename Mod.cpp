@@ -5,7 +5,6 @@
 #include "APIDHandler.h"
 #include "APReload.h"
 #include "APTraps.h"
-#include "Diva.h"
 #include "SigScan.h"
 
 // 0x1402AB070
@@ -134,18 +133,6 @@ HOOK(void, __fastcall, _PvUpdateHP, 0x14fb926f0, uintptr_t PvPlayData, int a2, c
     }
 }
 
-// 0x14024B720
-void* ModifierSudden = sigScan("\x83\xb9\x20\xd1\x02\x00\x03\x0f\x94\xc0\xc3", "xxxxxxxxxxx");
-HOOK(bool, __fastcall, _ModifierSudden, ModifierSudden, long long a1) {
-    return APTraps::isSudden || original_ModifierSudden(a1);
-}
-
-// 0x14024B730
-void* ModifierHidden = sigScan("\x83\xb9\x20\xd1\x02\x00\x02\x0f\x94\xc0\xc3", "xxxxxxxxxxx");
-HOOK(bool, __fastcall, _ModifierHidden, ModifierHidden, long long a1) {
-    return APTraps::isHidden || original_ModifierHidden(a1);
-}
-
 // 0x14024A5F0
 void* SafetyDuration = sigScan("\x66\x0f\x6e\x81\x10\xd3\x02\x00\x0f\x57\xc9\x0f\x5b\xc0\xf3\x0f\x5c\x81\x3c\xd3\x02\x00\xf3\x0f\x5f\xc1\xc3", "xxxxxxxxxxxxxxxxxxxxxxxxxxx");
 HOOK(float, __fastcall, _SafetyDuration, SafetyDuration, long long a1) {
@@ -161,11 +148,17 @@ HOOK(float, __fastcall, _SafetyDuration, SafetyDuration, long long a1) {
 // 0x1404C5950
 void* ReadDBLine = sigScan("\x48\x83\xec\x38\x80\x39\x00\x48\x8b\x02\x4c\x8b\x42\x08\x48\x8d\x54\x24\x20\x48\x89\x44\x24\x20\x4c\x89\x44\x24\x28\x74\x12", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 HOOK(char**, __fastcall, _ReadDBLine, ReadDBLine, uint64_t a1, char** pv_db_prop) {
-    std::string line(pv_db_prop[0], pv_db_prop[1]);
+    if (!APClient::devMode && AP_GetConnectionStatus() == AP_ConnectionStatus::Disconnected)
+        return original_ReadDBLine(a1, pv_db_prop);
+
     char** original = original_ReadDBLine(a1, pv_db_prop);
 
-    if (original != nullptr && **original >= '1' && **original <= '2' && !APIDHandler::check(line))
-        **original = '0';
+    if (original != nullptr && *original != nullptr && **original >= '1' && **original <= '2') {
+        std::string line(pv_db_prop[0], pv_db_prop[1]);
+        if (!APIDHandler::check(line)) {
+            **original = '0';
+        }
+    }
 
     return original;
 }
@@ -278,8 +271,6 @@ extern "C"
         INSTALL_HOOK(_PvGameApplyDiff);
         INSTALL_HOOK(_PvLoop);
         INSTALL_HOOK(_PvUpdateHP);
-        INSTALL_HOOK(_ModifierSudden);
-        INSTALL_HOOK(_ModifierHidden);
         INSTALL_HOOK(_SafetyDuration);
 
         INSTALL_HOOK(_ChangeGameSubState);

@@ -7,14 +7,15 @@ namespace APDeathLink
     bool &devMode = APClient::devMode;
 
     // Config options
-    bool death_link = false; // In-game state, not APCpp. Connection should always have the DeathLink tag from APCpp.
+    bool death_link = false; // In-game state, not APCpp. Update connection via APClient::UpdateTags.
     bool death_link_self = false; // Specifically for co-op play, if slot can kill itself.
     int death_link_amnesty = 0; // Pair with death_link_amnesty_count
     int death_link_percent = 100; // Percentage of max HP to lose on receive. "If at or below this, die."
     float death_link_safety = 10.0f; // Seconds after receiving a DL to avoid chain reaction DLs.
     bool auto_retry = false; // True: queue a song reset if a DL would kill
 
-    std::vector<std::string> death_link_tags = { "DeathLink" }; // Potential for DL Groups
+    std::string death_link_group = ""; // Suffix to "DeathLink" to only Bounce to/from this tag. Clear liberally/don't persist.
+    std::vector<std::string> death_link_tags = { "DeathLink" }; // Precalced for Bounce packet and UpdateTags
 
     const uint64_t DivaGameHP = PvPlayData + 0x2D234;
     const uint64_t DivaGameTimer = PvPlayData + 0x2C010;
@@ -22,12 +23,12 @@ namespace APDeathLink
 
     // Internal
     int death_link_amnesty_count = 0;
-    bool deathLinked = false; // true after calling a kill so future kills are ignored (until reset)
 
-    /*
-    True: the next time Death Link checks run, reset the song: resetSong()
-    Test cases: dying at 0 HP (hook), dying to prog HP, dying to a DL.
-    */
+    // true after calling a kill so future kills are ignored (until reset)
+    bool deathLinked = false;
+
+    // True: the next time Death Link checks run, reset the song: resetSong()
+    // Test cases: dying at 0 HP (hook), dying to prog HP, dying to a DL.
     bool resetQueued = false;
 
     void* _PvReset = sigScan("\x48\x89\x5c\x24\x10\x48\x89\x74\x24\x18\x55\x57\x41\x54\x41\x56\x41\x57\x48\x8b\xec\x48\x81\xec\x80\x00\x00\x00\x0f\x29\x74\x24\x70\x48\x8b\x05\x50\x8c\xb5\x00\x48\x33\xc4\x48\x89\x45\xe0\x48\x8b\xf9",
@@ -122,7 +123,7 @@ namespace APDeathLink
         bounce.tags = &death_link_tags;
 
         json data;
-        data["time"] = (int64_t)std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        data["time"] = (int64_t)std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         data["source"] = APClient::getSlotName();
         data["cause"] = std::format("The Disappearance of {}", APClient::getSlotName()); // TODO: Slot aliases?
         bounce.data = data.dump();
@@ -309,11 +310,17 @@ namespace APDeathLink
         bool& noFail = *(bool*)(PvPlayData + 0x2D31D);
         const bool& maxCombo = *(int*)(PvPlayData + 0x2D25C) > 0;
 
-        if (HP == 0  && !noFail && auto_retry && APGUI::isInGame() && (deathLinked || maxCombo) /* && death_link */) {
-            if (!deathLinked) check_fail(true);
-            //if (maxCombo)
-            resetQueued = true;
-            return;
+        if (HP == 0 && !noFail && auto_retry && APGUI::isInGame() && (deathLinked || maxCombo) /* && death_link */) {
+            if (APGUI::isInGame()) {
+                if (!deathLinked) check_fail(true);
+                //if (maxCombo)
+                resetQueued = true;
+                return;
+            }
+            else {
+                auto now = *(float*)DivaGameTimer;
+                APLogger::print("[%6.2f] DeathLink < Skipping auto retry (not in game)\n", now);
+            }
         }
 
         WRITE_MEMORY(DivaGameHP, int, HP);
@@ -321,8 +328,6 @@ namespace APDeathLink
 
     void ImGuiTab()
     {
-        ImGui::PushItemWidth(-1 * (ImGui::GetContentRegionAvail().x * 0.45f));
-
         if (devMode || HPdenominator > 1) {
             float progress = (float)min(HPdenominator, (HPdenominator - HPnumerator)) / (float)HPdenominator;
             char buf[8];
@@ -359,7 +364,7 @@ namespace APDeathLink
         HelpMarker("When you die on your own or fail to reach Grade Needed (not both), everyone with Death Link enabled dies.");
 
         if (death_link) {
-            if (ImGui::SliderInt("Death Link Amnesty", &death_link_amnesty, 0, 20)) {
+            if (ImGui::SliderInt("Amnesty", &death_link_amnesty, 0, 20)) {
                 death_link_amnesty = max(0, death_link_amnesty);
                 death_link_amnesty_count = death_link_amnesty;
             }
@@ -371,13 +376,25 @@ namespace APDeathLink
                 ImGui::ProgressBar(static_cast<float>(death_link_amnesty - death_link_amnesty_count) / static_cast<float>(death_link_amnesty), ImVec2(0,0), overlay);
             }
 
-            ImGui::SliderInt("Death Link Percent", &death_link_percent, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SliderInt("Percent", &death_link_percent, 0, 100, "%d%%", ImGuiSliderFlags_AlwaysClamp);
             HelpMarker("Percent of max HP to lose on receive.\n<100 for non-lethal, but makes Life Bonuses harder which may affect score by up to 2%.");
 
             if (death_link_percent < 100) {
-                ImGui::SliderFloat("Death Link Safety", &death_link_safety, 5.0f, 30.0f, "%.1f seconds", ImGuiSliderFlags_AlwaysClamp);
+                ImGui::SliderFloat("Safety", &death_link_safety, 5.0f, 30.0f, "%.1f seconds", ImGuiSliderFlags_AlwaysClamp);
                 HelpMarker("Seconds after receiving where dying does not send one out.");
             }
+
+            ImGui::PushItemFlag(ImGuiItemFlags_LiveEditOnInputText, false);
+            if (ImGui::InputText("Group", &death_link_group, ImGuiInputTextFlags_EnterReturnsTrue)) {
+                std::string new_tag = "DeathLink" + death_link_group;
+
+                if (new_tag != death_link_tags.front()) {
+                    death_link_tags = { new_tag };
+                    APClient::UpdateTags();
+                }
+            }
+            ImGui::PopItemFlag();
+            HelpMarker("Send and receive Death Links from this group.\nLeave empty to stay in the default group.");
 
             ImGui::Checkbox("Same slot deaths", &death_link_self);
             HelpMarker("When playing a slot co-op, react to deaths from the same slot.");
@@ -407,7 +424,5 @@ namespace APDeathLink
                 HelpMarker("If 1/true, the cause of the death prevented a Death Link from being sent.\nFor example, dying in one hit or inside the safety window.");
             }
         }
-
-        ImGui::PopItemWidth();
     }
 }

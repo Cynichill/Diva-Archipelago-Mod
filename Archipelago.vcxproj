@@ -175,6 +175,13 @@
     <ClInclude Include="Dependencies\SigScan.h" />
     <ClInclude Include="Diva.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="traps\trap.h" />
+    <ClInclude Include="traps\trap_hispeed.h" />
+    <ClInclude Include="traps\trap_icon.h" />
+    <ClInclude Include="traps\trap_psp.h" />
+    <ClInclude Include="traps\trap_sfx.h" />
+    <ClInclude Include="traps\trap_slow.h" />
+    <ClInclude Include="traps\trap_sudden_hidden.h" />
     <ClInclude Include="virtualKey.h" />
   </ItemGroup>
   <ItemGroup>
@@ -194,6 +201,7 @@
     <ClCompile Include="Dependencies\imgui\imgui_draw.cpp" />
     <ClCompile Include="Dependencies\imgui\imgui_tables.cpp" />
     <ClCompile Include="Dependencies\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Dependencies\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="Dependencies\SigScan.cpp" />
     <ClCompile Include="Mod.cpp" />
     <ClCompile Include="pch.cpp">
@@ -202,6 +210,13 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="traps\trap.cpp" />
+    <ClCompile Include="traps\trap_hispeed.cpp" />
+    <ClCompile Include="traps\trap_icon.cpp" />
+    <ClCompile Include="traps\trap_psp.cpp" />
+    <ClCompile Include="traps\trap_sfx.cpp" />
+    <ClCompile Include="traps\trap_slow.cpp" />
+    <ClCompile Include="traps\trap_sudden_hidden.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Dependencies\Detours\lib\detours.lib" />

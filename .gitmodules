@@ -1,6 +1,7 @@
 [submodule "Dependencies/APCpp"]
 	path = Dependencies/APCpp
-	url = https://github.com/N00byKing/APCpp.git
+	url = https://github.com/RePod/APCpp.git
+    branch = megamix
     ignore = dirty
 [submodule "Dependencies/imgui"]
 	path = Dependencies/imgui

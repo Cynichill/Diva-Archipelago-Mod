@@ -63,6 +63,27 @@
     <ClInclude Include="APSettings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="traps\trap_sfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="traps\trap_psp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="traps\trap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="traps\trap_slow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="traps\trap_icon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="traps\trap_sudden_hidden.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="traps\trap_hispeed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -120,6 +141,30 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="APSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="traps\trap_sfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="traps\trap_psp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="traps\trap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="traps\trap_slow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="traps\trap_icon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="traps\trap_sudden_hidden.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencies\imgui\misc\cpp\imgui_stdlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="traps\trap_hispeed.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

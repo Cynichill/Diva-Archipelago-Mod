@@ -61,7 +61,7 @@ namespace APHints
         if (playerName.compare(APClient::getSlotName()) == 0)
             return true;
 
-        std::string aliasSuffix = " (" + std::string(APClient::getSlotName()) + ")";
+        std::string aliasSuffix = " (" + APClient::getSlotName() + ")";
         if (playerName.rfind(aliasSuffix) != std::string::npos)
             return true;
 
@@ -277,7 +277,7 @@ namespace APHints
 
                 // TODO: ID Remaps
                 auto locID = location_name_to_id[hint.location.c_str()];
-                auto itemName = item_ap_id_to_name[(locID / AP_ID_FACTOR) * AP_ID_FACTOR];
+                auto &itemName = item_ap_id_to_name[(locID / AP_ID_FACTOR) * AP_ID_FACTOR];
 
                 bool haveItem = isMyCheck && std::ranges::find(recvIDs, locID / AP_ID_FACTOR) != recvIDs.end();
 
@@ -324,7 +324,7 @@ namespace APHints
                     }
                     else {
                         if (ImGui::MenuItem("Copy hint##xx")) {
-                            std::string h = std::string(APClient::getSlotName()) + "'s " + hint.item + " is at " + hint.location + " in " + hint.sendPlayer + "'s world";
+                            std::string h = APClient::getSlotName() + "'s " + hint.item + " is at " + hint.location + " in " + hint.sendPlayer + "'s world";
                             ImGui::SetClipboardText(h.c_str());
                         }
                     }

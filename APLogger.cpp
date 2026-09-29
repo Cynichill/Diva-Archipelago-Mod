@@ -71,6 +71,11 @@ namespace APLogger
     {
         if (ImGui::CollapsingHeader("Logging")) {
             ImGui::Checkbox("Log to file", &log_to_file);
+            ImGui::SameLine();
+            auto label = std::format("{:.1f} / {:.1f} KiB", (float)APLogLocal.size() / 1024.0f, (float)APLogLocal.capacity() / 1024.0f);
+            if (ImGui::Button(label.c_str()))
+                APLogLocal.clear();
+
             if (log_to_file) {
                 ImGui::SameLine();
                 ImGui::TextLinkOpenURL("Open log file", APLogger::LogPath.string().c_str());
