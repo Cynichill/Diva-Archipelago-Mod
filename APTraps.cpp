@@ -7,6 +7,7 @@
 #include "traps/trap_psp.h"
 #include "traps/trap_icon.h"
 #include "traps/trap_slow.h"
+#include "traps/trap_hispeed.h"
 
 namespace APTraps
 {
@@ -32,6 +33,8 @@ namespace APTraps
 		{ "Slow Trap",		{ TrapID::Slow } },
 		{ "PSP Trap",		{ TrapID::PSP } },
 		{ "SFX Trap",		{ TrapID::SFX } },
+		{ "HiSpeed Trap",	{ TrapID::HiSpeed } },
+		{ "NoSpeed Trap",	{ TrapID::NoSpeed } },
 	};
 
 	// Known traps from other games, when trap_link_others is true
@@ -209,7 +212,7 @@ namespace APTraps
 
 	bool canRecv(const int64_t itemID)
 	{
-		return itemID >= static_cast<int64_t>(TrapID::Hidden) && itemID <= static_cast<int64_t>(TrapID::PSP);
+		return itemID >= static_cast<int64_t>(TrapID::Hidden) && itemID <= static_cast<int64_t>(TrapID::NoSpeed);
 	}
 
 	void trapRecv(const int64_t itemID, const bool notify)
@@ -246,6 +249,16 @@ namespace APTraps
 			if (!notify) return;
 			TrapPSP::trap.touch();
 			linkSend("PSP Trap");
+			break;
+		case TrapID::HiSpeed:
+			if (!notify) return;
+			TrapHiSpeed::trap.touchHiSpeed();
+			linkSend("HiSpeed Trap");
+			break;
+		case TrapID::NoSpeed:
+			if (!notify) return;
+			TrapHiSpeed::trap.touchNoSpeed();
+			linkSend("NoSpeed Trap");
 			break;
 		}
 	}
@@ -304,6 +317,12 @@ namespace APTraps
 			case TrapID::PSP:
 				TrapPSP::trap.touch();
 				break;
+			case TrapID::HiSpeed:
+				TrapHiSpeed::trap.touchHiSpeed();
+				break;
+			case TrapID::NoSpeed:
+				TrapHiSpeed::trap.touchNoSpeed();
+				break;
 			}
 		}
 	}
@@ -355,7 +374,10 @@ namespace APTraps
 		}
 
 		for (Trap* t : registeredTraps()) {
+			//ImGui::PushID(t);
+			//if (ImGui::CollapsingHeader("Trap X"))
 			t->ImGuiConfig();
+			//ImGui::PopID();
 		}
 
 		/*

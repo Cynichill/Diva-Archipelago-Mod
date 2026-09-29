@@ -17,12 +17,13 @@ namespace APTraps
 		// Datapackage's Trap IDs begin at 30. Up to that can be used internally.
 		Hidden = 30,
 		Sudden = 31,
-		//HiSpeed = 32,
+		HiSpeed = 32,
 		Slow = 33,
 		Stutter = 34,
 		Icon = 35,
 		PSP = 36, // Changes actual resolution, minor flicker (window resize) on some recording software but should be seamless for the player.
 		SFX = 37,
+		NoSpeed = 38,
 	};
 
 	extern bool& devMode;

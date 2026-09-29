@@ -81,6 +81,9 @@
     <ClInclude Include="traps\trap_sudden_hidden.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="traps\trap_hispeed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -159,6 +162,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Dependencies\imgui\misc\cpp\imgui_stdlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="traps\trap_hispeed.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

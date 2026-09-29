@@ -176,6 +176,7 @@
     <ClInclude Include="Diva.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="traps\trap.h" />
+    <ClInclude Include="traps\trap_hispeed.h" />
     <ClInclude Include="traps\trap_icon.h" />
     <ClInclude Include="traps\trap_psp.h" />
     <ClInclude Include="traps\trap_sfx.h" />
@@ -210,6 +211,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="traps\trap.cpp" />
+    <ClCompile Include="traps\trap_hispeed.cpp" />
     <ClCompile Include="traps\trap_icon.cpp" />
     <ClCompile Include="traps\trap_psp.cpp" />
     <ClCompile Include="traps\trap_sfx.cpp" />
