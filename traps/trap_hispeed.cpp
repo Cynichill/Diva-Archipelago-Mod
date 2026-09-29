@@ -66,22 +66,16 @@ namespace TrapHiSpeed
 
 		if (isNoSpeed && now >= timestampNoSpeed) {
 			APLogger::print("[%6.2f] Trap > NoSpeed expired\n", now);
-			//resetNoSpeed();
-			touchHiSpeed();
+			reset();
 			return;
 		}
 
 		if (running && now >= timestamp) {
 			APLogger::print("[%6.2f] Trap > HiSpeed expired\n", now);
-			//reset();
-			touchNoSpeed();
+			reset();
 			return;
 		}
 	}
-
-	int note = 0;
-	float testX = 0.0f;
-	float testY = 0.0f;
 
 	void _TrapHiSpeed::ImGuiConfig()
 	{

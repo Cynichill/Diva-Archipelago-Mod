@@ -428,13 +428,18 @@ namespace APTraps
 				for (Trap* t : registeredTraps()) t->touch();
 			HelpMarker("Tempting.");
 
+			int i = 1;
 			for (Trap* t : registeredTraps()) {
 				ImGui::PushID(t);
 
 				t->ImGuiExpose();
-				ImGui::SameLine();
+
+				if (i % 4 != 0)
+					ImGui::SameLine();
 
 				ImGui::PopID();
+
+				i += 1;
 			}
 			ImGui::Spacing();
 
