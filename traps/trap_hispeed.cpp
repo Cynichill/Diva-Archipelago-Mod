@@ -1,5 +1,4 @@
 #include "trap_hispeed.h"
-#include "../APClient.h"
 
 namespace TrapHiSpeed
 {
