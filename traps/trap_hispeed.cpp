@@ -84,7 +84,7 @@ namespace TrapHiSpeed
 
 		if (ImGui::SliderFloat("HiSpeed Factor", &hiSpeedFactor, 0.5, 5.0, fmt.c_str()))
 			hiSpeedFactor = std::clamp(hiSpeedFactor, -10.0f, 10.0f);
-		HelpMarker("Fine tune the song's default high speed rate.\nThe second operand is from the latest song played.\n\n0 is equivalent to NoSpeed.\nNegative flips the trajectory.\nTry extremely small numbers close to 0!");
+		HelpMarker("Fine tune the song's default high speed rate.\nThe second operand is from the current song played.\n\n0 is equivalent to NoSpeed.\nNegative flips the trajectory.\nTry extremely small numbers close to 0!");
 	}
 
 	void _TrapHiSpeed::ImGuiStatus()
