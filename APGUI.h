@@ -9,6 +9,7 @@ namespace APGUI
     extern bool inlineTooltips;
     extern bool firstFrame; // false: rendering has started (past game init)
     extern bool forceHide; // true: if isInGame(), hide the GUI despite autoHideClient
+    extern bool visible; // true: the GUI is visible/rendering (mainly for ShowCursor)
 
     extern HWND g_hWnd;
     extern WNDPROC g_OriginalWndProc;

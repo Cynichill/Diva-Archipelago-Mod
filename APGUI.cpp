@@ -26,6 +26,7 @@ namespace APGUI
     bool showImGuiDemo = false;
     bool firstFrame = true;
     bool forceHide = false;
+    bool visible = true;
 
     // TODO: Move names into own namespace?
     std::vector<std::pair<const char*, std::function<void()>>> windows = {
@@ -40,8 +41,22 @@ namespace APGUI
     HWND g_hWnd = nullptr;
     WNDPROC g_OriginalWndProc = nullptr;
 
+    HOOK(int, WINAPI, _ShowCursor, GetProcAddress(GetModuleHandleA("User32.dll"), "ShowCursor"), bool bShow)
+    {
+        if (visible) {
+            while (original_ShowCursor(true) < 0);
+        }
+        else {
+            while (original_ShowCursor(false) >= 0);
+        }
+
+        return bShow ? 0 : -1;
+    }
+
     void init(IDXGISwapChain* swapChain, ID3D11Device* device, ID3D11DeviceContext* deviceContext)
     {
+        INSTALL_HOOK(_ShowCursor);
+
         g_Device = device;
         g_Context = deviceContext;
 
@@ -85,6 +100,8 @@ namespace APGUI
         ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingOverCentralNode);
 
         if (isInGame() && (autoHideClient || forceHide)) {
+            visible = false;
+
             ImGui::SetWindowFocus(nullptr);
             ImGui::GetIO().WantCaptureKeyboard = false;
             ImGui::GetIO().WantCaptureMouse = false;
@@ -97,9 +114,9 @@ namespace APGUI
         }
         else {
             forceHide = false;
+            visible = true;
         }
 
-        while (ShowCursor(true) < 1); // If the GUI is visible, the cursor should be too.
         ImGui::GetStyle().Alpha = isInGame() ? alphaIngame : alphaDefault;
 
         if (showImGuiDemo)
