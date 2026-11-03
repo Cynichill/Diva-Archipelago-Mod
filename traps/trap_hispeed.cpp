@@ -92,9 +92,6 @@ namespace TrapHiSpeed
 
 	void _TrapHiSpeed::touchLane()
 	{
-		if (AP_GetConnectionStatus() != AP_ConnectionStatus::Authenticated)
-			return;
-
 		timestampLane = APTraps::getTrapEndTime(timestampLane);
 		isLane = true;
 
