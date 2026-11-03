@@ -21,6 +21,7 @@
 #include <SigScan.h>
 #include <string>
 #include <thread>
+#include <deque>
 #include <toml++/toml.h>
 #include <imgui.h>
 #include <imgui_internal.h>

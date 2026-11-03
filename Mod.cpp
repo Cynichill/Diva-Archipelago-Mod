@@ -151,16 +151,22 @@ HOOK(char**, __fastcall, _ReadDBLine, ReadDBLine, uint64_t a1, char** pv_db_prop
     if (!APClient::devMode && AP_GetConnectionStatus() == AP_ConnectionStatus::Disconnected)
         return original_ReadDBLine(a1, pv_db_prop);
 
-    char** original = original_ReadDBLine(a1, pv_db_prop);
+    char** val = original_ReadDBLine(a1, pv_db_prop);
 
-    if (original != nullptr && *original != nullptr && **original >= '1' && **original <= '2') {
-        std::string line(pv_db_prop[0], pv_db_prop[1]);
-        if (!APIDHandler::check(line)) {
-            **original = '0';
+    if (val == nullptr || *val == nullptr)
+        return val;
+
+    static std::string key;
+    key.assign(pv_db_prop[0], pv_db_prop[1] - pv_db_prop[0]);
+
+    if (!APIDHandler::check(key)) {
+        // Encountered a "diff.length=9.5" and took it personally. "095" is also valid.
+        for (int i = 0; i < val[1] - val[0]; i++) {
+            *val[i] = '0';
         }
     }
 
-    return original;
+    return val;
 }
 
 // 0x1527E49E0

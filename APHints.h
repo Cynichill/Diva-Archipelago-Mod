@@ -29,6 +29,7 @@ namespace APHints
     void handleHintMessage(const AP_HintMessage& recvHint);
     void updateSentLocations(const std::array<int64_t, 2> &locationIDs);
     void updateByItemName(const std::string &itemName);
+    void updateByLocName(const std::string& locName);
 
     void ImGuiTab();
 }

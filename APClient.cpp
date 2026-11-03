@@ -6,7 +6,6 @@
 #include "APReload.h"
 #include "APSettings.h"
 #include "APTraps.h"
-#include <deque>
 
 namespace APClient
 {
@@ -25,6 +24,7 @@ namespace APClient
     std::deque<AP_Message*> ClientMessages;
     int ClientMessagesMax = 1000;
     bool ClientMessagesFilter_Self = false; // Only show own sends
+    bool ClientMessagesFilter_Locs = false; // Show locations
     bool ClientMessagesFilter_Recv = true;
     bool ClientMessagesFilter_Send = true;
     bool ClientMessagesFilter_Chat = true;
@@ -35,6 +35,7 @@ namespace APClient
 
     ImVec4 ClientMessagesColor_Player = ImColor(237, 0, 237, 255);
     ImVec4 ClientMessagesColor_Others = ImColor(249, 249, 209, 255);
+    ImVec4 ClientMessagesColor_Locations = ImColor(0, 255, 127, 255);
 
     ImVec4 ClientMessagesColor_Progression = ImColor(173, 153, 239, 255);
     ImVec4 ClientMessagesColor_Useful = ImColor(107, 137, 229, 255);
@@ -89,6 +90,7 @@ namespace APClient
         ClientMessagesFilter_Recv = section["show_recv"].value_or(ClientMessagesFilter_Recv);
         ClientMessagesFilter_Send = section["show_send"].value_or(ClientMessagesFilter_Send);
         ClientMessagesFilter_Self = section["show_send_self"].value_or(ClientMessagesFilter_Self);
+        ClientMessagesFilter_Locs = section["show_locations"].value_or(ClientMessagesFilter_Locs);
         ClientMessagesFilter_Server = section["show_server"].value_or(ClientMessagesFilter_Server);
         ClientMessagesFilter_Plain = section["show_plain"].value_or(ClientMessagesFilter_Plain);
 
@@ -96,6 +98,7 @@ namespace APClient
 
         ClientMessagesColor_Player = ImColor(section["color_player"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Player)));
         ClientMessagesColor_Others = ImColor(section["color_others"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Others)));
+        ClientMessagesColor_Locations = ImColor(section["color_locations"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Locations)));
 
         ClientMessagesColor_Progression = ImColor(section["color_progression"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Progression)));
         ClientMessagesColor_Useful = ImColor(section["color_useful"].value_or(ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Useful)));
@@ -130,6 +133,7 @@ namespace APClient
         config.insert("show_recv", ClientMessagesFilter_Recv);
         config.insert("show_send", ClientMessagesFilter_Send);
         config.insert("show_send_self", ClientMessagesFilter_Self);
+        config.insert("show_locations", ClientMessagesFilter_Locs);
         config.insert("show_server", ClientMessagesFilter_Server);
         config.insert("show_plain", ClientMessagesFilter_Plain);
 
@@ -137,6 +141,7 @@ namespace APClient
 
         config.insert("color_player", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Player));
         config.insert("color_others", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Others));
+        config.insert("color_locations", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Locations));
 
         config.insert("color_progression", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Progression));
         config.insert("color_useful", ImGui::ColorConvertFloat4ToU32(ClientMessagesColor_Useful));
@@ -269,7 +274,7 @@ namespace APClient
             AP_SetLocationCheckedCallback(LocationChecked);
 
             AP_RegisterSlotDataIntCallback("victoryID", SlotData_VictoryID);
-            AP_RegisterSlotDataIntCallback("scoreGradeNeeded", SlotData_VictoryID);
+            AP_RegisterSlotDataIntCallback("scoreGradeNeeded", SlotData_Grade);
             AP_RegisterSlotDataIntCallback("leekWinCount", SlotData_LeekWin);
             AP_RegisterSlotDataIntCallback("locWinCount", SlotData_LocWin);
             AP_RegisterSlotDataIntCallback("progHP", SlotData_ProgHP);
@@ -458,11 +463,17 @@ namespace APClient
                 auto msg_recv = static_cast<AP_ItemRecvMessage*>(msg);
                 auto msg_push = new AP_ItemRecvMessage(*msg_recv);
                 pushClientMessage(msg_push);
+
+                APHints::updateByLocName(msg_push->location);
             }
             else if (msg->type == AP_MessageType::ItemSend) {
                 auto msg_send = static_cast<AP_ItemSendMessage*>(msg);
                 auto msg_push = new AP_ItemSendMessage(*msg_send);
+
                 pushClientMessage(msg_push);
+
+                if (APHints::isPlayer(msg_push->recvPlayer))
+                    APHints::updateByLocName(msg_push->location);
             }
             else if (msg->type == AP_MessageType::Hint)
             {
@@ -596,7 +607,7 @@ namespace APClient
                 if (size > avail)
                     ImGui::Spacing();
 
-                ImGui::Text(word.c_str());
+                ImGui::Text("%s", word.c_str());
 
                 const auto& nextword = *std::next(it);
                 auto nextavail = ImGui::GetContentRegionAvail().x;
@@ -656,7 +667,7 @@ namespace APClient
                     if (ImGui::Button("Cancel"))
                         AP_Shutdown();
                     ImGui::SameLine();
-                    ImGui::Text(refused ? "Wrong Name/Server/Password" : "Connecting...");
+                    ImGui::Text("%s", refused ? "Wrong Name/Server/Password" : "Connecting...");
                 }
         }
         else
@@ -721,6 +732,9 @@ namespace APClient
                         parts.push_back({ isSlotRecv ? &ClientMessagesColor_Player : &ClientMessagesColor_Others, msg_send->recvPlayer });
                     }
 
+                    if (msg_send->sendPlayer != "Archipelago" && ClientMessagesFilter_Locs)
+                        parts.push_back({ &ClientMessagesColor_Locations, std::format("({})", msg_send->location) });
+
                     RichTextWrap(parts);
                 }
                 else if (msg->type == AP_MessageType::ItemRecv) {
@@ -740,10 +754,13 @@ namespace APClient
                         parts.push_back({ &ClientMessagesColor_Player, getSlotName() });
                     }
 
+                    if (msg_recv->sendPlayer != "Archipelago" && ClientMessagesFilter_Locs)
+                        parts.push_back({ &ClientMessagesColor_Locations, std::format("({})", msg_recv->location) });
+
                     RichTextWrap(parts);
                 }
                 else {
-                    ImGui::TextWrapped(msg->text.c_str());
+                    ImGui::TextWrapped("%s", msg->text.c_str());
                 }
             }
 
@@ -753,8 +770,9 @@ namespace APClient
             ImGui::EndChild();
 
             if (ImGui::BeginPopupContextItem("##xx")) {
-                if (ImGui::BeginMenu("Show message types")) {
-                    ImGui::MenuItem("Only show relevant sends", nullptr, &ClientMessagesFilter_Self);
+                if (ImGui::BeginMenu("Message options")) {
+                    ImGui::MenuItem("Show only relevant", nullptr, &ClientMessagesFilter_Self);
+                    ImGui::MenuItem("Show location", nullptr, &ClientMessagesFilter_Locs);
                     ImGui::Separator();
                     ImGui::MenuItem("Item sent", nullptr, &ClientMessagesFilter_Send);
                     ImGui::MenuItem("Item received", nullptr, &ClientMessagesFilter_Recv);
@@ -769,6 +787,7 @@ namespace APClient
                 if (ImGui::BeginMenu("Colors")) {
                     ImGui::ColorEdit4(getSlotName().c_str(), (float*)&ClientMessagesColor_Player, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
                     ImGui::ColorEdit4("Others##xx", (float*)&ClientMessagesColor_Others, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+                    ImGui::ColorEdit4("Locations##xx", (float*)&ClientMessagesColor_Locations, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
 
                     ImGui::Separator();
 
@@ -816,7 +835,7 @@ namespace APClient
             ImGui::PopItemWidth();
 
             ImGui::SameLine();
-            ImGui::Text(winCon.c_str());
+            ImGui::Text("%s", winCon.c_str());
 
             // TODO: Relocate
             std::string goalTip = std::format("Goal song: {}\nClear grade needed: {}",

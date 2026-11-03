@@ -6,8 +6,6 @@
 
 class Trap;
 
-namespace fs = std::filesystem;
-
 namespace APTraps
 {
 	enum struct TrapID : int64_t {
@@ -24,6 +22,7 @@ namespace APTraps
 		PSP = 36, // Changes actual resolution, minor flicker (window resize) on some recording software but should be seamless for the player.
 		SFX = 37,
 		NoSpeed = 38,
+		Lane = 39,
 	};
 
 	extern bool& devMode;

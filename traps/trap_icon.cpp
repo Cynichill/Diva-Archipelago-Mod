@@ -119,12 +119,16 @@ namespace TrapIcon
 
 	void _TrapIcon::ImGuiConfig()
 	{
-		ImGui::SliderFloat("Icon Reroll", &rerollInterval, 0.0f, 60.0f, "%.1f seconds", ImGuiSliderFlags_AlwaysClamp);
-		HelpMarker("Seconds between icon rerolls while Icon trap is active.\n0 to only reroll once.");
+		if (ImGui::CollapsingHeader("Icon")) {
+			ImGui::SliderFloat("Icon Reroll", &rerollInterval, 0.0f, 60.0f, "%.1f seconds", ImGuiSliderFlags_AlwaysClamp);
+			HelpMarker("Seconds between icon rerolls while Icon trap is active.\n0 to only reroll once.");
 
-		ImGui::Checkbox("Icon Trap: Alternate arrow colors", &alternateArrows);
-		HelpMarker("When not using random glyphs, allow colored arrows for other controllers.");
-		ImGui::Checkbox("Icon Trap: Random controller glyphs", &randomizeGlyphs);
+			ImGui::Checkbox("Icon Trap: Alternate arrow colors", &alternateArrows);
+			HelpMarker("When not using random glyphs, allow colored arrows for other controllers.");
+			ImGui::Checkbox("Icon Trap: Random controller glyphs", &randomizeGlyphs);
+
+			ImGui::Separator();
+		}
 	}
 
 	void _TrapIcon::ImGuiStatus()

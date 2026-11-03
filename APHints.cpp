@@ -9,7 +9,7 @@ namespace APHints
     //  https://github.com/ArchipelagoMW/Archipelago/blob/main/docs/network%20protocol.md#get
     //  https://github.com/ArchipelagoMW/Archipelago/blob/main/docs/network%20protocol.md#Hint
 
-    bool devMode = APClient::devMode;
+    bool &devMode = APClient::devMode;
 
     bool init = false; // If first !hint has been sent
     bool hintHideChecked = true;
@@ -203,6 +203,17 @@ namespace APHints
         resortHints = true;
     }
 
+    void updateByLocName(const std::string& locName)
+    {
+        for (auto& hint : Hints) {
+            if (hint.location.compare(locName) != 0)
+                continue;
+
+            APLogger::print(__FUNCTION__" setting checked for %s\n", hint.location.c_str());
+            hint.checked = true;
+        }
+    }
+
     void ImGuiTab()
     {
         //if (!APClient::devMode) return;
@@ -331,6 +342,16 @@ namespace APHints
 
                     if (ImGui::MenuItem("Copy location name##xx"))
                         ImGui::SetClipboardText(hint.location.c_str());
+
+                    if (devMode) {
+                        ImGui::Separator();
+
+                        if (ImGui::MenuItem("Copy /send_location##xx"))
+                            ImGui::SetClipboardText(std::format("/send_location {} {}", hint.sendPlayer, hint.location).c_str());
+
+                        //if (ImGui::MenuItem("Cheat##xx") && isMyCheck && haveItem)
+                        //    APClient::LocationSend(location_name_to_id[hint.location] / AP_ID_FACTOR);
+                    }
 
                     ImGui::EndPopup();
                 }

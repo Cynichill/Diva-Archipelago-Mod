@@ -28,23 +28,25 @@ namespace TrapHiSpeed
 		void save(toml::table& settings);
 		void resetHiSpeed();
 		void resetNoSpeed();
+		void resetLane();
 		void reset();
 		bool isRunningNoSpeed() const;
+		bool isRunningLane() const;
 		void touchHiSpeed();
 		void touchNoSpeed();
+		void touchLane();
 		void touch();
 		void tick();
 		void ImGuiConfig();
 		void ImGuiStatus();
 		void ImGuiExpose();
 
-		float getHiSpeedFactor() const;
-
 	private:
-		float hiSpeedFactor = 1.0f; // Extra mult on base high speed rate
-
 		bool isNoSpeed = false;
 		float timestampNoSpeed = 0.0f;
+
+		bool isLane = false;
+		float timestampLane = 0.0f;
 	};
 
 	int getHighSpeedRate();
