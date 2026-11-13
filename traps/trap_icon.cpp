@@ -84,7 +84,7 @@ namespace TrapIcon
 
 	void _TrapIcon::rollIcon()
 	{
-		if (!APGUI::isInGame()) return;
+		//if (!APGUI::isInGame()) return;
 
 		int currentIcon = getCurrentIcon();
 		int nextIcon = currentIcon;
